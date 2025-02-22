@@ -1,6 +1,7 @@
 import re
 import json
 from typing import Tuple, Optional, Dict, Any, List
+from agent_prm.utils.logger_email import elogger
 
 def parse_reason_and_action_alfworld(text: str) -> Tuple[str, str]:
     """
@@ -184,6 +185,7 @@ def parse_json(response: str) -> Optional[Dict[str, Any]]:
             return parsed_data
         except json.JSONDecodeError as e:
             print("Error decoding JSON:", e)
+            elogger.log(f"Error decoding JSON: {e}")
             return None
     else:
         print("No JSON data found")

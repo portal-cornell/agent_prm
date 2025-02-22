@@ -1,0 +1,20 @@
+{% if mode == 'input' %}
+You are an intelligent assistant answering a yes-no question about a secret object/entity.
+
+The secret object/entity is:
+"{{ thing }}"
+
+Please follow these general instructions:
+* If the question directly mentions "{{ thing }}" for example by saying "Is it a {{ thing }}?" or "Is this a {{ thing }}?" or "Is the secret object/entity a {{ thing }}?", you MUST answer "yes".
+* You MUST answer the question about "{{ thing }}" truthfully and honestly in the format "yes" or "no" in lower-case.
+
+The question about "{{ thing }}" is:
+"{{ question }}"
+
+For your response, you MUST write down "ANSWER:" followed by the answer to the question. The answer must be a lower-case "yes" or "no". You must follow the format below exactly:
+ANSWER:
+The answer to the question. It must be a lower-case single word "yes" or "no".
+{% elif mode == 'output' %}
+ANSWER:
+{{ action }}
+{% endif %}

@@ -1,0 +1,50 @@
+{% if mode == 'input' %}
+You are an intelligent player playing a game of twenty questions. Your objective is to ask the minimal number of yes-no questions in order to guess the identity of the entity/thing chosen by an oracle. You can only ask 20 questions in total.
+
+The things that the orcacle can choose from are:
+{{ all_obj_list }}
+
+Below is the history of previous questions and answers:
+{{ observation_action_history }}
+
+Your goal is to generate a yes-no question that either (1) help you narrow down the possible things as much as possible or (2) guess the object/entity directly.
+
+Please follow these general instructions:
+* You MUST ask a yes-no question.
+* Before you ask the question, you MUST intelligently reason about the history of previous questions and answers to ask the most informative question.
+* Consult the history of previous questions and answers to see what questions you have asked already so as to not repeat your questions.
+* Do NOT repeat the same question. It's going to yield the same result.
+* Do NOT get stuck on one idea and try to branch out if you get stuck. 
+
+You need to generate a response in the following format. Please issue only a single question at a time.
+REASON:
+Rationale for what question to ask next based on the previous history. 
+QUESTION:
+The question to be asked. The question must be a yes-no question.
+{% elif mode == 'input_final' %}
+You are an intelligent player playing a game of twenty questions. Your objective is to ask the minimal number of yes-no questions in order to guess the identity of the entity/thing chosen by an oracle. You can only ask 20 questions in total.
+
+The object/entity that the orcacle can choose from are:
+{{ all_obj_list }}
+
+Below is the history of previous questions and answers:
+{{ observation_action_history }}
+
+You have already asked 19 questions, so this is your final guess. Your goal is to consult the list of object/entity that the orcale can choose from and quess the object/entity directly.
+
+Please follow these general instructions:
+* You MUST ask a yes-no question.
+* Before you guess the object/entity, you MUST intelligently reason about the history of previous questions and answers to ask the most informative question.
+* The question must be in the format "Is the object/entity {your_guess}?". your_guess must be one from the list that the oracle can choose from.
+
+You need to generate a response in the following format. Please issue only a single question at a time.
+REASON:
+Rationale for what thing to quess based on the previous history. In your reason, consult the list of things that the oracle can choose from to precisely state VERBATIM which thing you will guess.
+QUESTION:
+The question to be asked. The question must be a yes-no question in the format "Is the object {your_guess}?". your_guess must be one of the things that the oracle can choose from.
+{% elif mode == 'output' %}
+REASON:
+{{ reason }}
+ACTION:
+{{ action }}
+{% endif %}

@@ -1,0 +1,44 @@
+{% if system %}
+You are an intelligent player playing a game of twenty questions. Your objective is to ask the minimal number of yes-no questions in order to guess the identity of the entity/thing chosen by an oracle. You can only ask 20 questions in total.
+
+### What you can guess
+The things that the orcacle can choose from are:
+{{ all_obj_list }}
+
+### Your goal and instructions
+Your goal is to generate a yes-no question that either (1) help you narrow down the possible things as much as possible or (2) guess the thing directly.
+
+Please follow these general instructions:
+* You MUST ask a yes-no question.
+* If you are guessing the thing directly, you MUST ask a question in the format "Is it {your_guess}?". your_guess must be one of the things that the oracle can choose from.
+* Before you ask the question, you MUST intelligently reason about the history of previous questions and answers to ask the most informative question. Your reasoning should also be based on the list of things that the oracle can choose from.
+* Consult the history of previous questions and answers to see what questions you have asked already so as to not repeat your questions.
+* Do NOT repeat the same question. It's going to yield the same result.
+* Do NOT get stuck on one idea and try to branch out if you get stuck. 
+
+### Output format
+The output is a JSON containing your reasoning and the question you will ask. Please issue only a single question at a time, and the question must be a yes-no question.
+```json
+{
+    "reason": "string: your rationale for the question you will ask",
+    "question": "string: the question to be asked. The question must be a yes-no question."
+}
+```
+{% endif %}
+
+{% if not system %}
+{% if mode == 'input' %}
+Below is the history of previous questions and answers:
+{{ observation_action_history }}
+{% elif mode == 'input_final' %}
+Below is the history of previous questions and answers:
+{{ observation_action_history }}
+
+You have already asked 19 questions, so this is your final guess. Your goal is to consult the list of things that the orcale can choose from and quess the thing directly. The question must be in the format "Is it {your_guess}?". your_guess must be one of the things that the oracle can choose from.
+{% elif mode == 'output' %}
+REASON:
+{{ reason }}
+QUESTION:
+{{ question }}
+{% endif %}
+{% endif %}
