@@ -41,7 +41,7 @@ We use [SGLang](https://github.com/sgl-project/sglang) for fast inference, with 
 # Clone and install SGLang
 git clone --branch new_llama_model https://github.com/sanjibanc/sglang.git
 cd sglang
-pip install -e .
+
 cd ..
 ```
 To use slgang server, [got to SGlang instructions](#sglang-instructions)

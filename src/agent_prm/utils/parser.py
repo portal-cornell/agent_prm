@@ -189,6 +189,7 @@ def parse_json(response: str) -> Optional[Dict[str, Any]]:
             return None
     else:
         print("No JSON data found")
+        elogger.log("No JSON data found")
         return None
 
 def extract_task_from_observation_alfworld(observation: str) -> str:

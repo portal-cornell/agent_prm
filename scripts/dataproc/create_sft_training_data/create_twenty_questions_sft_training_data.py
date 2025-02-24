@@ -7,7 +7,7 @@ from typing import List, Dict
 from jinja2 import Template
 
 from agent_prm.envs.twenty_questions.env import setup_twenty_questions_env
-from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, WordVariants, get_default_word_list
+from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, VALIDATION_OBJECT_DICT, TEST_OBJECT_DICT, WordVariants, get_default_word_list
 from agent_prm.utils.openai import generate_from_openai_completion
 from agent_prm.utils.parser import parse_json
 from agent_prm.utils.logger_email import elogger
@@ -15,6 +15,7 @@ from agent_prm.utils.logger_email import elogger
 def preprocess_args():
     parser = argparse.ArgumentParser(description='Generate raw 20questions logs')
     parser.add_argument('--config', type=str, default="configs/create_sft_training_data/20questions.yaml", help='Path to 20 questions dataproc config file')
+    parser.add_argument('-t', '--data-type', type=str, required=True, choices=["train", "val", "test"], help='Whether to use the train, or validation, or test set')
     parser.add_argument('-d', '--debug', default=False, action="store_true", help='Whether to run in debug mode (Human instead of gpt4o as the agent)')
     parser.add_argument('-e', '--activate-email', default=False, action="store_true", help='Whether to activate email logging')
     args = parser.parse_args()
@@ -47,8 +48,12 @@ def query_expert(history: List[Dict[str, str]], expert_agent_prompt_template: Te
     print(f"gpt 4o cost: {cost}")
 
     response_json = parse_json(response)
-    assert response_json is not None, f"Failed to parse response: {response}"
-    assert "reason" in response_json and "question" in response_json, f"Invalid response: {response_json}. Must contain 'reason' and 'question'"
+    try:
+        assert response_json is not None, f"Failed to parse response: {response}"
+        assert "reason" in response_json and "question" in response_json, f"Invalid response: {response_json}. Must contain 'reason' and 'question'"
+    except Exception as e:
+        elogger.log(f"Error parsing response: {response}")
+        raise e
 
     return response_json["reason"], response_json["question"], cost
 
@@ -61,10 +66,19 @@ def main():
 
     rollout_per_obj = cfg["rollout_per_obj"]
 
+    if args.data_type == "train":
+        object_dict_to_use = TRAIN_OBJECT_DICT
+    elif args.data_type == "val":
+        object_dict_to_use = VALIDATION_OBJECT_DICT
+    elif args.data_type == "test":
+        object_dict_to_use = TEST_OBJECT_DICT
+    else:
+        raise ValueError(f"Invalid data type: {args.data_type}")
+
     with open(cfg["expert_template"], "r") as file:
         expert_agent_prompt_template = Template(file.read())
 
-    summary_dict_fp = os.path.join(cfg["logs_dir"], "summary_dict.json")
+    summary_dict_fp = os.path.join(cfg["logs_dir"], args.data_type, "summary_dict.json")
     
     if not os.path.exists(summary_dict_fp):
         print(f"Summary dict not found at {summary_dict_fp}. Creating a new one.")
@@ -81,8 +95,8 @@ def main():
         if rollout_idx_str not in summary_dict:
             summary_dict[rollout_idx_str] = []
 
-        for category in TRAIN_OBJECT_DICT.keys():
-            for obj in TRAIN_OBJECT_DICT[category]:
+        for category in object_dict_to_use.keys():
+            for obj in object_dict_to_use[category]:
                 if obj in summary_dict[rollout_idx_str]:
                     print(f"Skipping {obj} as it is already in the summary dict")
                     continue
@@ -128,7 +142,7 @@ def main():
                 summary_dict[rollout_idx_str].append(obj)
 
                 save_json(summary_dict_fp, summary_dict)
-                save_json(os.path.join(cfg["logs_dir"], f"{obj}_{rollout_idx_str}.json"), traj_list)
+                save_json(os.path.join(cfg["logs_dir"], args.data_type, f"{obj}_{rollout_idx_str}.json"), traj_list)
 
                 print(f"======== collected idx={rollout_idx_str} obj={obj} with total reward {total_reward} and total cost {total_cost}")
 
