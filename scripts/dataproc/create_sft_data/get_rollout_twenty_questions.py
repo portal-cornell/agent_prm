@@ -78,7 +78,7 @@ def main():
     with open(cfg["expert_template"], "r") as file:
         expert_agent_prompt_template = Template(file.read())
 
-    summary_dict_fp = os.path.join(cfg["logs_dir"], args.data_type, "summary_dict.json")
+    summary_dict_fp = os.path.join(cfg["logs_dir"], args.data_type, "_summary_dict.json")
     
     if not os.path.exists(summary_dict_fp):
         print(f"Summary dict not found at {summary_dict_fp}. Creating a new one.")
