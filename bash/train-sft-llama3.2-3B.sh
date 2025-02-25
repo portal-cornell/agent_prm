@@ -1,17 +1,34 @@
 #!/bin/bash
 
-DATA_DIR=leap-iter0-4k
+DATA_DIR=iter0
 MODEL=meta-llama/Llama-3.2-3B-Instruct
 DATA_DIRS=""
-DATA_DIRS+="data/alfworld/sft/${DATA_DIR}"
+DATA_DIRS+="data/20questions/sft/${DATA_DIR}"
 
 # Remove the trailing comma
 DATA_DIRS=${DATA_DIRS%,}
 
 current_date=$(date +"%y%m%d_%H%M%S")
-echo $current_date
 
-SAVE_DIR=save/sft/${current_date}/${DATA_DIR}_${MODEL//\//-}/
+# Default value for use_peft
+USE_PEFT=false
+
+# Parse command-line arguments
+for arg in "$@"; do
+    case $arg in
+        --use_peft)
+            USE_PEFT=true
+            ;;
+    esac
+done
+
+echo "Use PEFT: $USE_PEFT"
+
+export TRITON_CACHE_DIR=/share/portal/hw575
+TRITON_CACHE_DIR=/share/portal/hw575
+
+SAVE_DIR=save/sft/${current_date}_${DATA_DIR}_${MODEL//\//-}_peft=${USE_PEFT}/
+echo "Save directory: $SAVE_DIR"
 
 accelerate launch \
     --num_processes 4 \
@@ -30,13 +47,13 @@ accelerate launch \
     --optim adamw_torch_fused \
     --learning_rate 3e-5 \
     --evaluation_strategy steps \
-    --eval_steps 250 \
+    --eval_steps 10 \
     --save_strategy steps \
     --save_steps 250 \
     --save_total_limit 3 \
     --load_best_model_at_end True \
     --metric_for_best_model eval_loss \
-    --use_peft False \
+    --use_peft $USE_PEFT \
     --lora_alpha 64 \
     --lora_r 128 \
     --lora_dropout 0.05 \
@@ -46,6 +63,6 @@ accelerate launch \
     --bf16 \
     --seed 42 \
     --report_to wandb \
-    --wandb_project_name "LLM_RM" \
+    --wandb_project_name "Hinsight_LLM" \
     --logging_first_step \
     --logging_steps 10 \

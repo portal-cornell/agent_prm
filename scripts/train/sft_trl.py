@@ -23,7 +23,7 @@ class Arguments:
     data_dir: str = field(default=None, metadata={"help": "path to training data"})
     prior_data_dir: str = field(default=None, metadata={"help": "path to prior data"})
     data_dirs: str = field(default=None, metadata={"help": "path to training data directories"})
-    wandb_project_name: str = field(default="LLM_RM", metadata={"help": "wandb project name"})
+    wandb_project_name: str = field(default="Hinsight_LLM", metadata={"help": "wandb project name"})
 
 if __name__ == "__main__":
     parser = TrlParser((Arguments, SFTConfig, ModelConfig))
@@ -31,7 +31,9 @@ if __name__ == "__main__":
 
     # Initialize wandb if specified
     if training_args.report_to == "wandb":
-        wandb.init(project=args.wandb_project_name)
+        print(f"Initializing wandb with project name {args.wandb_project_name}")
+        wandb.init(project=args.wandb_project_name,
+                   entity="yuki-wang-org")
 
     ################
     # Model init kwargs & Tokenizer
@@ -74,7 +76,7 @@ if __name__ == "__main__":
         ).shuffle(seed=42)
 
         eval_dataset = load_dataset(
-            "json", data_files=f"{args.data_dir}/test.json", split="train"
+            "json", data_files=f"{args.data_dir}/val.json", split="train"
         ).shuffle(seed=42)
 
         if args.prior_data_dir is not None:
@@ -94,7 +96,7 @@ if __name__ == "__main__":
         train_datasets, eval_datasets = [], []
         for data_dir in data_dirs:
             train_datasets.append(load_dataset("json", data_files=f"{data_dir}/train.json", split="train"))
-            eval_datasets.append(load_dataset("json", data_files=f"{data_dir}/test.json", split="train"))
+            eval_datasets.append(load_dataset("json", data_files=f"{data_dir}/val.json", split="train"))
         
         N_train = min(len(dataset) for dataset in train_datasets)
         N_eval = min(len(dataset) for dataset in eval_datasets)
