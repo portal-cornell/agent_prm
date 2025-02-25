@@ -13,11 +13,11 @@ machine_rank: 0
 main_training_function: main
 mixed_precision: bf16
 num_machines: 1  # Number of nodes used in training
-num_processes: 4  # Number of GPUs used in training
+num_processes: 2  # Number of GPUs used in training
 rdzv_backend: static
 same_network: true
 tpu_env: []
 tpu_use_cluster: false
 tpu_use_sudo: false
 use_cpu: false
-main_process_port: 29520
+main_process_port: 29530

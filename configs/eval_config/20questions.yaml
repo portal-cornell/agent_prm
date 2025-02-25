@@ -13,17 +13,41 @@ data_types:
 logdir: data/20questions/eval
 agents:
   - type: hf
-    log_name: Llama-3B-Instruct
+    log_name: 3B
     model_id: meta-llama/Llama-3.2-3B-Instruct
     prompt_template_file: prompts/20questions/20questions_template.j2
   - type: hf
-    log_name: Llama-3B-Instruct-SFT-on-all-data
+    log_name: 3B-PSFT-all-data-1epoch
     model_id: /share/portal/hw575/agent_prm/save/sft/250224_142629_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=true/checkpoint-80
     prompt_template_file: prompts/20questions/20questions_template.j2
-  # - type: hf
-  #   log_name: Llama-3B-Instruct-SFT-on-successful-data
-  #   model_id: /share/portal/hw575/agent_prm/save/sft/250224_151841_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=true/checkpoint-33
-  #   prompt_template_file: prompts/20questions/20questions_template.j2
+  - type: hf
+    log_name: 3B-PSFT-all-data-3epoches-33pct
+    model_id: /share/portal/hw575/agent_prm/save/sft/250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/checkpoint-160
+    prompt_template_file: prompts/20questions/20questions_template.j2
+  - type: hf
+    log_name: 3B-PSFT-all-data-3epoches-66pct
+    model_id: /share/portal/hw575/agent_prm/save/sft/250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/checkpoint-320
+    prompt_template_file: prompts/20questions/20questions_template.j2
+  - type: hf
+    log_name: 3B-PSFT-all-data-3epoches
+    model_id: /share/portal/hw575/agent_prm/save/sft/250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/checkpoint-480
+    prompt_template_file: prompts/20questions/20questions_template.j2
+  - type: hf
+    log_name: 3B-PSFT-success-data-1epoch
+    model_id: /share/portal/hw575/agent_prm/save/sft/250224_151841_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=true/checkpoint-33
+    prompt_template_file: prompts/20questions/20questions_template.j2
+  - type: hf
+    log_name: 3B-PSFT-success-data-3epoches-60pct
+    model_id: /share/portal/hw575/agent_prm/save/sft/250224_224915_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+scs/checkpoint-120
+    prompt_template_file: prompts/20questions/20questions_template.j2
+  - type: hf
+    log_name: 3B-PSFT-success-data-3epoches-90pct
+    model_id: /share/portal/hw575/agent_prm/save/sft/250224_224915_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+scs/checkpoint-120
+    prompt_template_file: prompts/20questions/20questions_template.j2
+  - type: hf
+    log_name: 3B-PSFT-success-data-3epoches
+    model_id: /share/portal/hw575/agent_prm/save/sft/250224_224915_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+scs/checkpoint-201
+    prompt_template_file: prompts/20questions/20questions_template.j2
   - type: gpt4o_expert
     log_name: gpt4o
 defaults:

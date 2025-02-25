@@ -29,12 +29,6 @@ if __name__ == "__main__":
     parser = TrlParser((Arguments, SFTConfig, ModelConfig))
     args, training_args, model_config = parser.parse_args_and_config()
 
-    # Initialize wandb if specified
-    if training_args.report_to == "wandb":
-        print(f"Initializing wandb with project name {args.wandb_project_name}")
-        wandb.init(project=args.wandb_project_name,
-                   entity="yuki-wang-org")
-
     ################
     # Model init kwargs & Tokenizer
     ################

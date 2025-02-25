@@ -205,6 +205,10 @@ def main(cfg: DictConfig):
                 online_eval(cfg, logdir, agent)
             else:
                 raise ValueError(f"Invalid mode: {cfg.mode}")
+
+    if cfg.mode == "online":
+        # Because this takes a long time, we notify when the online eval is done
+        elogger.log(f"Online eval results saved in {dstdir}")
     
 
 if __name__ == "__main__":

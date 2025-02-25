@@ -1,6 +1,8 @@
 #!/bin/bash
+WANDB_PROJECT_NAME="Hinsight_LLM"
+export WANDB_PROJECT=$WANDB_PROJECT_NAME
 
-DATA_DIR=iter0
+DATA_DIR=iter0-all
 MODEL=meta-llama/Llama-3.2-3B-Instruct
 DATA_DIRS=""
 DATA_DIRS+="data/20questions/sft/${DATA_DIR}"
@@ -10,16 +12,22 @@ DATA_DIRS=${DATA_DIRS%,}
 
 current_date=$(date +"%y%m%d_%H%M%S")
 
-# Default value for use_peft
+# Default values
 USE_PEFT=false
+NOTE=""
 
 # Parse command-line arguments
-for arg in "$@"; do
-    case $arg in
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
         --use_peft)
             USE_PEFT=true
             ;;
+        --note)
+            NOTE="_$2"
+            shift
+            ;;
     esac
+    shift
 done
 
 echo "Use PEFT: $USE_PEFT"
@@ -27,11 +35,11 @@ echo "Use PEFT: $USE_PEFT"
 export TRITON_CACHE_DIR=/share/portal/hw575
 TRITON_CACHE_DIR=/share/portal/hw575
 
-SAVE_DIR=save/sft/${current_date}_${DATA_DIR}_${MODEL//\//-}_peft=${USE_PEFT}/
+SAVE_DIR=save/sft/${current_date}_${DATA_DIR}_${MODEL//\//-}_peft=${USE_PEFT}${NOTE}/
 echo "Save directory: $SAVE_DIR"
 
 accelerate launch \
-    --num_processes 4 \
+    --num_processes 2 \
     --config_file configs/ds_configs/deepspeed_zero3.yaml scripts/train/sft_trl.py \
     --data_dirs "${DATA_DIRS}" \
     --output_dir ${SAVE_DIR} \
@@ -39,7 +47,7 @@ accelerate launch \
     --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 2 \
     --gradient_accumulation_steps 8 \
-    --num_train_epochs 1 \
+    --num_train_epochs 3 \
     --gradient_checkpointing True \
     --max_seq_length 4000 \
     --packing False \
@@ -47,11 +55,11 @@ accelerate launch \
     --optim adamw_torch_fused \
     --learning_rate 3e-5 \
     --evaluation_strategy steps \
-    --eval_steps 10 \
+    --eval_steps 20 \
     --save_strategy steps \
-    --save_steps 250 \
+    --save_steps 160 \
     --save_total_limit 3 \
-    --load_best_model_at_end True \
+    --load_best_model_at_end False \
     --metric_for_best_model eval_loss \
     --use_peft $USE_PEFT \
     --lora_alpha 64 \
@@ -63,6 +71,6 @@ accelerate launch \
     --bf16 \
     --seed 42 \
     --report_to wandb \
-    --wandb_project_name "Hinsight_LLM" \
+    --wandb_project_name "${WANDB_PROJECT_NAME}" \
     --logging_first_step \
     --logging_steps 10 \
