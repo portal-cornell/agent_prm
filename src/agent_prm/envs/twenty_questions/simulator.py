@@ -36,30 +36,6 @@ def parse_reason_and_action_20questions_oracle(text: str) -> Tuple[str, str]:
         answer = "no"
 
     return reason, answer
-    
-# def parse_reason_and_action_20questions_oracle(text: str) -> Tuple[str, str]:
-#     """
-#     Parses the reason and action given prediction from model for ORCALE environment 
-
-#     Args:
-#         text: The text containing the reason and action.
-
-#     Returns:
-#         A tuple with the parsed reason and action. 
-#     """
-#     pattern = r"ANSWER:\s*([\s\S]*?)$"
-#     match = re.search(pattern, text)
-
-#     if match:
-#         answer = match.group(1).strip()
-
-#         # Clean up action to move to lower case and remove any random characters
-#         answer = answer.lower()
-#         answer = re.sub(r'[^a-z0-9 /]', '', answer)
-
-#         return "None", answer
-#     else:
-#         return "None", "None"
 
 class TwentyQuestionsSimulator(object):
     """Initialize the TwentyQuestionsOracle agent.
@@ -167,6 +143,51 @@ class TwentyQuestionsSimulator(object):
                 reason = "None"
 
         return reason, action
+    
 
+    def generate_answer_batch(self, 
+                              words: List[WordVariants], 
+                              questions: List[str]) -> Tuple[List[str], List[str]]:
+        """
+        Predicts a reason and an asnwer given the current word and question
+        """
+        input_datas = [
+            {
+                'mode': 'input',
+                'thing': word[0].lower(),
+                'question': question
+            }
+            for word, question in zip(words, questions)
+        ]
 
-    # TODO: Add batching
+        messages = [
+            self.prompt_template.render(**input_data)
+            for input_data in input_datas
+        ]
+
+        tokenized_inputs = self.tokenizer(messages, return_tensors="pt", padding=True, truncation=True, max_length=self.max_length).to(self.model.device)  # size for "input_ids" is (bs, seq_len)
+
+        outputs = self.model.generate(
+            **tokenized_inputs,
+            max_new_tokens=256,
+            eos_token_id=[
+                self.tokenizer.eos_token_id,
+                self.tokenizer.convert_tokens_to_ids("<|eot_id|>"),
+            ],
+            do_sample=False,
+            num_beams=1,
+            temperature=None,
+            top_p=None,
+            pad_token_id=self.tokenizer.eos_token_id
+        )  # size: (bs, seq_len)
+
+        # We want to only decode the last part of the output
+        responses = self.tokenizer.batch_decode(outputs[:, tokenized_inputs["input_ids"].shape[-1]:], skip_special_tokens=True)
+
+        answer_reasons, answers = [], []
+        for response in responses:
+            reason, answer = self.parse_reason_action_fn(response)
+            answer_reasons.append(reason)
+            answers.append(answer)
+
+        return answer_reasons, answers

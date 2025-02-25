@@ -102,18 +102,115 @@ class TwentyQuestionsEnvironment():
         return []
     
 
-    def copy(self):
-        return TwentyQuestionsEnvironment(
-            answerer=self.answerer,
-            word_list=self.word_list,
-            max_conversation_length=self.max_conversation_length,
-        )
+class BatchedTwentyQuestionsEnvironment(object):
+    """
+    A more stateless version of the 20 questions environment where we don't keep track of curr_world.
 
+    We will use the trick that our simulator is essentially a simulator, which can accept batched inputs.
+    """
+    def __init__(self, answerer: TwentyQuestionsSimulator,  word_list: List[WordVariants],  max_conversation_length: int=20):
+        self.answerer = answerer
+        self.word_list = word_list
+        self.max_conversation_length = max_conversation_length
 
-# TODO: get Batched Environment to work
+    
+    def step(self, words_to_guess: List[WordVariants], histories: List[Dict], actions: List[str], prev_dones: List[bool]):
+        """
+        Parameters:
+            words_to_guess (List[WordVariants]): The secrete words that the agent is trying to guess.
+            histories (List[List[Dict]]): The history of the conversation so far (in the beginning, it's empty). A list of lists of dictionaries, of the form:
+            [
+                [
+                    {
+                        "question": str,
+                        "answer": str,
+                    }
+                ]
+            ]
+            actions (List[str]): The actions to take in the environment.
+                We assume that even if the conversation is done, there is a placeholder action '' (to make batching easier)
+            prev_dones (List[bool]): Whether the conversation is done in the previous step.
 
+        Returns:
+            histories (List[List[Dict]]): Updated histories.
+            answer_reasons (List[List[str]]): The reasons for the answers.
+            answers (List[List[str]]): The answers.
+            rewards (List[float]): The rewards for the actions.
+            dones (List[bool]): Whether the conversation is done.
+        """
+        # Get batched answers
+        start_time = time.time()
+        answer_reasons, answers = self.answerer.generate_answer_batch(words_to_guess, actions)
+        end_time = time.time()
+        print(f"[ENV] time taken to generate answers: {end_time - start_time} seconds")
+
+        # Update histories
+        for i in range(len(histories)):
+            if not prev_dones[i]:
+                histories[i].append({
+                    "question": actions[i],
+                    "answer": answers[i],
+                })
+
+        rewards = []
+        dones = []
+        # Compute rewards
+        for i in range(len(histories)):
+            if prev_dones[i]:
+                rewards.append(0.0)
+                dones.append(True)
+            else:
+                if "yes" in answers[i] and "no" not in answers[i] and is_done(words_to_guess[i], actions[i]):
+                    reward = 0.0
+                    done = True
+                else:
+                    reward = -1.0
+                    done = False
+                rewards.append(reward)
+                dones.append(done)
+
+            # Check if the agents have exhausted all their guesses
+            if len(histories[i]) == self.max_conversation_length:
+                dones[i] = True
+
+        return histories, answer_reasons, answers, rewards, dones
+
+    def reset(self, seed: Optional[int] = None, num_envs: int = 1, words_to_guess: Optional[List[WordVariants]] = None):
+        """
+        Parameters:
+            seed (Optional[int]): The seed to use for the environment.
+            num_envs (int): The number of environments to create.
+            words_to_guess (Optional[List[WordVariants]]): The secrete words that the agent is trying to guess.
+
+        Returns:
+            histories (List[List[Dict]]): A list of lists. Each list reprsents the history of the conversation so far (in the beginning, it's empty)
+            words_to_guess (List[WordVariants]): The secrete words that the agents are trying to guess.
+        """
+        if words_to_guess is None:
+            words_to_guess = self.random.sample(self.word_list, num_envs)
+        else:
+            assert len(words_to_guess) == num_envs, "The number of words to guess must be equal to the number of environments."
+
+        histories = [[] for _ in range(num_envs)]
+
+        return histories, words_to_guess
+
+        
 def setup_twenty_questions_env(data_split: str='all') -> TwentyQuestionsEnvironment:
     env = TwentyQuestionsEnvironment(
+        answerer=TwentyQuestionsSimulator(
+            model_id="meta-llama/Llama-3.2-3B-Instruct",
+            prompt_template_file="prompts/20questions/20questions_simulator_template_with-reasoning.j2",
+            verbose=1
+        ),
+        word_list=get_default_word_list(data_split),
+        max_conversation_length=20,
+    )
+    return env
+
+
+def setup_batched_twenty_questions_env(data_split: str='all') -> BatchedTwentyQuestionsEnvironment:
+    env = BatchedTwentyQuestionsEnvironment(
         answerer=TwentyQuestionsSimulator(
             model_id="meta-llama/Llama-3.2-3B-Instruct",
             prompt_template_file="prompts/20questions/20questions_simulator_template_with-reasoning.j2",

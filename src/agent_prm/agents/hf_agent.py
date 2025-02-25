@@ -103,18 +103,48 @@ class HFAgent(Agent):
 
         return reason, action
 
-
-    def predict_reason_action_batch(self, queries: List[Dict], num_responses: int) -> List[Tuple[str, str]]:
+    # This is not done in an actual batch way (since it's still using a for loop)
+    def predict_reason_action_batch(self, input_datas: List[Dict]) -> List[Tuple[str, str]]:
         """
         Return a list of reason_actions of len(queries), each being len(num_responses)
         """
         reason_actions_all_queries = []
-        for query in queries:
-            reason_actions_per_query = []
-            for _ in range(num_responses):
-                reason, action = self.predict_reason_action(query["task"], query["observation"], query["candidate_actions"], query["observation_action_history"])
-                reason_actions_per_query.append({'reason': reason, 'action': action})
-            
-            reason_actions_all_queries.append(reason_actions_per_query)
+        for i in range(len(input_datas)):
+            reason, action = self.predict_reason_action(input_datas[i])
+            reason_actions_all_queries.append({'reason': reason, 'action': action})
 
         return reason_actions_all_queries
+    
+    # A trained model seems to deprecate (hypothesis: not able to stop)
+    # def predict_reason_action_batch(self, input_datas: List[Dict]) -> List[Tuple[str, str]]:
+    #     """
+    #     Return a list of reason_actions of len(queries), each being len(num_responses)
+    #     """
+    #     messages = [
+    #         self.prompt_template.render(**input_data)
+    #         for input_data in input_datas
+    #     ]
+
+    #     tokenized_inputs = self.tokenizer(messages, return_tensors="pt", padding=True, truncation=True, max_length=self.max_length).to(self.model.device)  # size for "input_ids" is (bs, seq_len)
+
+    #     outputs = self.model.generate(
+    #         **tokenized_inputs,
+    #         max_new_tokens=256,
+    #         eos_token_id=[
+    #             self.tokenizer.eos_token_id,
+    #             self.tokenizer.convert_tokens_to_ids("<|eot_id|>"),
+    #         ],
+    #         temperature=0.3,
+    #         pad_token_id=self.tokenizer.eos_token_id
+    #     )  # size: (bs, seq_len)
+
+    #     # We want to only decode the last part of the output
+    #     responses = self.tokenizer.batch_decode(outputs[:, tokenized_inputs["input_ids"].shape[-1]:], skip_special_tokens=True)
+
+    #     reason_actions_all_queries = []
+    #     for response in responses:
+    #         reason, action = self.parse_reason_action_fn(response)
+    #         reason_actions_all_queries.append({'reason': reason, 'action': action})
+
+    #     return reason_actions_all_queries
+            

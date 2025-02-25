@@ -1,11 +1,13 @@
 import os
 import time
+import math
 from omegaconf import DictConfig, OmegaConf
 import hydra
 from datasets import load_dataset
 from typing import List, Dict
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from agent_prm.agents.agent_registry import initialize_agent
 from agent_prm.agents.agent import Agent
@@ -13,7 +15,7 @@ from agent_prm.utils.parser import parse_reason_and_action_twenty_questions
 from agent_prm.utils.cfg_utils import get_output_folder_name
 from agent_prm.utils.general_utils import load_json, save_json
 from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, VALIDATION_OBJECT_DICT, TEST_OBJECT_DICT, WordVariants, get_default_word_list
-from agent_prm.envs.twenty_questions.env import setup_twenty_questions_env
+from agent_prm.envs.twenty_questions.env import setup_twenty_questions_env, setup_batched_twenty_questions_env
 from agent_prm.utils.logger_email import elogger
 
 def offline_eval(cfg: dict, agent: Agent):
@@ -38,13 +40,31 @@ def query_agent(agent: Agent, history: List[Dict[str, str]], all_obj_list: List[
     return reason, action
 
 
+def query_agent_batch(agent: Agent, histories: List[List[Dict[str, str]]], all_obj_list: List[WordVariants], last_question: bool = List[bool]):
+    """
+    Query the agent in batch
+    """
+    input_datas = [
+        {
+            'mode': 'input' if not last_question[i] else 'input_final',
+            'all_obj_list': all_obj_list,
+            'observation_action_history': histories[i]
+        }
+        for i in range(len(histories))
+    ]
+
+    reason_actions = agent.predict_reason_action_batch(input_datas)
+
+    return reason_actions
+
 def online_eval(cfg: dict, logdir: str, agent: Agent):
     """
     Evaluate the model by interacting with the environment
     """
-    rollout_per_obj = cfg.rollout_per_task
-    env = setup_twenty_questions_env()
+    rollout_per_obj = cfg.online.rollout_per_task
+    batched_env = setup_batched_twenty_questions_env()
     all_obj_list = [wv[0] for wv in get_default_word_list("all")]
+    bs = cfg.online.batch_size
 
     for data_type in cfg.data_types:
         os.makedirs(os.path.join(logdir, data_type), exist_ok=True)
@@ -66,52 +86,83 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
             object_dict_to_use = TEST_OBJECT_DICT
         else:
             raise ValueError(f"Invalid data type: {data_type}")
-
+        
         for rollout_idx in range(rollout_per_obj):
             rollout_idx_str = str(rollout_idx)
             if rollout_idx_str not in summary_dict:
                 summary_dict[rollout_idx_str] = []
 
-            for category in object_dict_to_use.keys():
-                for obj in object_dict_to_use[category]:
-                    if obj in summary_dict[rollout_idx_str]:
-                        print(f"Skipping {obj} as it is already in the summary dict")
-                        continue
-                    obj_to_process = WordVariants.from_str(obj)
+            # Consolidate the objects to evaluate on
+            objects_to_eval_on = [obj for category in object_dict_to_use.keys() for obj in object_dict_to_use[category] if obj not in summary_dict[rollout_idx_str]]
+
+            for batch in tqdm(range(math.ceil(len(objects_to_eval_on) / bs))):
+                # Determine the objects to evaluate on for this batch
+                batch_objects = objects_to_eval_on[batch * bs:(batch + 1) * bs]
+
+                print(f"=========== Batch {batch} has {len(batch_objects)} objects: {batch_objects} ===========")
+                
+                histories, words_to_guess = batched_env.reset(num_envs=len(batch_objects), words_to_guess=[WordVariants.from_str(obj) for obj in batch_objects])
+
+                # Initialize prev_dones as a list of False with the same length as batch_objects
+                prev_dones = [False for _ in range(len(batch_objects))]
+                traj_list = [[] for _ in range(len(batch_objects))]
+
+                while not all(prev_dones):
+                    # Batched way
+                    start_time = time.time()
+                    reasons, actions = [], []
+                    last_questions = [len(histories[i]) == batched_env.max_conversation_length - 1 for i in range(len(batch_objects))]
+                    reasons_actions_dict = query_agent_batch(agent, histories, all_obj_list, last_questions)
+                    for i in range(len(batch_objects)):
+                        if prev_dones[i]:
+                            reasons.append("")
+                            actions.append("")
+                        else:
+                            reasons.append(reasons_actions_dict[i]["reason"])
+                            actions.append(reasons_actions_dict[i]["action"])
+                    print(f"[AGENT] time taken for batch_size={bs}: {time.time() - start_time}")
+
+                    # Non-batched way
+                    # start_time = time.time()
+                    # reasons = []
+                    # actions = []
+                    # for i in range(len(batch_objects)):
+                    #     if prev_dones[i]:
+                    #         reason, action = "", ""
+                    #     else:
+                    #         last_question = len(histories[i]) == batched_env.max_conversation_length - 1
+                    #         reason, action = query_agent(agent, histories[i], all_obj_list, last_question)
+                    #     reasons.append(reason)
+                    #     actions.append(action)
+                    # print(f"[AGENT] time taken for batch_size={bs}: {time.time() - start_time}")
+
+                    # Step the environment
+                    histories, answer_reasons, answers, rewards, dones = batched_env.step(words_to_guess, histories, actions, prev_dones)
+
+                    # Log the trajectories
+                    for i in range(len(batch_objects)):
+                        if not prev_dones[i]:
+                            traj_list[i].append({
+                                "reason": reasons[i],
+                                "action": actions[i],
+                                "answerer_reason": answer_reasons[i],
+                                "answer": answers[i],
+                                "reward": rewards[i],
+                            })
+
+                            # print(f"{i}th traj at {len(traj_list[i])}:\n{traj_list[i][-1]}")
+                            # input("traj_list")
+
+                    prev_dones = dones
+
+                # Update the summary dict
+                summary_dict[rollout_idx_str].extend(batch_objects)
+                save_json(summary_dict_fp, summary_dict)
+
+                # Save the trajectories
+                for i in range(len(batch_objects)):
+                    save_json(os.path.join(logdir, data_type, f"{batch_objects[i]}_{rollout_idx_str}.json"), traj_list[i])
                     
-                    history = env.reset(word=obj_to_process)
-                    done = False
-                    total_reward = 0.0
-                    traj_list = []
-
-                    while not done:
-                        last_question = len(history) == env.max_conversation_length - 1
-
-                        reason, action = query_agent(agent, history, all_obj_list, last_question)
-
-                        print(f"++++++ agent step: {len(history)} ++++++")
-                        print(f"Reason:\n{reason}\nAction:\n{action}", )
-                        print(f"++++++ agent step: {len(history)} ++++++")
-
-                        obs, reward, done = env.step(history, action)
-                        history, answerer_reason, answer = obs
-                        total_reward += reward
-
-                        traj_list.append({
-                            "reason": reason,
-                            "question": action,
-                            "answerer_reason": answerer_reason,
-                            "answer": answer,
-                            "reward": reward,
-                        })
-
-                    summary_dict[rollout_idx_str].append(obj)
-
-                    save_json(summary_dict_fp, summary_dict)
-                    save_json(os.path.join(logdir, data_type, f"{obj}_{rollout_idx_str}.json"), traj_list)
-
-                    print(f"======== collected idx={rollout_idx_str} obj={obj} with total reward {total_reward}")
-
 
 def consolidate_online_eval(cfg: dict, logdir: str, agent_rollout_dir: str, agent_name: str):
     """
