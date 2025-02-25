@@ -11,6 +11,7 @@ from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, VALIDATION_O
 from agent_prm.utils.openai import generate_from_openai_completion
 from agent_prm.utils.parser import parse_json
 from agent_prm.utils.logger_email import elogger
+from agent_prm.utils.general_utils import load_json, save_json
 
 def preprocess_args():
     parser = argparse.ArgumentParser(description='Generate raw 20questions logs')
@@ -25,13 +26,6 @@ def preprocess_args():
 
     return args, cfg
 
-def load_json(fp: str):
-    with open(fp, "r") as f:
-        return json.load(f)
-    
-def save_json(fp: str, data: dict):
-    with open(fp, "w") as f:
-        json.dump(data, f, indent=4)
 
 def query_expert(history: List[Dict[str, str]], expert_agent_prompt_template: Template, all_obj_list: List[WordVariants], last_question: bool = False):
     system_prompt = expert_agent_prompt_template.render(system=True, all_obj_list=all_obj_list)

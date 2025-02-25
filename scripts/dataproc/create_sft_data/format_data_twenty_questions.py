@@ -67,8 +67,8 @@ def process_data(data_type: str, cfg: dict, i: int):
             data = json.load(f)
 
         # Skip if the trajectory was not successful
-        if data[-1]["reward"] != 0.0:
-            continue
+        # if data[-1]["reward"] != 0.0:
+        #     continue
 
         # Iterate over each timestep
         for i in range(len(data)):

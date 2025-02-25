@@ -1,6 +1,6 @@
 prompt_template_file: prompts/20questions/20questions_template.j2
 logs_dir: data/20questions/rollout/
-data_dir: data/20questions/sft/base
+data_dir: data/20questions/sft/
 expert_template: prompts/20questions/20questions_gpt_agent_template.j2
 rollout_per_obj: 3
 train_split: 0.85

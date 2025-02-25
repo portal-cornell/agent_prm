@@ -3,6 +3,30 @@ import json
 from typing import Tuple, Optional, Dict, Any, List
 from agent_prm.utils.logger_email import elogger
 
+
+def parse_reason_and_action_twenty_questions(text: str) -> Tuple[str, str]:
+    """
+    Parses the reason and action given prediction from model for ALFWorld environment 
+
+    Args:
+        text: The text containing the reason and action.
+
+    Returns:
+        A tuple with the parsed reason and action. 
+    """
+    pattern = r"REASON:\s*([\s\S]*?)\s*QUESTION:\s*([\s\S]*?)$"
+    match = re.search(pattern, text)
+
+    if match:
+        reason = match.group(1).strip()  # Remove extra spaces/newlines
+        action = match.group(2).strip()
+    else:
+        reason = ""
+        action = ""
+
+    return reason, action
+
+
 def parse_reason_and_action_alfworld(text: str) -> Tuple[str, str]:
     """
     Parses the reason and action given prediction from model for ALFWorld environment 

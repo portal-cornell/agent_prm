@@ -52,10 +52,7 @@ class HFAgent(Agent):
         return self.model_id
     
     def predict_reason_action(self, 
-                              task: str, 
-                              observation: Any, 
-                              candidate_actions: List[str], 
-                              observation_action_history: List[Dict]) -> Tuple[str, str]:
+                              input_data: Dict):
         """
         Predicts a reason and an action given the current task, observation, and candidate actions.
 
@@ -68,17 +65,8 @@ class HFAgent(Agent):
         Returns:
             A tuple containing the predicted reason (str) and action (str).
         """ 
-        observation_action_history = [{'observation': entry['observation'], 'action': entry['action']} for entry in self.observation_action_history]
-
-        input_data = {
-            'mode': 'input',
-            'task': task,
-            'observation_action_history': observation_action_history,
-            'observation': observation,
-            'candidate_actions': candidate_actions
-        }
         input_prompt = self.prompt_template.render(**input_data)
-
+        
         messages = [
             {"role": "user", "content": input_prompt}
         ]
@@ -104,9 +92,6 @@ class HFAgent(Agent):
 
         reason, action = self.parse_reason_action_fn(response)
         if self.verbose > 0:
-            if self.verbose > 1:
-                print(f"\n OBSERVATION: {observation}")
-            print(f"\n CANDIDATE ACTIONS: {candidate_actions}")
             print(f"\n REASON: {reason}")
             print(f"\n ACTION: {action}")
         
