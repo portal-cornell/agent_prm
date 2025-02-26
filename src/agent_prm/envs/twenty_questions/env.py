@@ -56,9 +56,12 @@ class TwentyQuestionsEnvironment():
 
         # Compute the reward for the history
         # Assume that if it's guessing the specific object, it's in the format: "Is it <object>?"
-        if "yes" in answer and "no" not in answer and is_done(self.curr_word, action):
+        if is_done(self.curr_word, action):
             reward = 0.0
             done = True
+
+            # Edit the response of the env just in case the env is wrong
+            history[-1]["answer"] = "yes"
         else:
             reward = -1.0
             done = False

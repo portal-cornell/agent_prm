@@ -6,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import nltk
+import re
 
 @dataclass
 class WordVariants:
@@ -227,6 +228,9 @@ def is_done(word_var: WordVariants, question: str):
     for q_i in range(len(question_pos)):
         q_i_word, q_i_pos = question_pos[q_i]
 
+        # Remove any punctuation from the question
+        q_i_word = re.sub(r'[^a-zA-Z]', '', q_i_word)
+
         # check if the current word is a noun that shouldn't be ignored
         if q_i_pos[:2] == "NN" and q_i_word not in ignores:
             # if it's a counter word that comes before "of", also ignore it
@@ -239,13 +243,17 @@ def is_done(word_var: WordVariants, question: str):
     for word_pos in word_var.pos_tags:
         if len(word_pos) > len(question_pos):
             continue
-        
+
         all_same = True
         for (var_i_word, _), (q_i_word, _) in zip(word_pos, question_pos[-len(word_pos):]):
+            # Remove any punctuation from the question
+            var_i_word = re.sub(r'[^a-zA-Z]', '', var_i_word)
+            q_i_word = re.sub(r'[^a-zA-Z]', '', q_i_word)
+
             if var_i_word != q_i_word:
                 all_same = False
                 break
         if all_same:
             return True
-    
+
     return False

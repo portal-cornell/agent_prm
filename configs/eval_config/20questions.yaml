@@ -12,7 +12,8 @@ data_types:
   - test
 online:
   rollout_per_task: 1
-  batch_size: 4
+  batch_size: 16
+  num_alt_responses: 2
 agents:
   # - type: hf
   #   log_name: 3B

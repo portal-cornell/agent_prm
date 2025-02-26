@@ -40,7 +40,7 @@ def query_agent(agent: Agent, history: List[Dict[str, str]], all_obj_list: List[
     return reason, action
 
 
-def query_agent_batch(agent: Agent, histories: List[List[Dict[str, str]]], all_obj_list: List[WordVariants], last_question: bool = List[bool]):
+def query_agent_batch(agent: Agent, histories: List[List[Dict[str, str]]], all_obj_list: List[WordVariants], last_question: bool = List[bool], num_alt_responses: int = 0):
     """
     Query the agent in batch
     """
@@ -53,7 +53,7 @@ def query_agent_batch(agent: Agent, histories: List[List[Dict[str, str]]], all_o
         for i in range(len(histories))
     ]
 
-    reason_actions = agent.predict_reason_action_batch(input_datas, num_responses=1)
+    reason_actions = agent.predict_reason_action_batch(input_datas, num_responses=1 + num_alt_responses, alt_temperature_for_extra_responses=0.7 if num_alt_responses > 0 else None)
 
     return reason_actions
 
@@ -111,8 +111,9 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
                     # Batched way
                     start_time = time.time()
                     reasons, actions = [], []
+                    alt_reasons, alt_actions = [[] for _ in range(len(batch_objects))], [[] for _ in range(len(batch_objects))]  # For each object, we have a list of alt_reasons and alt_actions
                     last_questions = [len(histories[i]) == batched_env.max_conversation_length - 1 for i in range(len(batch_objects))]
-                    reasons_actions_dict = query_agent_batch(agent, histories, all_obj_list, last_questions)
+                    reasons_actions_dict = query_agent_batch(agent, histories, all_obj_list, last_questions, cfg.online.num_alt_responses)
                     for i in range(len(batch_objects)):
                         if prev_dones[i]:
                             reasons.append("")
@@ -121,6 +122,11 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
                             # Assuming that we are just request number of responses to be 1
                             reasons.append(reasons_actions_dict[i][0]["reason"])
                             actions.append(reasons_actions_dict[i][0]["action"])
+
+                            for j in range(cfg.online.num_alt_responses):
+                                alt_reasons[i].append(reasons_actions_dict[i][j]["reason"])
+                                alt_actions[i].append(reasons_actions_dict[i][j]["action"])
+
                     print(f"[AGENT] time taken for batch_size={bs}: {time.time() - start_time}")
 
                     # Step the environment
@@ -136,10 +142,14 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
                                 "answerer_reason": answer_reasons[i],
                                 "answer": answers[i],
                                 "reward": rewards[i],
+                                'alternatives': [
+                                    {
+                                        "reason": alt_reasons[i][j],
+                                        "action": alt_actions[i][j]
+                                    }
+                                    for j in range(cfg.online.num_alt_responses)
+                                ]
                             })
-
-                            # print(f"{i}th traj at {len(traj_list[i])}:\n{traj_list[i][-1]}")
-                            # input("traj_list")
 
                     prev_dones = dones
 
@@ -150,7 +160,7 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
                 # Save the trajectories
                 for i in range(len(batch_objects)):
                     save_json(os.path.join(logdir, data_type, f"{batch_objects[i]}_{rollout_idx_str}.json"), traj_list[i])
-
+                    
 
 def consolidate_online_eval(cfg: dict, logdir: str, agent_rollout_dir: str, agent_name: str):
     """
