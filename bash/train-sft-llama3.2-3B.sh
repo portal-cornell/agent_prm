@@ -33,7 +33,7 @@ done
 echo "Use PEFT: $USE_PEFT"
 
 export TRITON_CACHE_DIR=/share/portal/hw575
-TRITON_CACHE_DIR=/share/portal/hw575
+TRITON_CACHE_DIR=/share/portal/hw575/.triton
 
 SAVE_DIR=save/sft/${current_date}_${DATA_DIR}_${MODEL//\//-}_peft=${USE_PEFT}${NOTE}/
 echo "Save directory: $SAVE_DIR"

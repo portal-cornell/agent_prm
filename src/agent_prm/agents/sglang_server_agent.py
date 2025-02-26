@@ -49,35 +49,16 @@ class SGLangServerAgent(Agent):
         return self.model_id
 
     def predict_reason_action(self, 
-                              task: str, 
-                              observation: Any, 
-                              candidate_actions: List[str], 
-                              observation_action_history: List[Dict]) -> Tuple[str, str]:
+                              input_data: Dict) -> Tuple[str, str]:
         """
-        Predict reason and action given task, observation and candidate_actions. 
+        Predict reason and action given input_data. 
 
         Args:
-            task: The task the agent is performing.
-            observation: The current observation or input the agent is reacting to.
-            candidate_actions: A list of possible actions the agent can take.
-            reward: An optional reward signal from prior actions (default is an empty string).
+            input_data (Dict): A dictionary containing the necessary data to render the prompt.
         
         Returns:
             A tuple containing the predicted reason (str) and action (str).
         """
-
-        observation_action_history = [
-            {"observation": entry["observation"], "action": entry["action"]}
-            for entry in self.observation_action_history
-        ]
-        input_data = {
-            "mode": "input",
-            "task": task,
-            "observation_action_history": observation_action_history,
-            "observation": observation,
-            "candidate_actions": candidate_actions,
-        }
-
         input_prompt = self.prompt_template.render(**input_data)
         conversation = [{"role": "user", "content": input_prompt}] 
         input_text = self.tokenizer.apply_chat_template(conversation, tokenize=False, add_generation_prompt=True)
@@ -93,11 +74,6 @@ class SGLangServerAgent(Agent):
         reason, action = self.parse_reason_action_fn(generated_text)
 
         if self.verbose > 0:
-            if self.verbose > 1:
-                print(f"\n OBSERVATION: {observation}")
-                print(f"\n RESPONSE: {generated_text}")
-            print(f"\n OBSERVATION: {observation}")
-            print(f"\n CANDIDATE ACTIONS: {candidate_actions}")
             print(f"\n REASON: {reason}")
             print(f"\n ACTION: {action}")
 
@@ -109,27 +85,12 @@ class SGLangServerAgent(Agent):
 
         return reason, action
     
-    def predict_reason_action_batch(self, queries: List[Dict], num_responses: int) -> List[Tuple[str, str]]:
+    def predict_reason_action_batch(self, input_datas: List[Dict], num_responses: int) -> List[Tuple[str, str]]:
         """
         Return a list of reason_actions of len(queries), each being len(num_responses)
         """
-        input_prompts = []
-        for query in queries:
-            observation_action_history = [
-                {"observation": entry["observation"], "action": entry["action"]}
-                for entry in query["observation_action_history"]
-            ]
-            input_data = {
-                "mode": "input",
-                "task": query["task"],
-                "observation": query["observation"],
-                "candidate_actions": query["candidate_actions"],
-                "observation_action_history": observation_action_history,           
-            }
-            input_prompt = self.prompt_template.render(**input_data)
-            for _ in range(num_responses):
-                input_prompts.append(input_prompt)
-
+        input_prompts = [self.prompt_template.render(**input_datas[i]) for i in range(len(input_datas)) for _ in range(num_responses)]
+        
         conversations = [[{"role": "user", "content": input_prompt}] for input_prompt in input_prompts] # list of lists
 
         batch_limit = self.batch_limit if self.batch_limit is not None else len(conversations)
@@ -157,7 +118,7 @@ class SGLangServerAgent(Agent):
 
         reason_actions_all_queries = []
         counter = 0
-        for query in queries:
+        for _ in range(len(input_datas)):
             reason_actions_per_query = []
             for _ in range(num_responses):
                 generated_text = generated_texts[counter]
@@ -166,15 +127,10 @@ class SGLangServerAgent(Agent):
                 reason_actions_per_query.append({'reason': reason, 'action': action})
 
                 if self.verbose >= 2:
-                    print(f"\n OBSERVATION: {query['observation']}")
-                    print(f"\n CANDIDATE ACTIONS: {query['candidate_actions']}")
                     if self.verbose >= 3: 
                         print(f"\n RESPONSE: {generated_text}")
                     print(f"\n REASON: {reason}")
                     print(f"\n ACTION: {action}")
             reason_actions_all_queries.append(reason_actions_per_query)
-
-        if self.debug:
-            human_input = input() #can't override a batch of actions
-
+        
         return reason_actions_all_queries

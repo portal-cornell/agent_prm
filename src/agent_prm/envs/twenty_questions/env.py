@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 import random
 import time
 from agent_prm.envs.twenty_questions.data import WordVariants, get_default_word_list
-from agent_prm.envs.twenty_questions.simulator import TwentyQuestionsSimulator
+from agent_prm.envs.twenty_questions.simulator import TwentyQuestionsSimulator, SGLangServerTwentyQuestionsSimulator
 from agent_prm.envs.twenty_questions.data import is_done
 
 class TwentyQuestionsEnvironment():
@@ -209,13 +209,23 @@ def setup_twenty_questions_env(data_split: str='all') -> TwentyQuestionsEnvironm
     return env
 
 
-def setup_batched_twenty_questions_env(data_split: str='all') -> BatchedTwentyQuestionsEnvironment:
-    env = BatchedTwentyQuestionsEnvironment(
-        answerer=TwentyQuestionsSimulator(
+def setup_batched_twenty_questions_env(data_split: str='all', use_sglang_server: bool = True) -> BatchedTwentyQuestionsEnvironment:
+    if use_sglang_server:
+        sim = SGLangServerTwentyQuestionsSimulator(
+            model_id="meta-llama/Llama-3.2-3B-Instruct",
+            server_url="http://localhost:40042",
+            prompt_template_file="prompts/20questions/20questions_simulator_template_with-reasoning.j2",
+            verbose=0
+        )
+    else:
+        sim = TwentyQuestionsSimulator(
             model_id="meta-llama/Llama-3.2-3B-Instruct",
             prompt_template_file="prompts/20questions/20questions_simulator_template_with-reasoning.j2",
             verbose=1
-        ),
+        )
+
+    env = BatchedTwentyQuestionsEnvironment(
+        answerer=sim,
         word_list=get_default_word_list(data_split),
         max_conversation_length=20,
     )

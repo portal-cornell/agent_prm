@@ -36,14 +36,8 @@ pip install -e .
 cd ..
 ```
 
-We use [SGLang](https://github.com/sgl-project/sglang) for fast inference, with some  minor compatibility fixes with LLama so it needs to be installed locally. 
-```bash
-# Clone and install SGLang
-git clone --branch new_llama_model https://github.com/sanjibanc/sglang.git
-cd sglang
+To use SGLang server, [got to SGlang instructions](#sglang-instructions)
 
-cd ..
-```
 To use slgang server, [got to SGlang instructions](#sglang-instructions)
 
 To set up external environments like AlfWorld, [go to external environment instructions](#external-environment-instructions).
@@ -179,6 +173,22 @@ bash bash/online-dpo-shaped-prm-llama3.2-3B.sh
 ```
 
 ## SGLang instructions
+
+### Install SGLang
+SGLang has some compatibility issues with agent_prm conda environment, so we recommend using the sglang environment
+```bash
+conda create -n sglang python=3.10.16
+```
+
+We use [SGLang](https://github.com/sgl-project/sglang) for fast inference, with some minor compatibility fixes with LLama so it needs to be installed locally. 
+```bash
+# Clone and install SGLang
+git clone --branch new_llama_model https://github.com/sanjibanc/sglang.git
+cd sglang
+pip install -e "python[all]" --find-links https://flashinfer.ai/whl/cu121/torch2.5/flashinfer-python
+pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+```
+You should make sure `cu121` is changed to match the correct CUDA version.
 
 To use SGLang for inference, grab a node from the same network as your inference scripts so they can communicate over the network. 
 

@@ -4,7 +4,8 @@ import torch
 from jinja2 import Template
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from typing import Callable, List, Tuple, Any, Optional, Dict, Union
-
+import requests
+from tqdm import tqdm
 from typing import Tuple, List
 from agent_prm.envs.twenty_questions.data import WordVariants
 
@@ -161,8 +162,15 @@ class TwentyQuestionsSimulator(object):
         ]
 
         messages = [
-            self.prompt_template.render(**input_data)
+            [
+                {"role": "user", "content": self.prompt_template.render(**input_data)}
+            ]
             for input_data in input_datas
+        ]
+
+        messages = [
+            self.tokenizer.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
+            for msg in messages
         ]
 
         tokenized_inputs = self.tokenizer(messages, return_tensors="pt", padding=True, truncation=True, max_length=self.max_length).to(self.model.device)  # size for "input_ids" is (bs, seq_len)
@@ -186,6 +194,88 @@ class TwentyQuestionsSimulator(object):
 
         answer_reasons, answers = [], []
         for response in responses:
+            reason, answer = self.parse_reason_action_fn(response)
+            answer_reasons.append(reason)
+            answers.append(answer)
+
+        return answer_reasons, answers
+
+
+class SGLangServerTwentyQuestionsSimulator(object):
+    """
+    Initialize the TwentyQuestionsOracle agent.
+    """
+    def __init__(self, 
+                 model_id: str, 
+                 server_url: str, 
+                 prompt_template_file: str, 
+                 verbose: int = 0, 
+                 debug: bool = False, 
+                 parse_reason_action_fn: Callable[[str], Tuple[str, str]] = parse_reason_and_action_20questions_oracle, 
+                 max_tokens: int = 256,
+                 batch_limit: Optional[int] = None) -> None:
+        self.model_id = model_id
+        self.server_url = server_url.rstrip('/') + '/generate'
+        self.verbose = verbose
+        self.debug = debug
+        self.parse_reason_action_fn = parse_reason_action_fn
+        with open(prompt_template_file, "r") as file:
+            self.prompt_template = Template(file.read())
+
+        self.max_tokens = max_tokens
+        self.batch_limit = batch_limit
+        self.tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+    
+
+    def generate_answer_batch(self, 
+                              words: List[WordVariants], 
+                              questions: List[str]) -> Tuple[List[str], List[str]]:
+        """
+        Predicts a reason and an asnwer given the current word and question
+        """
+        input_datas = [
+            {
+                'mode': 'input',
+                'thing': word[0].lower(),
+                'question': question
+            }
+            for word, question in zip(words, questions)
+        ]
+
+        messages = [
+            [
+                {"role": "user", "content": self.prompt_template.render(**input_data)}
+            ]
+            for input_data in input_datas
+        ]
+
+        batch_limit = self.batch_limit if self.batch_limit is not None else len(messages)
+        generated_texts = []
+
+        if self.verbose==1:  
+            iterator = tqdm(range(0, len(messages), batch_limit), desc="Querying sglang agent")
+        else:
+            iterator = range(0, len(messages), batch_limit)
+
+        for i in iterator:
+            messages_batch = messages[i:i+batch_limit]
+            prompts_batch = self.tokenizer.apply_chat_template(messages_batch, tokenize=False, add_generation_prompt=True)
+            data_batch = {"model": self.model_id, 
+                          "text": prompts_batch,
+                          "sampling_params": {
+                              "temperature": 0.0,
+                              "max_new_tokens": self.max_tokens,
+                              },
+                          }
+            
+            responses_batch = requests.post(self.server_url, 
+                                            json=data_batch).json()
+            generated_texts_batch = [x["text"] for x in responses_batch]
+            generated_texts.extend(generated_texts_batch)
+
+        answer_reasons, answers = [], []
+        for response in generated_texts:
             reason, answer = self.parse_reason_action_fn(response)
             answer_reasons.append(reason)
             answers.append(answer)
