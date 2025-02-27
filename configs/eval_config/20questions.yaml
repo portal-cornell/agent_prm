@@ -1,6 +1,7 @@
 verbose: 0
 debug: false
 elogger: false # Whether to activate email logging
+host_sglang: false  # Whether to host the sglang server through code
 iter: 0
 mode: offline # offline or online
 logdir: data/20questions/eval
@@ -8,11 +9,9 @@ rollout_data_dir: data/20questions/rollout/
 offline_data_dir: data/20questions/sft/
 data_types:
   - train
-  - val
-  - test
 online:
-  rollout_per_task: 1
-  batch_size: 16
+  rollout_per_task: 10
+  batch_size: 32
   num_alt_responses: 2
 agents:
   # - type: hf
@@ -37,7 +36,7 @@ agents:
     prompt_template_file: prompts/20questions/20questions_template.j2
     server_url: http://localhost:30000/
     temperature: 0.3
-    batch_limit: 16
+    batch_limit: 32
     verbose: 3
   # - type: hf
   #   log_name: 3B-PSFT-success-data-1epoch

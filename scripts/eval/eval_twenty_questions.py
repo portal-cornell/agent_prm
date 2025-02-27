@@ -8,7 +8,8 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-
+import os
+import signal
 from agent_prm.agents.agent_registry import initialize_agent
 from agent_prm.agents.agent import Agent
 from agent_prm.utils.parser import parse_reason_and_action_twenty_questions
@@ -17,6 +18,7 @@ from agent_prm.utils.general_utils import load_json, save_json
 from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, VALIDATION_OBJECT_DICT, TEST_OBJECT_DICT, WordVariants, get_default_word_list
 from agent_prm.envs.twenty_questions.env import setup_twenty_questions_env, setup_batched_twenty_questions_env
 from agent_prm.utils.logger_email import elogger
+from agent_prm.utils.general_utils import start_sglang_server
 
 def offline_eval(cfg: dict, agent: Agent):
     """
@@ -160,7 +162,7 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
                 # Save the trajectories
                 for i in range(len(batch_objects)):
                     save_json(os.path.join(logdir, data_type, f"{batch_objects[i]}_{rollout_idx_str}.json"), traj_list[i])
-                    
+
 
 def consolidate_online_eval(cfg: dict, logdir: str, agent_rollout_dir: str, agent_name: str):
     """
@@ -222,6 +224,14 @@ def main(cfg: DictConfig):
 
     # Load the model
     for agent_config in cfg.agents:
+        if cfg.host_sglang:
+            port = int(agent_config.server_url.split(":")[-1][:-1])
+            print(f"Starting SGLang server on port {port}")
+            process, _ = start_sglang_server(model_path=agent_config.model_id,
+                                                    port=port, 
+                                                    tp=1)
+
+
         if agent_config.type == "gpt4o_expert":
             # Use the data collected for SFT
             assert cfg.mode == "consolidate_online", "Gpt4o expert can only be used in consolidate_online mode, where we are comparing the performance of different models"
@@ -254,6 +264,13 @@ def main(cfg: DictConfig):
                 online_eval(cfg, logdir, agent)
             else:
                 raise ValueError(f"Invalid mode: {cfg.mode}")
+            
+        if cfg.host_sglang:
+            if process is not None:
+                # Cleanup the SGLang server
+                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                process.wait()
+                print("SGLang server terminated")
 
     if cfg.mode == "online":
         # Because this takes a long time, we notify when the online eval is done
