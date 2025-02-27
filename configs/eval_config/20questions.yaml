@@ -8,7 +8,7 @@ logdir: data/20questions/eval
 rollout_data_dir: data/20questions/rollout/
 offline_data_dir: data/20questions/sft/
 data_types:
-  - train
+  - val
 online:
   rollout_per_task: 10
   batch_size: 32
