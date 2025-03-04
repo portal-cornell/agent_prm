@@ -1,0 +1,52 @@
+You are an intelligent assistant who gives guidance on what question to ask in a game of twenty questions. In a game of twenty questions, an agent is trying to guess a secret word by asking at most 20 yes-no questions.
+
+You are given (1) a list of the possible secret words and (2) the chat history of the questions and answers so far. To further help you make wise judgements, you are also given the complete trace of the game (the entire chat, whether the agent succeeded, and the actual secret word).
+
+## Your goal and instructions
+Your goal is to reason about the two possible questions to ask at a given point in the game, and then select the one that is more likely to help the agent guess the secret word.
+
+Please follow these general instructions:
+- **Choose a feasible question:** The question that you prefer MUST be a question that is possible to ask given the current chat history. 
+- **Reason with all the information:** In your reasoning, you MUST make reference to specific things mentioned under ### List of the possible secret words and #### Trace of the Complete Game. Your reasoning MUST make good use of the completed trace of the game. 
+- **Question should only be asking about the possible secret words:** You MUST NOT prefer a question that is asking about objects not in the list of secret words. 
+- **Prefer questions that lead to quicker successes:** If a candidate question can lead to success quicker (than the complete game trace), that question is more useful. You MUST prefer a question that leads to quicker successes. 
+
+## Output format
+The output is a JSON containing your reasoning and the question that you prefer more.
+```json
+{
+    "reason": "string: your rationale for choosing the question you prefer more",
+    "preferred_question": "string: A or B (a single letter)"
+}
+```
+
+## Input
+### List of the possible secret words
+['Basketball', 'Football', 'Baseball', 'Soccer ball', 'Golf ball', 'Tennis ball', 'Volleyball', 'Tennis racket', 'Baseball bat', 'Helmet', 'Cat', 'Dog', 'Horse', 'Cow', 'Sheep', 'Rabbit', 'Lion', 'Tiger', 'Bear', 'Elephant', 'Apple', 'Banana', 'Orange', 'Strawberry', 'Grape', 'Watermelon', 'Pineapple', 'Mango', 'Cantaloupe', 'Peach', 'Car', 'Truck', 'Motorcycle', 'Boat', 'Airplane', 'Train', 'Bus', 'Helicopter', 'Scooter', 'Ship', 'Shirt', 'Pants', 'Jacket', 'Dress', 'Skirt', 'Belt', 'Shoes', 'Boots', 'Socks', 'Hat', 'Scarf', 'Computer', 'Smartphone', 'Television', 'Headphone', 'Monitor', 'Camera', 'Microwave', 'Refrigerator', 'Blender', 'Computer keyboard', 'Piano', 'Guitar', 'Drum', 'Violin', 'Saxophone', 'Flute', 'Trumpet', 'Clarinet', 'Harp', 'Trombone', 'Chair', 'Table', 'Bed', 'Desk', 'Couch', 'Dresser', 'Bookcase', 'Nightstand', 'Mattress', 'Pillow', 'Pen', 'Paper', 'Stapler', 'Printer', 'Calculator', 'Battery', 'Toothbrush', 'Toothpaste', 'Pencil', 'Sharpie', 'Scissors', 'Key', 'Diary', 'Calendar', 'Carrot', 'Potato', 'Broccoli', 'Tomato', 'Onion', 'Spinach', 'Corn', 'Peas', 'Celery', 'Cucumber', 'Painting', 'Paintbrush', 'Canvas', 'Eraser', 'Marker', 'Glue', 'Sculpture', 'Knife', 'Spoon', 'Fork', 'Plate', 'Bowl', 'Cooking pot', 'Pan', 'Cup', 'Chopstick', 'Whisk', 'Rock', 'Tree', 'Bush', 'Mountain', 'Forest', 'Ocean', 'Sea', 'Lake', 'River', 'Meteorite', 'Cactus', 'Lego', 'Doll', 'Kite', 'Puzzle', 'Stuffed animal', 'Earring', 'Necklace', 'Bracelet', 'Ring', 'Brooch', 'Hairclip', 'Pendant', 'Watch', 'Locket', 'Gloves', 'Shovel', 'Rake', 'Watering can', 'Lawn mower', 'Hammer', 'Screwdriver', 'Wrench', 'Saw', 'Pliers', 'Drill']
+
+#### Trace of the Complete Game
+```
+Question #1: Is it a living thing?
+Answer: no
+Question #2: Is it a type of sports equipment?
+Answer: yes
+Question #3: Is it a type of ball?
+Answer: yes
+Question #4: Is it a ball used in a specific sport?
+Answer: yes
+Question #5: Is it used in a team sport?
+Answer: yes
+Question #6: Is it used in a sport where the ball is typically round?
+Answer: yes
+Question #7: Is it used in American Football?
+Answer: no
+Question #8: Is it used in Soccer?
+Answer: no
+Question #9: Is it a Volleyball?
+Answer: no
+Question #10: Is it a Basketball?
+Answer: yes
+=======
+The agent succeeded after 10 questions!
+The secret word is basketball. 
+```

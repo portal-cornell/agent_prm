@@ -15,7 +15,7 @@ from agent_prm.utils.general_utils import load_json, save_json
 
 def preprocess_args():
     parser = argparse.ArgumentParser(description='Generate raw 20questions logs')
-    parser.add_argument('--config', type=str, default="configs/create_sft_training_data/20questions.yaml", help='Path to 20 questions dataproc config file')
+    parser.add_argument('--config', type=str, default="configs/create_sft_training_data/twenty_questions.yaml", help='Path to 20 questions dataproc config file')
     parser.add_argument('-t', '--data-type', type=str, required=True, choices=["train", "val", "test"], help='Whether to use the train, or validation, or test set')
     parser.add_argument('-d', '--debug', default=False, action="store_true", help='Whether to run in debug mode (Human instead of gpt4o as the agent)')
     parser.add_argument('-i', '--iter', type=int, default=0, help='The iteration number')

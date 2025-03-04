@@ -74,6 +74,8 @@ class Args:
     """The dataset splits to use for evaluation"""
     dataset_name: str = "mbpp"
     """Name of the dataset"""
+    domain_name: str = "alfworld"
+    """Name of the dataset"""
 
     # common args
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
@@ -128,7 +130,7 @@ class Args:
     # wandb and HF tracking configs
     with_tracking: bool = False
     """If toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "LLM_RM"
+    wandb_project_name: str = "Hinsight_LLM"
     """The wandb's project name"""
     wandb_entity: Optional[str] = None
     """The entity (team) of wandb's project"""
@@ -216,7 +218,7 @@ def calculate_runtime_args_and_accelerator(args: Args, model_config: ModelConfig
     time_tensor = torch.tensor(int(time.time()), device=accelerator.device)
     # set a unique run name with the current timestamp
     time_int = broadcast(time_tensor, 0).item()
-    args.run_name = f"{args.exp_name}__{args.seed}__{time_int}"
+    args.run_name = args.output_dir
     if args.push_to_hub:
         if args.hf_repo_id is None:  # auto-generate one
             args.hf_repo_id = "open_instruct_dev"
@@ -262,7 +264,7 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
                 save_code=True,
                 tags=[args.exp_name] + get_wandb_tags(),
             )
-        writer = SummaryWriter(f"runs/{args.run_name}")
+        writer = SummaryWriter(f"{args.output_dir}/summary")
         writer.add_text(
             "hyperparameters",
             "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
@@ -287,14 +289,14 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
         tokenizer.add_special_tokens({"pad_token": "[PAD]"})  # NOTE: we do not resize the embedding
     
     # TODO: Remove parquet hardcoding
-    data_files = {'train': f'{args.dataset_train_splits}.parquet', 'test': f'{args.dataset_eval_splits}.parquet'}
+    data_files = {'train': f'{args.dataset_train_splits}_10k.parquet', args.dataset_eval_splits: f'{args.dataset_eval_splits}.parquet'}
     dataset = load_dataset('parquet', data_dir=f"{args.dataset_name}", data_files=data_files)
     if args.max_test_dataset is not None:
-        dataset['test'] = dataset['test'].shuffle(seed=42).select(range(int( min(args.max_test_dataset, len(dataset['test'])))))  
+        dataset[args.dataset_eval_splits] = dataset[args.dataset_eval_splits].shuffle(seed=42).select(range(int( min(args.max_test_dataset, len(dataset[args.dataset_eval_splits])))))  
         
     dataset_processor = BinaryPromptDatasetProcessor(tokenizer=tokenizer, config=dataset_config)
     with accelerator.main_process_first():
-        dataset = dataset_processor.tokenize(dataset)
+        dataset = dataset_processor.tokenize(dataset, domain=args.domain_name)
         dataset = dataset_processor.filter(dataset)
 
     # some more runtime logging

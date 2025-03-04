@@ -62,6 +62,10 @@ def alfworld_extract_state_reason_action(trajectory, task, t):
 def alfworld_skip_file_condition(file_name):
     return not file_name.endswith(".json")
 
+def alfworld_success_file_condition(file_name):
+    # TODO: Implement this
+    return True
+
 """================================================================================
     20 Questions processing functions
 ================================================================================"""
@@ -102,15 +106,19 @@ def twenty_questions_extract_state_reason_action(trajectory, t):
     return state, reason_action
     
 def twenty_questions_normalize_reward(reward):
-    # # normalize reward from [-1, 0] to [-1, 1]
-    # return 2 * reward + 1
-
-    # TODO: I think the reward should be in go from [-1, 0] to [0, 1]
-    return reward + 1
+    # normalize outcome reward from [-1, 0] to [-1, 1]
+    #   We normalize the outcome reward to -1 and 1 so that we can proprogate the negative effect of failed trajectories
+    #   We assume that the reward before the last step is still 0
+    return 2 * reward + 1
 
 def twenty_questions_skip_file_condition(file_name):
     return (not file_name.endswith(".json")) or ('_summary_dict' in file_name)
 
+def twenty_questions_success_file_condition(file_name):
+    # Read the file and check the last reward is 0
+    with open(file_name, 'r') as file:
+        data = json.load(file)
+    return data[-1]['reward'] == 0
 
 """================================================================================
     General functions shared by all tasks
@@ -199,20 +207,20 @@ def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_sp
         num_cpus = cpu_count
     print(f"Using {num_cpus} CPUs for parallel processing")
 
-    # # Use multiprocessing Pool for parallel processing
+    # Use multiprocessing Pool for parallel processing
     with Pool(processes=num_cpus) as pool:
         process_func = partial(process_file, gamma=gamma)
         results = list(tqdm(pool.imap(process_func, files), total=len(files), desc="Processing files"))
     
-    # First test with single process
+    # # First test with single process
     # results = [process_file(file, gamma) for file in files]
     
     # Merge results from all processes
     Q_target = merge_results(results)
 
     # Transform Q_target back to [0, 1]
-    # for key in Q_target.keys():
-    #     Q_target[key]['qestimate'] = 0.5 * (Q_target[key]['qestimate'] + 1)
+    for key in Q_target.keys():
+        Q_target[key]['qestimate'] = 0.5 * (Q_target[key]['qestimate'] + 1)
 
     print_qestimate_histogram(Q_target)
 
@@ -272,11 +280,13 @@ def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_sp
         train_table_10k = train_table.slice(0, 10000)
         pq.write_table(train_table_10k, os.path.join(outputdir, 'train_10k.parquet'))
 
-def compute_file_list(rolloutdirs, domain, max_files_per_dir=None):
+def compute_file_list(rolloutdirs, domain, balance_data=False, max_files_per_dir=None):
     if domain == "alfworld":
         skip_condition = alfworld_skip_file_condition
+        success_condition = alfworld_success_file_condition
     elif domain == "twenty_questions":
         skip_condition = twenty_questions_skip_file_condition
+        success_condition = twenty_questions_success_file_condition
     else:
         raise ValueError(f"Invalid domain: {domain}")
 
@@ -291,6 +301,20 @@ def compute_file_list(rolloutdirs, domain, max_files_per_dir=None):
             if (max_files_per_dir is not None) and (len(files_per_dir) >= max_files_per_dir):
                 break
         files = files + files_per_dir
+
+    if balance_data:
+        # Shuffle the files
+        random.shuffle(files)
+
+        # Ensure that there are 50% successful and 50% failed trajectories
+        successful_files = [file for file in files if success_condition(file)]
+        failed_files = [file for file in files if not success_condition(file)]
+        
+        print(f"Number of successful files: {len(successful_files)}, Number of failed files: {len(failed_files)}")
+        num_files = min(len(successful_files), len(failed_files))
+
+        files = successful_files[:num_files] + failed_files[:num_files]
+
     return files
         
 @hydra.main(version_base=None, config_path="../../configs", config_name="compute_prm_target.yaml")
@@ -307,7 +331,7 @@ def main(cfg: DictConfig):
     else:
         rolloutdirs = cfg.rolloutdirs
 
-    files = compute_file_list(rolloutdirs, cfg.domain, cfg.max_files_per_dir)
+    files = compute_file_list(rolloutdirs, cfg.domain, cfg.balance_data, cfg.max_files_per_dir)
     compute_prm_target(files, cfg.domain, cfg.outputdir, cfg.gamma, cfg.cpu_count, cfg.train_split, cfg.split_name)
 
 if __name__ == "__main__":

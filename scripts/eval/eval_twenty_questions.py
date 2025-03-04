@@ -55,7 +55,7 @@ def query_agent_batch(agent: Agent, histories: List[List[Dict[str, str]]], all_o
         for i in range(len(histories))
     ]
 
-    reason_actions = agent.predict_reason_action_batch(input_datas, num_responses=1 + num_alt_responses, alt_temperature_for_extra_responses=0.7 if num_alt_responses > 0 else None)
+    reason_actions = agent.predict_reason_action_batch(input_datas, num_responses=1 + num_alt_responses, alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None)
 
     return reason_actions
 
@@ -64,7 +64,7 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
     Evaluate the model by interacting with the environment
     """
     rollout_per_obj = cfg.online.rollout_per_task
-    batched_env = setup_batched_twenty_questions_env()
+    batched_env = setup_batched_twenty_questions_env(port=cfg.sim_port)
     all_obj_list = [wv[0] for wv in get_default_word_list("all")]
     bs = cfg.online.batch_size
 
@@ -215,7 +215,7 @@ def consolidate_online_eval(cfg: dict, logdir: str, agent_rollout_dir: str, agen
 
 
 
-@hydra.main(version_base=None, config_path="../../configs/eval_config", config_name="20questions.yaml")
+@hydra.main(version_base=None, config_path="../../configs/eval_config", config_name="twenty_questions.yaml")
 def main(cfg: DictConfig):
     elogger.set_activate(cfg.elogger)
 

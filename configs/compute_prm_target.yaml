@@ -7,6 +7,8 @@ iter: 1
 train_split: null
 split_name: null
 
+balance_data: true # Whether to only use 50% successful trajectories and 50% failed trajectories
+
 cpu_count: null
 max_files_per_dir: null 
 outputdir: data/${domain}/prm/iter${iter}

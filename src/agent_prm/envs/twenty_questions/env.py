@@ -203,7 +203,7 @@ def setup_twenty_questions_env(data_split: str='all') -> TwentyQuestionsEnvironm
     env = TwentyQuestionsEnvironment(
         answerer=TwentyQuestionsSimulator(
             model_id="meta-llama/Llama-3.2-3B-Instruct",
-            prompt_template_file="prompts/20questions/20questions_simulator_template_with-reasoning.j2",
+            prompt_template_file="prompts/twenty_questions/twenty_questions_simulator_template_with-reasoning.j2",
             verbose=1
         ),
         word_list=get_default_word_list(data_split),
@@ -212,18 +212,18 @@ def setup_twenty_questions_env(data_split: str='all') -> TwentyQuestionsEnvironm
     return env
 
 
-def setup_batched_twenty_questions_env(data_split: str='all', use_sglang_server: bool = True) -> BatchedTwentyQuestionsEnvironment:
+def setup_batched_twenty_questions_env(data_split: str='all', use_sglang_server: bool = True, port: int = 40042) -> BatchedTwentyQuestionsEnvironment:
     if use_sglang_server:
         sim = SGLangServerTwentyQuestionsSimulator(
             model_id="meta-llama/Llama-3.2-3B-Instruct",
-            server_url="http://localhost:40042",
-            prompt_template_file="prompts/20questions/20questions_simulator_template_with-reasoning.j2",
+            server_url=f"http://localhost:{port}",
+            prompt_template_file="prompts/twenty_questions/twenty_questions_simulator_template_with-reasoning.j2",
             verbose=0
         )
     else:
         sim = TwentyQuestionsSimulator(
             model_id="meta-llama/Llama-3.2-3B-Instruct",
-            prompt_template_file="prompts/20questions/20questions_simulator_template_with-reasoning.j2",
+            prompt_template_file="prompts/twenty_questions/20questions_simulator_template_with-reasoning.j2",
             verbose=1
         )
 

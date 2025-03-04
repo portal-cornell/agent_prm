@@ -22,7 +22,7 @@ from agent_prm.envs.twenty_questions.data import get_default_word_list
 
 def preprocess_args():
     parser = argparse.ArgumentParser(description='Generate raw 20questions logs')
-    parser.add_argument('--config', type=str, default="configs/create_sft_training_data/20questions.yaml", help='Path to 20 questions dataproc config file')
+    parser.add_argument('--config', type=str, default="configs/create_sft_training_data/twenty_questions.yaml", help='Path to 20 questions dataproc config file')
     parser.add_argument('-i', type=int, required=True, help='The iteration number of the rollout')
     args = parser.parse_args()
 

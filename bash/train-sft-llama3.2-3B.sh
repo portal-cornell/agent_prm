@@ -5,7 +5,7 @@ export WANDB_PROJECT=$WANDB_PROJECT_NAME
 DATA_DIR=iter0-all
 MODEL=meta-llama/Llama-3.2-3B-Instruct
 DATA_DIRS=""
-DATA_DIRS+="data/20questions/sft/${DATA_DIR}"
+DATA_DIRS+="data/twenty_questions/sft/${DATA_DIR}"
 
 # Remove the trailing comma
 DATA_DIRS=${DATA_DIRS%,}
