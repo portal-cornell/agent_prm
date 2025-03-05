@@ -13,12 +13,15 @@ data_types:
 online:
   rollout_per_task: 10
   batch_size: 32
-  num_alt_responses: 2
+  num_alt_responses: 5
+consolidate_online:
+  table_notes: 'until-PRM-eval'
+  rollout_per_task: 1 # Number of rollouts per task to consolidate results for
 agents:
-  # - type: hf
-  #   log_name: 3B
-  #   model_id: meta-llama/Llama-3.2-3B-Instruct
-  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  - type: hf
+    log_name: 3B
+    model_id: meta-llama/Llama-3.2-3B-Instruct
+    prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   # - type: hf
   #   log_name: 3B-PSFT-all-data-1epoch
   #   model_id: /share/portal/hw575/agent_prm/save/sft/250224_142629_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=true/checkpoint-80
@@ -39,6 +42,46 @@ agents:
     temperature: 0.3
     batch_limit: 32
     verbose: 3
+  ######################################################### no peft RM
+  - type: best_of_n
+    log_name: BoN-10kQ-3B-PSFT-all-data-3epoches
+    num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+    generator:
+      type: sglang_server
+      model_id: /share/portal/hw575/agent_prm/save/sft/250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/merged_checkpoint-480
+      prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+      server_url: http://localhost:30000/
+      temperature: 0.7
+      batch_limit: 500
+      dist_url_port: 29500
+    critic:
+      type: sglang_server
+      model_id: /share/portal/hw575/agent_prm/save/rm/250303_235634_iter1_-share-portal-hw575-agent_prm-save-sft-250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all-merged_checkpoint-480_peft=false_10k-data/checkpoint-1250
+      prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+      server_url: http://localhost:30001/
+      temperature: 0.3
+      batch_limit: 32
+      dist_url_port: 29501
+    verbose: 3
+  ######################################################### peft RM
+  # - type: best_of_n
+  #   log_name: BoN-10kQ-3B-PSFT-all-data-3epoches
+  #   num_generations: 3 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/merged_checkpoint-480
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30010/
+  #     temperature: 0.7
+  #     batch_limit: 500
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250303_235634_iter1_-share-portal-hw575-agent_prm-save-sft-250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all-merged_checkpoint-480_peft=false_10k-data/checkpoint-1250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30011/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #   verbose: 3
   # - type: hf
   #   log_name: 3B-PSFT-success-data-1epoch
   #   model_id: /share/portal/hw575/agent_prm/save/sft/250224_151841_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=true/checkpoint-33
@@ -55,11 +98,11 @@ agents:
   #   log_name: 3B-PSFT-success-data-3epoches
   #   model_id: /share/portal/hw575/agent_prm/save/sft/250224_224915_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+scs/checkpoint-201
   #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  # - type: gpt4o_expert
-  #   log_name: gpt4o
+  - type: gpt4o_expert
+    log_name: gpt4o
 defaults:
   - _self_
 
 hydra:
   run:
-    dir: ${logdir}/iter${iter}/hydra/${now:%Y-%m-%d-%H%M%S%f}_${mode}
+    dir: ${logdir}/iter${iter}/hydra/${mode}/${now:%Y-%m-%d-%H%M%S%f}

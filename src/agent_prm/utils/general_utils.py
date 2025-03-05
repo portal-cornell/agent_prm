@@ -14,7 +14,7 @@ def save_json(fp: str, data: dict):
     with open(fp, "w") as f:
         json.dump(data, f, indent=4)
 
-def start_sglang_server(model_path, port, tp=1, dist_url="localhost:29500"):
+def start_sglang_server(model_path, port, tp=1, dist_url_port=29500, gpu_id=None):
     """
     Starts an SGLang server on the given port.
 
@@ -31,13 +31,18 @@ def start_sglang_server(model_path, port, tp=1, dist_url="localhost:29500"):
         dist_url (str): The URL for distributed training.
     """
     num_gpus = torch.cuda.device_count()
+    if gpu_id is None:
+        base_gpu_id = num_gpus - tp
+    else:
+        base_gpu_id = gpu_id
+
     command = [
         "python", "-m", "sglang.launch_server",
         "--model-path", model_path,
         "--host", "0.0.0.0",
         "--port", str(port),
-        "--dist-init-addr", dist_url,
-        "--base-gpu-id", str(num_gpus - tp), # Reserve highest ID GPUs for SGLang
+        "--dist-init-addr", f"localhost:{dist_url_port}",
+        "--base-gpu-id", str(base_gpu_id), # Reserve highest ID GPUs for SGLang
         "--tp", str(tp)
     ]
     print (command)
@@ -64,4 +69,4 @@ def start_sglang_server(model_path, port, tp=1, dist_url="localhost:29500"):
     wait_for_server(base_url)
     print(f"SGLang server has started on {base_url}")
 
-    return process, f"{base_url}/v1"
+    return process, f"{base_url}/v1", base_gpu_id

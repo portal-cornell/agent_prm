@@ -423,7 +423,7 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
                 for key in table:
                     table[key] = gather_object(table[key])
                 df = pd.DataFrame(table)
-                os.makedirs(os.path.dirname(args.eval_dir), exist_ok=True)
+                os.makedirs(args.eval_dir, exist_ok=True)
                 df.to_csv(f'{args.eval_dir}/eval_epoch{epoch_id}.csv')
                 if accelerator.is_main_process:
                     print_rich_single_line_metrics(eval_metrics)
@@ -437,11 +437,20 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
             # save model
             if (training_step % args.save_freq == 0):
                 save_dir = f"{args.output_dir}/checkpoint-{training_step}"
-                os.makedirs(os.path.dirname(save_dir), exist_ok=True)
+                os.makedirs(save_dir, exist_ok=True)
                 print(f"***** Saving model to {save_dir} *****")
                 if model_config.use_peft:
-                    model.save_pretrained(args.output_dir)
-                    accelerator.wait_for_everyone()  # Ensure synchronization
+                    # model.save_pretrained(args.output_dir)
+                    # accelerator.wait_for_everyone()  # Ensure synchronization
+
+                    # TODO: Debug why LoRA is not saving properly
+                    save_with_accelerate(
+                        accelerator,
+                        model,
+                        tokenizer,
+                        save_dir,
+                        use_lora=True
+                    )
                 else:
                     # original_tokenizer = AutoTokenizer.from_pretrained(
                     #     model_config.model_name_or_path, revision=model_config.model_revision

@@ -1,0 +1,28 @@
+# For each server, you need to specify the following: 
+# - model_id
+# - server_url
+# - tp
+# - dist_url_port
+# - gpu_id (Optional, if you are running multiple servers on the same interactive session, specify which GPU to use)
+
+server_configs:
+  - model_id: /share/portal/hw575/agent_prm/save/sft/250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/merged_checkpoint-480
+    server_url: http://localhost:30000/
+    tp: 1
+    dist_url_port: 29500
+    gpu_id: 1
+  - model_id: /share/portal/hw575/agent_prm/save/rm/250303_235634_iter1_-share-portal-hw575-agent_prm-save-sft-250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all-merged_checkpoint-480_peft=false_10k-data/checkpoint-1250
+    server_url: http://localhost:30001/
+    tp: 1
+    dist_url_port: 29501
+    gpu_id: 0
+
+defaults:  
+  - _self_  
+  - override hydra/hydra_logging: disabled  
+  - override hydra/job_logging: disabled  
+  
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .

@@ -31,24 +31,14 @@ class SGLangServerCritic(Critic):
 
     def score_reason_action_batch(self, queries: List[Dict]) -> List[float]:
         conversations = []
+        
         for query in queries:
-            observation_action_history = [
-                {"observation": entry["observation"], "action": entry["action"]}
-                for entry in query["observation_action_history"]
-            ]
-            input_data = {
-                "mode": "input",
-                "task": query["task"],
-                "observation": query["observation"],
-                "candidate_actions": query["candidate_actions"],
-                "observation_action_history": observation_action_history,      
-            }
-            input_prompt = self.prompt_template.render(**input_data)
+            # We assume that the query already has the mode
+            input_prompt = self.prompt_template.render(**query)
 
             output_data = {
-                "mode": "output",
-                "reason": query["reason"],
-                "action": query["action"]     
+                **query,
+                "mode": "output",  # Overwrite the mode
             }    
             output_prompt = self.prompt_template.render(**output_data)
 
@@ -63,7 +53,7 @@ class SGLangServerCritic(Critic):
             responses_batch = requests.post(self.server_url, json=data_batch).json()
             scores_batch = [x["embedding"][0] for x in responses_batch]
             scores = scores + scores_batch
-            
+        
         return scores
     
     def score_state_batch(self, queries: List[Dict]) -> List[float]:

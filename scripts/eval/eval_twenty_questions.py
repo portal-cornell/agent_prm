@@ -19,6 +19,7 @@ from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, VALIDATION_O
 from agent_prm.envs.twenty_questions.env import setup_twenty_questions_env, setup_batched_twenty_questions_env
 from agent_prm.utils.logger_email import elogger
 from agent_prm.utils.general_utils import start_sglang_server
+from agent_prm.utils.cfg_utils import get_output_path
 
 def offline_eval(cfg: dict, agent: Agent):
     """
@@ -27,6 +28,50 @@ def offline_eval(cfg: dict, agent: Agent):
     pass
 
 
+def setup_sglang_server(agent_config: dict):
+    """
+    Setup the SGLang server
+
+    If the agent is a SGLang server, we only need to start one server
+    If the agent is a Best of N, we need to start two servers
+        - One for the generator
+        - One for the critic
+
+    Returns:
+        a list of processes
+    """
+    processes = []
+    if agent_config.type == "sglang_server":
+        port = int(agent_config.server_url.split(":")[-1][:-1])
+        print(f"Starting SGLang server on port {port}")
+        process, _, _ = start_sglang_server(model_path=agent_config.model_id,
+                                                port=port, 
+                                                tp=1)
+        processes.append(process)
+    elif agent_config.type == "best_of_n":
+        # Start the generator
+        port = int(agent_config.generator.server_url.split(":")[-1][:-1])
+        print(f"Starting SGLang server for the generator on port {port}, serving on the highest ID GPU")
+        process, _, base_gpu_id = start_sglang_server(model_path=agent_config.generator.model_id,
+                                                port=port, 
+                                                tp=1,
+                                                dist_url_port=agent_config.generator.dist_url_port)
+        processes.append(process)
+
+        # Start the critic
+        port = int(agent_config.critic.server_url.split(":")[-1][:-1])
+        gpu_id = max(0, base_gpu_id - 1)
+        print(f"Starting SGLang server for the critic on port {port}, serving on the next highest ID GPU {gpu_id}")
+        process, _, _ = start_sglang_server(model_path=agent_config.critic.model_id,
+                                                port=port, 
+                                                tp=1,
+                                                dist_url_port=agent_config.critic.dist_url_port,
+                                                gpu_id=gpu_id)
+        processes.append(process)
+
+    return processes
+
+        
 def query_agent(agent: Agent, history: List[Dict[str, str]], all_obj_list: List[WordVariants], last_question: bool = False):
     """
     Query the agent for a reason and action
@@ -112,22 +157,37 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
                 while not all(prev_dones):
                     # Batched way
                     start_time = time.time()
-                    reasons, actions = [], []
-                    alt_reasons, alt_actions = [[] for _ in range(len(batch_objects))], [[] for _ in range(len(batch_objects))]  # For each object, we have a list of alt_reasons and alt_actions
+                    reasons, actions, scores = [], [], []
+                    if cfg.online.num_alt_responses > 0:
+                        alt_reasons, alt_actions, alt_scores = [[] for _ in range(len(batch_objects))], [[] for _ in range(len(batch_objects))], [[] for _ in range(len(batch_objects))]  # For each object, we have a list of alt_reasons and alt_actions and alt_scores
                     last_questions = [len(histories[i]) == batched_env.max_conversation_length - 1 for i in range(len(batch_objects))]
                     reasons_actions_dict = query_agent_batch(agent, histories, all_obj_list, last_questions, cfg.online.num_alt_responses)
                     for i in range(len(batch_objects)):
                         if prev_dones[i]:
                             reasons.append("")
                             actions.append("")
+                            scores.append(None)
                         else:
                             # Assuming that we are just request number of responses to be 1
                             reasons.append(reasons_actions_dict[i][0]["reason"])
                             actions.append(reasons_actions_dict[i][0]["action"])
+                            
+                            has_critic_score = "score" in reasons_actions_dict[i][0]
 
-                            for j in range(cfg.online.num_alt_responses):
-                                alt_reasons[i].append(reasons_actions_dict[i][j]["reason"])
-                                alt_actions[i].append(reasons_actions_dict[i][j]["action"])
+                            if has_critic_score:
+                                scores.append(reasons_actions_dict[i][0]["score"])
+                            else:
+                                scores.append(None)
+                            
+                            if cfg.online.num_alt_responses > 0:
+                                for j in range(cfg.online.num_alt_responses):
+                                    alt_reasons[i].append(reasons_actions_dict[i][j]["reason"])
+                                    alt_actions[i].append(reasons_actions_dict[i][j]["action"])
+
+                                    if has_critic_score:
+                                        alt_scores[i].append(reasons_actions_dict[i][j]["score"])
+                                    else:
+                                        alt_scores[i].append(None)
 
                     print(f"[AGENT] time taken for batch_size={bs}: {time.time() - start_time}")
 
@@ -144,13 +204,15 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
                                 "answerer_reason": answer_reasons[i],
                                 "answer": answers[i],
                                 "reward": rewards[i],
+                                "score": scores[i],
                                 'alternatives': [
                                     {
                                         "reason": alt_reasons[i][j],
-                                        "action": alt_actions[i][j]
+                                        "action": alt_actions[i][j],
+                                        "score": alt_scores[i][j]
                                     }
                                     for j in range(cfg.online.num_alt_responses)
-                                ]
+                                ] if cfg.online.num_alt_responses > 0 else None
                             })
 
                     prev_dones = dones
@@ -163,22 +225,19 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
                 for i in range(len(batch_objects)):
                     save_json(os.path.join(logdir, data_type, f"{batch_objects[i]}_{rollout_idx_str}.json"), traj_list[i])
 
-
-def consolidate_online_eval(cfg: dict, logdir: str, agent_rollout_dir: str, agent_name: str):
+def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, agent_name: str, rollout_per_task: int = 3):
     """
     Consolidate the online eval results and save it as a csv file
     """
-    table_fp = os.path.join(logdir, "online_eval_table.csv")
-
     if not os.path.exists(table_fp):
         table_dict = {
             "model": [],
             "train (avg reward)": [],
-            "train (std reward)": [],
+            "train (se reward)": [],
             "val (avg reward)": [],
-            "val (std reward)": [],
+            "val (se reward)": [],
             "test (avg reward)": [],
-            "test (std reward)": []
+            "test (se reward)": []
         }
     else:
         table = pd.read_csv(table_fp)
@@ -192,27 +251,43 @@ def consolidate_online_eval(cfg: dict, logdir: str, agent_rollout_dir: str, agen
         table_dict["model"].append(agent_name)
         overwrite = False
 
-    for data_type in cfg.data_types:
+    def is_valid_rollout(f: str) -> bool:
+        """
+        Check if the rollout is valid
+        """
+        is_a_rollout_file = f.endswith(".json") and not f.endswith("_summary_dict.json")
+        to_include = False
+
+        for i in range(rollout_per_task):
+            if f"_{i}" in f:
+                to_include = True
+                break
+
+        return is_a_rollout_file and to_include
+
+    for data_type in ["train", "val", "test"]:
         all_rewards = []
 
-        # Get all the json files that's not _summary_dict.json
-        json_files = [f for f in os.listdir(os.path.join(agent_rollout_dir, data_type)) if f.endswith(".json") and not f.endswith("_summary_dict.json")]
+        # Get all the rollouts that are used to consolidate the results
+        json_files = [f for f in os.listdir(os.path.join(agent_rollout_dir, data_type)) if is_valid_rollout(f)]
 
         # Compute rewards efficiently
         all_rewards = [sum(t["reward"] for t in load_json(os.path.join(agent_rollout_dir, data_type, f))) for f in json_files if "_0" in f]
 
         # Update the table dict
+        mean_reward = np.mean(all_rewards)
+        se_reward = np.std(all_rewards)/math.sqrt(len(all_rewards))
+
         if overwrite:
-            table_dict[f"{data_type} (avg reward)"][table_dict["model"].index(agent_name)] = np.mean(all_rewards)
-            table_dict[f"{data_type} (std reward)"][table_dict["model"].index(agent_name)] = np.std(all_rewards)
+            table_dict[f"{data_type} (avg reward)"][table_dict["model"].index(agent_name)] = mean_reward
+            table_dict[f"{data_type} (se reward)"][table_dict["model"].index(agent_name)] = se_reward
         else:
-            table_dict[f"{data_type} (avg reward)"].append(np.mean(all_rewards))
-            table_dict[f"{data_type} (std reward)"].append(np.std(all_rewards))
+            table_dict[f"{data_type} (avg reward)"].append(mean_reward)
+            table_dict[f"{data_type} (se reward)"].append(se_reward)
 
     # Convert the table dict to a dataframe and save it
     table = pd.DataFrame(table_dict)
     table.to_csv(table_fp, index=False)
-
 
 
 @hydra.main(version_base=None, config_path="../../configs/eval_config", config_name="twenty_questions.yaml")
@@ -225,36 +300,45 @@ def main(cfg: DictConfig):
     # Load the model
     for agent_config in cfg.agents:
         if cfg.host_sglang:
-            port = int(agent_config.server_url.split(":")[-1][:-1])
-            print(f"Starting SGLang server on port {port}")
-            process, _ = start_sglang_server(model_path=agent_config.model_id,
-                                                    port=port, 
-                                                    tp=1)
-
-
+            processes = setup_sglang_server(agent_config)
+        # Extract the agent_name and logdir
         if agent_config.type == "gpt4o_expert":
             # Use the data collected for SFT
             assert cfg.mode == "consolidate_online", "Gpt4o expert can only be used in consolidate_online mode, where we are comparing the performance of different models"
             logdir = os.path.join(cfg.rollout_data_dir, f"iter{cfg.iter}")
             agent_name = "gpt4o_expert"
         else:
-            agent = initialize_agent(agent_config,
-                                        parse_reason_action_fn=parse_reason_and_action_twenty_questions,
-                                        verbose=cfg["verbose"],
-                                        debug=cfg["debug"])
+            agent_name = agent_config.model_id if agent_config.type != "best_of_n" else agent_config.generator.model_id
             
-            if "checkpoint" in agent.name():
-                agent_name = os.path.basename(agent.name().split("/")[-2])
+            if "checkpoint" in agent_name:
+                agent_name = os.path.basename(agent_name.split("/")[-2])
             else:
-                agent_name = os.path.basename(agent.name())
+                agent_name = os.path.basename(agent_name)
 
             agent_name = f"{agent_config.log_name}_{agent_name}"
 
             logdir = os.path.join(dstdir, agent_name)
 
         if cfg.mode == "consolidate_online":
-            consolidate_online_eval(cfg, dstdir, agent_rollout_dir=logdir, agent_name=agent_config.log_name)
+            # Saving table under a specific hydra version
+            hydra_folder_path = get_output_path()
+            table_fp = os.path.join(hydra_folder_path, f"online_eval_table{'_' + cfg.consolidate_online.table_notes if cfg.consolidate_online.table_notes else ''}.csv")
+
+            consolidate_online_eval(cfg, table_fp, agent_rollout_dir=logdir, agent_name=agent_config.log_name, rollout_per_task=cfg.consolidate_online.rollout_per_task)
+
+            # Check if the file or symlink exists, then remove it
+            dst_link_fp = os.path.join(dstdir, "online_eval_table.csv")
+            if os.path.exists(dst_link_fp) or os.path.islink(dst_link_fp):
+                os.remove(dst_link_fp)
+
+            # Adding a soft link to the table under dstdir
+            os.symlink(table_fp, dst_link_fp)
         else:
+            agent = initialize_agent(agent_config,
+                                        parse_reason_action_fn=parse_reason_and_action_twenty_questions,
+                                        verbose=cfg["verbose"],
+                                        debug=cfg["debug"])
+                 
             os.makedirs(logdir, exist_ok=True)
             print(f"Evaluating {agent_name} in {logdir}")
 
@@ -266,11 +350,12 @@ def main(cfg: DictConfig):
                 raise ValueError(f"Invalid mode: {cfg.mode}")
             
         if cfg.host_sglang:
-            if process is not None:
-                # Cleanup the SGLang server
-                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-                process.wait()
-                print("SGLang server terminated")
+            if processes is not None:
+                for process in processes:
+                    # Cleanup the SGLang server
+                    os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                    process.wait()
+                    print("SGLang server terminated")
 
     if cfg.mode == "online":
         # Because this takes a long time, we notify when the online eval is done

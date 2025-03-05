@@ -34,10 +34,23 @@ class BestofNAgent(Agent):
     def name(self) -> str:
         return f"critic-{self.critic.name()}-generator-{self.generator.name()}-{self.num_generations}"
     
-    def predict_reason_action_batch(self, queries: List[Dict], num_responses: int) -> List[List[Dict]]:
+    def predict_reason_action_batch(self, queries: List[Dict], num_responses: int, alt_temperature_for_extra_responses: float = None) -> List[List[Dict]]:
+        """
+        Parameters:
+            queries: a list of dictionaries, each containing the necessary data to render the prompt
+                size: batch_size
+            num_responses: the number of responses to generate
+            alt_temperature_for_extra_responses: the temperature to use for the alternative responses
+                Not implemented. We instead return the top num_responses reason-actions for each query
+
+                Keeping this here for compatibility with the abstract class
+
+        Returns:
+            a list of reason_actions of len(queries), each being len(num_responses)
+        """
         assert num_responses <= self.num_generations # Cannot return more than generations
 
-        reason_actions_all_queries = self.generator.predict_reason_action_batch(queries=queries, num_responses=self.num_generations)
+        reason_actions_all_queries = self.generator.predict_reason_action_batch(input_datas=queries, num_responses=self.num_generations)
 
         # Flatten the queries and their corresponding reason-actions
         flattened_queries_with_reason_action = []
@@ -66,8 +79,6 @@ class BestofNAgent(Agent):
         if self.verbose > 0:
             reason_actions_all_queries_sorted = [sorted(batch, key=lambda x: x['score'], reverse=True) for batch in reason_actions_all_queries]
             for query, reason_actions_per_query in zip(queries, reason_actions_all_queries_sorted):
-                print(f"\n Observation: {query['observation']}")
-                print(f"\n Candidate Actions: {query['candidate_actions']}")
                 for idx, reason_action in enumerate(reason_actions_per_query):
                     if idx < num_responses:
                         print(f"\n Score: {reason_action['score']} Reason: {reason_action['reason']} Action: {reason_action['action']}")
