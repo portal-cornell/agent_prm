@@ -234,10 +234,20 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
             "model": [],
             "train (avg reward)": [],
             "train (se reward)": [],
+            "train (avg success rate)": [],
+            "train (se success rate)": [],
             "val (avg reward)": [],
             "val (se reward)": [],
+            "val (avg success rate)": [],
+            "val (se success rate)": [],
             "test (avg reward)": [],
-            "test (se reward)": []
+            "test (se reward)": [],
+            "test (avg success rate)": [],
+            "test (se success rate)": [],
+            "total (avg reward)": [],
+            "total (se reward)": [],
+            "total (avg success rate)": [],
+            "total (se success rate)": []
         }
     else:
         table = pd.read_csv(table_fp)
@@ -265,6 +275,9 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
 
         return is_a_rollout_file and to_include
 
+    total_rewards = []
+    total_success_rates = []
+
     for data_type in ["train", "val", "test"]:
         all_rewards = []
 
@@ -272,18 +285,33 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
         json_files = [f for f in os.listdir(os.path.join(agent_rollout_dir, data_type)) if is_valid_rollout(f)]
 
         # Compute rewards efficiently
-        all_rewards = [sum(t["reward"] for t in load_json(os.path.join(agent_rollout_dir, data_type, f))) for f in json_files if "_0" in f]
-
-        # Update the table dict
+        all_rewards = [sum(t["reward"] for t in load_json(os.path.join(agent_rollout_dir, data_type, f))) for f in json_files]
         mean_reward = np.mean(all_rewards)
         se_reward = np.std(all_rewards)/math.sqrt(len(all_rewards))
+
+        # Compute success rate
+        all_success_rates = [load_json(os.path.join(agent_rollout_dir, data_type, f))[-1]["reward"] == 0 for f in json_files]
+        mean_success_rate = np.mean(all_success_rates)
+        se_success_rate = np.std(all_success_rates)/math.sqrt(len(all_success_rates))
 
         if overwrite:
             table_dict[f"{data_type} (avg reward)"][table_dict["model"].index(agent_name)] = mean_reward
             table_dict[f"{data_type} (se reward)"][table_dict["model"].index(agent_name)] = se_reward
+            table_dict[f"{data_type} (avg success rate)"][table_dict["model"].index(agent_name)] = mean_success_rate
+            table_dict[f"{data_type} (se success rate)"][table_dict["model"].index(agent_name)] = se_success_rate
         else:
             table_dict[f"{data_type} (avg reward)"].append(mean_reward)
             table_dict[f"{data_type} (se reward)"].append(se_reward)
+            table_dict[f"{data_type} (avg success rate)"].append(mean_success_rate)
+            table_dict[f"{data_type} (se success rate)"].append(se_success_rate)
+
+        total_rewards.append(mean_reward)
+        total_success_rates.append(mean_success_rate)
+
+    table_dict["total (avg reward)"].append(np.mean(total_rewards))
+    table_dict["total (se reward)"].append(np.std(total_rewards)/math.sqrt(len(total_rewards)))
+    table_dict["total (avg success rate)"].append(np.mean(total_success_rates))
+    table_dict["total (se success rate)"].append(np.std(total_success_rates)/math.sqrt(len(total_success_rates)))
 
     # Convert the table dict to a dataframe and save it
     table = pd.DataFrame(table_dict)
