@@ -7,7 +7,7 @@ MODEL="/share/portal/hw575/agent_prm/save/sft/250224_225421_iter0-all_meta-llama
 
 TRAIN_SPLITS=train
 TEST_SPLITS=val
-TRAIN_EPOCHS=1
+TRAIN_EPOCHS=2
 
 current_date=$(date +"%y%m%d_%H%M%S")
 
@@ -30,6 +30,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 echo "Use PEFT: $USE_PEFT"
+echo "Note: $NOTE"
 
 export TRITON_CACHE_DIR=/share/portal/hw575
 TRITON_CACHE_DIR=/share/portal/hw575/.triton
@@ -55,7 +56,7 @@ accelerate launch  --num-processes 2 \
     --max_token_length 2048 \
     --max_prompt_token_length 2048 \
     --num_train_epochs ${TRAIN_EPOCHS} \
-    --num_evals 10 \
+    --num_evals 20 \
     --save_freq 500 \
     --output_dir ${SAVE_DIR} \
     --eval_dir ${EVAL_DIR} \

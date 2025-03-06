@@ -96,6 +96,8 @@ class Args:
     """The dataset mixer as a dictionary"""
     dataset_eval_mixer_dict: Optional[dict] = None
     """The dataset eval mixer as a dictionary"""
+    domain_name: str = "alfworld"
+    """Name of the domain"""
 
     # common args
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
@@ -289,36 +291,34 @@ def calculate_runtime_args_and_accelerator(args: Args, model_config: ModelConfig
 import re
 import json
 
-def parse_reason_and_action_alfworld(text):
-    reason_pattern = r"REASON:\s*(.*?)\s*ACTION:"
-    action_pattern = r"ACTION:\s*([^\n]+)"
+from agent_prm.utils.parser import parse_reason_and_action_alfworld, parse_reason_and_action_twenty_questions
 
-    reason_match = re.search(reason_pattern, text, re.DOTALL)
-    action_match = re.search(action_pattern, text)
+# Map domain to parser
+PARSER_DICT = {
+    "alfworld": parse_reason_and_action_alfworld,
+    "twenty_questions": parse_reason_and_action_twenty_questions
+}
 
-    reason = reason_match.group(1).strip() if reason_match else text
-    action = action_match.group(1).strip() if action_match else ""
+def clean_up_generation(tokenizer, response_ids, domain:str):
+    # Get parser from domain name
+    parser = PARSER_DICT[domain]
 
-    #Clean up action to move to lower case and remove any random characters
-    action = action.lower()
-    action = re.sub(r'[^a-z0-9 /]', '', action)
-
-    return reason, action
-
-def clean_up_generation(tokenizer, response_ids):
     # detokenize
     responses = tokenizer.batch_decode(response_ids, skip_special_tokens=True)
     cleaned_responses = []
     for response in responses:
-        reason, action = parse_reason_and_action_alfworld(response)
-        cleaned_responses.append(f"REASON:\n{reason}\nACTION:\n{action}<|eot_id|>")
-    # tokenize
-    # print(cleaned_responses)
+        reason, action = parser(response)
+
+        action_header_name = "ACTION:" if domain != "twenty_questions" else "QUESTION:"
+        cleaned_responses.append(f"REASON:\n{reason}\n{action_header_name}:\n{action}<|eot_id|>")
+
+    # Re-tokenize the cleaned responses
     response_ids_reversed = [tokenizer.encode(response, add_special_tokens=False) for response in cleaned_responses]
-    # print(response_ids_reversed)
+
     return response_ids_reversed
 
 def vllm_generate(
+    domain: str,
     model_name_or_path: str,
     model_revision: Optional[str],
     max_model_len: int,
@@ -344,7 +344,7 @@ def vllm_generate(
         gpu_memory_utilization=vllm_gpu_memory_utilization,
         max_model_len=max_model_len,
     )
-    print("🔥🔥🔥 vllm loaded")
+    print(f"🔥🔥🔥 vllm loaded (max_model_len: {max_model_len})")
     llmp = llm.llm_engine.model_executor.driver_worker.model_runner.model
     
     for training_step in range(resume_training_step, num_training_steps + 1):
@@ -361,17 +361,18 @@ def vllm_generate(
         generation_start_time = time.time()
         outputs = llm.generate(prompt_token_ids=g_queries_list, sampling_params=generation_config)
         response_ids = [list(output.outputs[0].token_ids) for output in outputs]
-        response_ids = clean_up_generation(tokenizer, response_ids)
+        response_ids = clean_up_generation(tokenizer, response_ids, domain)
 
         print(f"🔥🔥🔥 Generation time: {time.time() - generation_start_time:.2f} seconds")
         response_ids_Q.put(response_ids)
 
+        # Evaluation
         if sample_evaluation_prompt_token_ids is not None and (training_step - 1) % eval_freq == 0:
             outputs = llm.generate(
                 prompt_token_ids=sample_evaluation_prompt_token_ids, sampling_params=generation_config
             )
             response_ids = [list(output.outputs[0].token_ids) for output in outputs]
-            response_ids = clean_up_generation(tokenizer, response_ids)
+            response_ids = clean_up_generation(tokenizer, response_ids, domain)
             evaluation_Q.put(response_ids)
 
 
@@ -411,7 +412,7 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
                 save_code=True,
                 tags=[args.exp_name] + get_wandb_tags(),
             )
-        writer = SummaryWriter(f"runs/{args.run_name}")
+        writer = SummaryWriter(f"{args.output_dir}/summary")
         writer.add_text(
             "hyperparameters",
             "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
@@ -455,7 +456,7 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
             range(0, min(len(train_dataset), dataset_config.sanity_check_max_samples))
         )
     with accelerator.main_process_first():
-        train_dataset = dataset_processor.tokenize(train_dataset)
+        train_dataset = dataset_processor.tokenize(train_dataset, domain=args.domain_name)
         train_dataset = dataset_processor.filter(train_dataset)
     dataset_dict["train"] = train_dataset
     
@@ -470,7 +471,7 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
 
         eval_dataset = eval_dataset.select(range(0, min(len(eval_dataset), 1000)))
         with accelerator.main_process_first():
-            eval_dataset = dataset_processor.tokenize(eval_dataset)
+            eval_dataset = dataset_processor.tokenize(eval_dataset, domain=args.domain_name)
             eval_dataset = dataset_processor.filter(eval_dataset)
         dataset_dict["eval"] = eval_dataset
 
@@ -592,6 +593,7 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
     # deepspeed setup
     is_deepspeed_enabled = getattr(accelerator.state, "deepspeed_plugin", None) is not None
     mixed_precision = accelerator.state.mixed_precision
+
     if is_deepspeed_enabled:
         reward_model = prepare_deepspeed(reward_model, args.per_device_train_batch_size, mixed_precision)
         ref_model = prepare_deepspeed(ref_model, args.per_device_train_batch_size, mixed_precision)
@@ -626,20 +628,21 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
         thread = threading.Thread(
             target=vllm_generate,
             args=(
-                model_config.model_name_or_path,
-                model_config.model_revision,
-                dataset_config.max_prompt_token_length + args.response_length,
-                args.vllm_device,
-                args.vllm_gpu_memory_utilization,
-                generation_config,
-                response_ids_Q,
-                param_prompt_Q,
-                args.num_training_steps,
-                sample_evaluation_prompt_token_ids,
-                evaluation_Q,
-                args.eval_freq,
-                resume_training_step,
-                tokenizer
+                args.domain_name,  # domain: str
+                model_config.model_name_or_path,  # model_name_or_path: str
+                model_config.model_revision,  # model_revision: Optional[str]
+                dataset_config.max_prompt_token_length + args.response_length,  # max_model_len: int
+                args.vllm_device,  # vllm_device: str
+                args.vllm_gpu_memory_utilization,  # vllm_gpu_memory_utilization: float
+                generation_config,  # generation_config: SamplingParams
+                response_ids_Q,  # response_ids_Q: Queue
+                param_prompt_Q,  # param_prompt_Q: Queue
+                args.num_training_steps,  # num_training_steps: int
+                sample_evaluation_prompt_token_ids,  # sample_evaluation_prompt_token_ids: Optional[List[int]]
+                evaluation_Q,  # evaluation_Q: Queue
+                args.eval_freq,  # eval_freq: int
+                resume_training_step,  # resume_training_step: int
+                tokenizer  # tokenizer: PreTrainedTokenizer
             ),
         )
         thread.start()
