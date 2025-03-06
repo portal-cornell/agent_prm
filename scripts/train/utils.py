@@ -236,15 +236,30 @@ class SFTDatasetProcessor(DatasetProcessor):
 
 
 class SFTPromptDatasetProcessor(DatasetProcessor):
-    def tokenize(self, dataset: Dataset):
+    def tokenize(self, dataset: Dataset, domain: str):
         def tokenize_fn(row):
-            with open("prompts/alfworld/alfworld_template.j2", "r") as file:
-                prompt_template = Template(file.read())
-            input_data = {'mode': 'input',
-                            'observation': row['state']['observation'],
-                            'candidate_actions': row['state']['candidate_actions'] if ('candidate_actions' in row['state']) else "",
-                            'task': row['state']['task'],
-                            'observation_action_history': row['state']['history']}
+            if domain == "alfworld":
+                with open("prompts/alfworld/alfworld_template.j2", "r") as file:
+                    prompt_template = Template(file.read())
+                input_data = {'mode': 'input',
+                                'observation': row['state']['observation'],
+                                'candidate_actions': row['state']['candidate_actions'] if ('candidate_actions' in row['state']) else "",
+                                'task': row['state']['task'],
+                                'observation_action_history': row['state']['history']}
+            elif domain == "twenty_questions":
+                with open("prompts/twenty_questions/twenty_questions_template.j2", "r") as file:
+                    prompt_template = Template(file.read())
+
+                # TODO: This is a hack to get the all_obj_list and input_final
+                from agent_prm.envs.twenty_questions.data import get_default_word_list
+
+                # Make sure question appears before answer
+                formatted_history = [{"question": item["question"], "answer": item["answer"]} for item in row['state']['history']]
+                input_data = {
+                                'mode': 'input_final' if len(row['state']['history']) == 19 else 'input',
+                                'all_obj_list': [wv[0] for wv in get_default_word_list("all")],
+                                'observation_action_history': formatted_history}
+            
             row[PROMPT_KEY] = prompt_template.render(**input_data)
 
             messages = [{"role": "user", "content": row[PROMPT_KEY]}]

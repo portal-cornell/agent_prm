@@ -58,6 +58,7 @@ class SGLangServerAgent(Agent):
         
         Returns:
             A tuple containing the predicted reason (str) and action (str).
+            generated_text (str): The generated text from the model.
         """
         input_prompt = self.prompt_template.render(**input_data)
         conversation = [{"role": "user", "content": input_prompt}] 
@@ -83,7 +84,7 @@ class SGLangServerAgent(Agent):
                 action = human_input
                 reason = "None"
 
-        return reason, action
+        return reason, action, generated_text
     
 
     def _request_sglang_server_all_same_temperature(self, input_datas: List[Dict], num_responses: int, temperature: float) -> List[str]:
@@ -152,7 +153,9 @@ class SGLangServerAgent(Agent):
 
     def predict_reason_action_batch(self, input_datas: List[Dict], num_responses: int, alt_temperature_for_extra_responses: float = None) -> List[Tuple[str, str]]:
         """
-        Return a list of reason_actions of len(queries), each being len(num_responses)
+        Return 
+            - a list of reason_actions of len(queries), each being len(num_responses)
+            - a list of generated texts of len(input_datas) * num_responses
         """
         if alt_temperature_for_extra_responses is None:
             generated_texts = self._request_sglang_server_all_same_temperature(input_datas, num_responses, self.temperature)
@@ -166,7 +169,11 @@ class SGLangServerAgent(Agent):
             for _ in range(num_responses):
                 generated_text = generated_texts[counter]
                 counter += 1
+                # print(f"\n RESPONSE:\n{generated_text}")
                 reason, action = self.parse_reason_action_fn(generated_text)
+                # print(f"\n REASON:\n{reason}")
+                # print(f"\n ACTION:\n{action}")   
+                # input("===============")
                 reason_actions_per_query.append({'reason': reason, 'action': action})
 
                 if self.verbose >= 2:
@@ -176,4 +183,4 @@ class SGLangServerAgent(Agent):
                     print(f"\n ACTION: {action}")
             reason_actions_all_queries.append(reason_actions_per_query)
         
-        return reason_actions_all_queries
+        return reason_actions_all_queries, generated_texts

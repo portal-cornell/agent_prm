@@ -75,7 +75,7 @@ class Args:
     dataset_name: str = "mbpp"
     """Name of the dataset"""
     domain_name: str = "alfworld"
-    """Name of the dataset"""
+    """Name of the domain"""
 
     # common args
     exp_name: str = os.path.basename(__file__)[: -len(".py")]

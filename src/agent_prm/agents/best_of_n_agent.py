@@ -50,7 +50,7 @@ class BestofNAgent(Agent):
         """
         assert num_responses <= self.num_generations # Cannot return more than generations
 
-        reason_actions_all_queries = self.generator.predict_reason_action_batch(input_datas=queries, num_responses=self.num_generations)
+        reason_actions_all_queries, generated_texts = self.generator.predict_reason_action_batch(input_datas=queries, num_responses=self.num_generations)
 
         # Flatten the queries and their corresponding reason-actions
         flattened_queries_with_reason_action = []
@@ -70,9 +70,13 @@ class BestofNAgent(Agent):
 
         # Sort reason-actions by score and select top responses for each query
         reason_actions_all_queries_top = []
+        generated_texts_top = []
         for reason_actions_per_query in reason_actions_all_queries:
-            sorted_reason_actions = sorted(reason_actions_per_query, key=lambda x: x['score'], reverse=True)
-            reason_actions_all_queries_top.append(sorted_reason_actions[:num_responses])
+            # Get the indices of the top num_responses reason-actions
+            sorted_reason_actions_indices = sorted(range(len(reason_actions_per_query)), key=lambda x: reason_actions_per_query[x]['score'], reverse=True)
+            top_sorted_reason_actions_indices = sorted_reason_actions_indices[:num_responses]
+            generated_texts_top.extend([generated_texts[i] for i in top_sorted_reason_actions_indices])
+            reason_actions_all_queries_top.append([reason_actions_per_query[i] for i in top_sorted_reason_actions_indices])
 
         self.agent_log = reason_actions_all_queries
         ## DEBUG PRINTING
@@ -88,7 +92,7 @@ class BestofNAgent(Agent):
         if self.debug:
             human_input = input() 
 
-        return reason_actions_all_queries_top
+        return reason_actions_all_queries_top, generated_texts_top
 
     def get_log(self):
         return self.agent_log

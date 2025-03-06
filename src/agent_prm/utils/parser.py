@@ -14,7 +14,8 @@ def parse_reason_and_action_twenty_questions(text: str) -> Tuple[str, str]:
     Returns:
         A tuple with the parsed reason and action. 
     """
-    pattern = r"REASON:\s*([\s\S]*?)\s*QUESTION:\s*([\s\S]*?)$"
+    # pattern = r"REASON\s*[\W]*\s*([\s\S]*?)\s*QUESTION\s*[\W]*\s*(.*)"  # Requires REASON to exist before QUESTION
+    pattern = r"(?:REASON\s*[\W]*\s*)?([\s\S]*?)\s*QUESTION\s*[\W]*\s*(.*)"
     match = re.search(pattern, text)
 
     if match:
