@@ -206,7 +206,7 @@ class Args:
     """The wandb's project name"""
     wandb_entity: Optional[str] = None
     """The entity (team) of wandb's project"""
-    push_to_hub: bool = True
+    push_to_hub: bool = False
     """Whether to upload the saved model to huggingface"""
     hf_entity: Optional[str] = None
     """The user or org name of the model repository from the Hugging Face Hub"""
@@ -256,7 +256,7 @@ def calculate_runtime_args_and_accelerator(args: Args, model_config: ModelConfig
     time_tensor = torch.tensor(int(time.time()), device=accelerator.device)
     # set a unique run name with the current timestamp
     time_int = broadcast(time_tensor, 0).item()
-    args.run_name = f"{args.exp_name}__{args.seed}__{time_int}"
+    args.run_name = args.output_dir
     args.mini_batch_size = exact_div(
         args.batch_size, args.num_mini_batches, "`batch_size` must be a multiple of `num_mini_batches`"
     )
@@ -310,7 +310,12 @@ def clean_up_generation(tokenizer, response_ids, domain:str):
         reason, action = parser(response)
 
         action_header_name = "ACTION:" if domain != "twenty_questions" else "QUESTION:"
-        cleaned_responses.append(f"REASON:\n{reason}\n{action_header_name}:\n{action}<|eot_id|>")
+
+        if reason == "" or action == "":
+            print(f"invalid response:\n{response}\nreason: {reason}\naction: {action}")
+            cleaned_responses.append(f"<|eot_id|>") # A trick to penalize ill-formed responses that cannot be parsed
+        else:
+            cleaned_responses.append(f"REASON:\n{reason}\n{action_header_name}\n{action}<|eot_id|>")
 
     # Re-tokenize the cleaned responses
     response_ids_reversed = [tokenizer.encode(response, add_special_tokens=False) for response in cleaned_responses]
@@ -482,9 +487,9 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
         if args.with_tracking:
             # upload the visualized token length
             dataset_processor.get_token_length_visualization(
-                dataset_dict, save_path=f"runs/{args.run_name}/token_length.png"
+                dataset_dict, save_path=f"{args.output_dir}/summary/token_length.png"
             )
-            wandb.log({"token_length": wandb.Image(f"runs/{args.run_name}/token_length.png")})
+            wandb.log({"token_length": wandb.Image(f"{args.output_dir}/summary/token_length.png")})
 
     # create the model and optimizer
     policy: PreTrainedModel = AutoModelForCausalLM.from_pretrained(
@@ -668,6 +673,9 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
     queries_next = queries_next.repeat(args.num_generation_per_prompt, 1)
     send_queries(accelerator, None, tokenizer, param_prompt_Q, queries_next)
 
+    # Create the dir to save sampled eval results
+    os.makedirs(os.path.join(args.output_dir, "sampled_eval"), exist_ok=True)
+
     for _ in range(1, resume_training_step):  # we didn't store scheduler state
         scheduler.step()
 
@@ -695,11 +703,52 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
 
         if accelerator.is_main_process:
             try:
-                evaluation_responses = evaluation_Q.get(timeout=0.01)
+                evaluation_responses = evaluation_Q.get(timeout=0.01)  # a list of list (tokens of different lengths)
                 print("🔥🔥🔥 Evaluation responses received")
                 table = {}
+
                 table["prompt"] = tokenizer.batch_decode(sample_evaluation_prompt_token_ids,skip_special_tokens=False)
                 table["response"] = tokenizer.batch_decode(evaluation_responses,skip_special_tokens=False)
+
+                # print(f"evaluation_responses:{evaluation_responses}\nevaluation_responses len:{[len(item) for item in evaluation_responses]}")
+                # print(f"sample_evaluation_prompt_token_ids len:{[len(item) for item in sample_evaluation_prompt_token_ids]}")
+
+                # # Step 1: Because the responses are tokens of different length, we need to pad them to pass through our reward model
+                # DUMMY_PAD_TOKEN = 0  # we can't use tokenizer.pad_token_id because it's outside vocab and `torch.gather(all_logprob, 2, response.unsqueeze(-1))` will error out
+                # postprocessed_eval_response_ids = [
+                #     r + [DUMMY_PAD_TOKEN] * (args.response_length - len(r))
+                #     for r in evaluation_responses
+                # ]
+
+                # for i, item in enumerate(postprocessed_eval_response_ids):
+                #     if len(item) > args.response_length:
+                #         postprocessed_eval_response_ids[i] = item[:args.response_length]
+                #     assert len(postprocessed_eval_response_ids[i]) == args.response_length
+                #     for inner_item in postprocessed_eval_response_ids[i]:
+                #         if not inner_item < config.vocab_size:
+                #             assert inner_item < config.vocab_size, f"{inner_item=}, {tokenizer.vocab_size=}"
+                # postprocessed_eval_response_ids = torch.tensor(postprocessed_eval_response_ids, device=device)
+                
+                # print(f"size (postprocessed_eval_response_ids): {postprocessed_eval_response_ids.size()}")
+                # if args.stop_token_id is not None:  # handle the edge case when stop_token_id exists but is 0
+                #     postprocessed_eval_response = truncate_response(
+                #         args.stop_token_id, tokenizer.pad_token_id, postprocessed_eval_response_ids
+                #     )
+                
+                # print(f"size (postprocessed_eval_response) after truncating: {postprocessed_eval_response.size()}")
+                # # Step 2: run reward model on the truncated responses
+                # postprocessed_eval_query_response = torch.cat((sample_evaluation_prompt_token_ids, postprocessed_eval_response_ids), 1)
+                # sequence_length = first_true_indices(postprocessed_eval_query_response == tokenizer.pad_token_id) - 1
+                # eval_context_length = sample_evaluation_prompt_token_ids.shape[1]
+                # print(f"sample_evaluation_prompt_token_ids.size(): {sample_evaluation_prompt_token_ids.size()}, postprocessed_eval_response.size(): {postprocessed_eval_response.size()}")
+                # print(f"postprocessed_eval_query_response.size(): {postprocessed_eval_query_response.size()}")
+                # print(f"sequence_length: {sequence_length}, eval_context_length: {eval_context_length}")
+                # _, score, _ = get_reward(
+                #     reward_model, postprocessed_eval_query_response, tokenizer.pad_token_id, eval_context_length
+                # )
+
+                # table["PRM score"] = score.tolist()
+
                 #table["response"] = [item.replace(tokenizer.pad_token, "") for item in table["response"]]
                 df = pd.DataFrame(table)
                 print_rich_table(df)
@@ -707,6 +756,7 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
                     wandb.log({"sample_completions": wandb.Table(dataframe=df)})
                 else:
                     print_rich_table(df)
+                df.to_csv(f'{args.output_dir}/sampled_eval/eval_step={training_step}.csv')
                 del table
             except Empty:
                 print("🙈 Evaluation responses not received")
@@ -764,13 +814,15 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
                     g_padded_response_ids = torch.tensor(g_padded_response_ids, device=device)
                     
                     g_vllm_responses[:] = g_padded_response_ids
-                broadcast(g_vllm_responses, 0)
+                broadcast(g_vllm_responses, 0) 
+                # g_vllm_responses.size() == (args.batch_size, args.response_length)
                 local_vllm_responses = g_vllm_responses[
                     accelerator.process_index
                     * queries.shape[0] : (accelerator.process_index + 1)
                     * queries.shape[0]
                 ]
                 query_responses = torch.cat((queries, local_vllm_responses), 1)
+                print(f"queries: {queries.size()}, local_vllm_responses: {local_vllm_responses.size()}, query_responses: {query_responses.size()}")
                 for i in range(0, queries.shape[0], args.local_rollout_forward_batch_size):
                     query = queries[i : i + args.local_rollout_forward_batch_size]
                     query_response = query_responses[i : i + args.local_rollout_forward_batch_size]
@@ -820,6 +872,10 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
                 # NOTE: only apply the stop token filter if the response is long enough
                 # otherwise the model could learn to generate the first token as the stop token
                 contain_stop_token = contain_stop_token & (sequence_lengths >= args.min_response_length)
+                print("========= checking processing procedure =========")
+                print(f"contain_stop_token: {contain_stop_token}\nsize:{contain_stop_token.size()}")
+                print(f"sequence_lengths: {sequence_lengths}\nsize:{sequence_lengths.size()}")
+                print("========= checking processing procedure =========")
                 if args.non_stop_penalty:
                     scores = torch.where(
                         contain_stop_token, scores, torch.full_like(scores, args.penalty_reward_value)
