@@ -3,6 +3,7 @@ from agent_prm.agents.chat_agent import ChatAgent
 from agent_prm.agents.hf_agent import HFAgent
 from agent_prm.agents.hf_spaces_agent import HFSpaceAgent
 from agent_prm.agents.sglang_server_agent import SGLangServerAgent
+from agent_prm.agents.sglang_server_agent_with_critic import SGLangServerAgentWithCritic
 from agent_prm.critics.sglang_server_critic import SGLangServerCritic
 from agent_prm.critics.random_critic import RandomCritic
 from agent_prm.agents.best_of_n_agent import BestofNAgent
@@ -74,6 +75,17 @@ def initialize_agent(
                                  parse_reason_action_fn=parse_reason_action_fn,
                                  temperature=agent_config["temperature"],
                                  batch_limit=agent_config["batch_limit"])
+    elif agent_type == "sglang_server_with_critic":
+        critic = initialize_critic(critic_config=agent_config["critic"], verbose=verbose, debug=debug)
+        return SGLangServerAgentWithCritic(model_id=agent_config["model_id"],
+                                          server_url=agent_config["server_url"],
+                                          prompt_template_file=agent_config["prompt_template_file"],
+                                          critic=critic,
+                                          verbose=verbose,
+                                          debug=debug,
+                                          parse_reason_action_fn=parse_reason_action_fn,
+                                          temperature=agent_config["temperature"],
+                                          batch_limit=agent_config["batch_limit"])
     elif agent_type == "best_of_n":
         generator = initialize_agent(agent_config=agent_config["generator"], parse_reason_action_fn=parse_reason_action_fn, verbose=verbose, debug=debug)        
         critic = initialize_critic(critic_config=agent_config["critic"], verbose=verbose, debug=debug)

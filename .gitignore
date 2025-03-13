@@ -142,3 +142,5 @@ user_session_logs/
 .env
 *.zip
 playground/
+tmp/
+.vscode/
