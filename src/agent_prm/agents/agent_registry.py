@@ -133,6 +133,7 @@ def initialize_critic(
         return SGLangServerCritic(model_id=critic_config["model_id"],
                                   server_url=critic_config["server_url"],
                                   prompt_template_file=critic_config["prompt_template_file"],
+                                  include_reason=critic_config["include_reason"] if "include_reason" in critic_config else True,
                                   verbose=verbose,
                                   debug=debug,
                                   batch_limit=critic_config["batch_limit"])

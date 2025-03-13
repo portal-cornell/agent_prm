@@ -10,6 +10,7 @@ class SGLangServerCritic(Critic):
                  model_id: str, 
                  server_url: str, 
                  prompt_template_file: str, 
+                 include_reason: bool = True,
                  verbose: int = 0, 
                  debug: bool = False, 
                  parse_reason_action_fn: Callable[[str], Tuple[str, str]] = None,
@@ -19,6 +20,7 @@ class SGLangServerCritic(Critic):
         self.verbose = verbose
         self.debug = debug
         self.parse_reason_action_fn = parse_reason_action_fn
+        self.include_reason = include_reason
         with open(prompt_template_file, "r") as file:
             self.prompt_template = Template(file.read())
 
@@ -38,7 +40,7 @@ class SGLangServerCritic(Critic):
 
             output_data = {
                 **query,
-                "mode": "output",  # Overwrite the mode
+                "mode": "output" if self.include_reason else "output_no_reason",  # Overwrite the mode
             }    
             output_prompt = self.prompt_template.render(**output_data)
 
