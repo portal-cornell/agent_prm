@@ -5,7 +5,10 @@ import copy
 import pandas as pd
 from tqdm import tqdm
 from jinja2 import Template
-
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from agent_prm.utils.openai import generate_from_openai_completion
 from agent_prm.utils.parser import parse_json
 from agent_prm.envs.twenty_questions.data import get_default_word_list
@@ -32,6 +35,14 @@ summary_dict = {
 }
 
 all_obj_list = [wv[0] for wv in get_default_word_list("all")]
+
+
+EXPERT_ERROR_TAGS = [
+    "[fixate_summary]",
+    "[lack_reason_about_options]",
+    "[prefer_unlisted_words]",
+    "[prefer_empty_question]",
+]
 
 
 def query_expert_preference(input_data, action, alt_action, prompt_template, num_responses=3):
@@ -358,6 +369,9 @@ def consolidate_expert_pref_scores():
 
     human_pref_0_expert_pref_1_dict = copy.deepcopy(human_pref_1_expert_pref_0_dict)
 
+    human_pref_0_expert_pref_0_count = 0
+    human_pref_1_expert_pref_1_count = 0
+
     for file_name in files_to_test:
         print(f"Processing {file_name}")
         path = os.path.join(save_folder_path, file_name)
@@ -374,13 +388,16 @@ def consolidate_expert_pref_scores():
             action = traj[t]['action']
 
             for i, alt in enumerate(traj[t]['alternatives']):
-                print(f"Processing {file_name} at t={t} alt_action_idx={i}")
-                print(json.dumps(alt, indent=4))
-
                 if alt['human_pref_score'] == 1 and alt['expert_pref_score'] == 0:
                     dict_to_add = human_pref_1_expert_pref_0_dict
                 elif alt['human_pref_score'] == 0 and alt['expert_pref_score'] == 1:
                     dict_to_add = human_pref_0_expert_pref_1_dict
+                elif alt['human_pref_score'] == 0 and alt['expert_pref_score'] == 0:
+                    human_pref_0_expert_pref_0_count += 1
+                    continue
+                elif alt['human_pref_score'] == 1 and alt['expert_pref_score'] == 1:
+                    human_pref_1_expert_pref_1_count += 1
+                    continue
                 else:
                     continue
 
@@ -401,10 +418,115 @@ def consolidate_expert_pref_scores():
 
     df_human_pref_1_expert_pref_0.to_csv(os.path.join(save_folder_path, "human_pref_1_expert_pref_0.csv"), index=False)
     df_human_pref_0_expert_pref_1.to_csv(os.path.join(save_folder_path, "human_pref_0_expert_pref_1.csv"), index=False)
+
+    # Create the confusion matrix (y-axis: human pref, x-axis: expert pref)
+    confusion_matrix = np.zeros((2, 2))
+    confusion_matrix[0, 0] = human_pref_0_expert_pref_0_count
+    confusion_matrix[0, 1] = len(human_pref_0_expert_pref_1_dict['file_name'])  # This will get updated after we manually inspect the points of disagreement
+    confusion_matrix[1, 0] = len(human_pref_1_expert_pref_0_dict['file_name'])  # This will get updated after we manually inspect the points of disagreement
+    confusion_matrix[1, 1] = human_pref_1_expert_pref_1_count
+
+    # Save the confusion matrix as a csv and a visualization
+    df_confusion_matrix = pd.DataFrame(confusion_matrix, index=['human_pref_0', 'human_pref_1'], columns=['expert_pref_0', 'expert_pref_1'])
+    df_confusion_matrix.to_csv(os.path.join(save_folder_path, "confusion_matrix.csv"), index=False)
+
+    # Plot the confusion matrix
+    plot_confusion_matrix(df_confusion_matrix)
+
+def plot_confusion_matrix(df_confusion_matrix, file_name="confusion_matrix.png", is_percentage=False):
+    # Plot the confusion matrix
+    plt.figure(figsize=(10, 10))
+    plt.imshow(df_confusion_matrix, cmap='Blues', interpolation='nearest')
+    # Add text to the cells
+    for i in range(2):
+        for j in range(2):
+            plt.text(j, i, f"{df_confusion_matrix.iloc[i, j]:.2f}" if not is_percentage else f"{df_confusion_matrix.iloc[i, j]:.2f}%", ha='center', va='center', color='black', fontsize=20)
+    plt.colorbar()
+    plt.xticks(ticks=[0, 1], labels=['expert_pref_0', 'expert_pref_1'])
+    plt.yticks(ticks=[0, 1], labels=['human_pref_0', 'human_pref_1'])
+    plt.xlabel('Expert Preference')
+    plt.ylabel('Human Preference')
+    plt.title(file_name)
+    plt.savefig(os.path.join(save_folder_path, file_name))
+
+
+def gen_consolidated_expert_pref_scores():
+    """
+    Update the confusion matrix based on the ad-hoc inspection comments
+    """
+    df_confusion_matrix = pd.read_csv(os.path.join(save_folder_path, "confusion_matrix.csv"))
+    df_human_pref_1_expert_pref_0 = pd.read_csv(os.path.join(save_folder_path, "human_pref_1_expert_pref_0.csv"))
+    df_human_pref_0_expert_pref_1 = pd.read_csv(os.path.join(save_folder_path, "human_pref_0_expert_pref_1.csv"))
+
+    # Count the number of points that doesn't have the label [human_mislabel] in the inspection_comments column
+    df_human_pref_1_expert_pref_0['human_mislabel'] = df_human_pref_1_expert_pref_0['inspection_comments'].apply(lambda x: 1 if '[human_mislabel]' in x or '[either]' in x else 0)
+    df_human_pref_0_expert_pref_1['human_mislabel'] = df_human_pref_0_expert_pref_1['inspection_comments'].apply(lambda x: 1 if '[human_mislabel]' in x or '[either]' in x else 0)
+
+    # Update the confusion matrix
+    df_confusion_matrix.iloc[0, 1] = df_human_pref_0_expert_pref_1['human_mislabel'].value_counts()[0]
+    df_confusion_matrix.iloc[1, 0] = df_human_pref_1_expert_pref_0['human_mislabel'].value_counts()[0]
+
+    df_confusion_matrix.to_csv(os.path.join(save_folder_path, "confusion_matrix.csv"), index=False)
+    plot_confusion_matrix(df_confusion_matrix)
+
+    # Also plot the confusion matrix by percentage
+    total_count = df_confusion_matrix.sum().sum()
+    df_confusion_matrix_percentage = df_confusion_matrix.div(total_count).mul(100)
+    plot_confusion_matrix(df_confusion_matrix_percentage, file_name="confusion_matrix_percentage.png", is_percentage=True)
+
+
+def count_expert_error_tags():
+    """
+    Count the number of times each expert error tag appears in the inspection_comments column
+    """
+    df_human_pref_1_expert_pref_0 = pd.read_csv(os.path.join(save_folder_path, "human_pref_1_expert_pref_0.csv"))
+    df_human_pref_0_expert_pref_1 = pd.read_csv(os.path.join(save_folder_path, "human_pref_0_expert_pref_1.csv"))
+
+    results_dict = {
+        "human_pref_1_expert_pref_0": {},
+        "human_pref_0_expert_pref_1": {},
+        "overall": {}
+    }
+    for tag in EXPERT_ERROR_TAGS:
+        results_dict["human_pref_1_expert_pref_0"][tag] = df_human_pref_1_expert_pref_0['inspection_comments'].apply(lambda x: 1 if tag in x else 0).sum()
+        results_dict["human_pref_0_expert_pref_1"][tag] = df_human_pref_0_expert_pref_1['inspection_comments'].apply(lambda x: 1 if tag in x else 0).sum()
+        results_dict["overall"][tag] = results_dict["human_pref_1_expert_pref_0"][tag] + results_dict["human_pref_0_expert_pref_1"][tag]
     
+    total_count = sum(results_dict["overall"].values())
+
+    # Normalize the results by the total count
+    for key, value in results_dict.items():
+        for tag, count in value.items():
+            value[tag] = count / total_count * 100
+    
+    colors = matplotlib.color_sequences['Dark2']
+
+    # Create a bar plot of the results (with 3 subplots: human_pref_1_expert_pref_0, human_pref_0_expert_pref_1, overall)
+    fig, axs = plt.subplots(1, 3, figsize=(30, 10))
+    for i, (key, value) in enumerate(results_dict.items()):
+        axs[i].bar(value.keys(), value.values(), color=colors)
+        # Add the percentage on top of the bar
+        for j, (tag, count) in enumerate(value.items()):
+            axs[i].text(j, count, f"{count:.2f}%", ha='center', va='bottom', fontsize=18)
+        axs[i].set_title(f"{key} (n={sum(results_dict[key].values()) / 100 * total_count:.2f})")
+        axs[i].set_xlabel('Failure Mode')
+        axs[i].set_ylabel('% (of all disagreements)')
+        axs[i].set_ylim(0, 100)
+
+    # Add a legend to the plot
+    # Create legend patches matching bar colors
+    patches = [mpatches.Patch(color=colors[i], label=tag) for i, tag in enumerate(EXPERT_ERROR_TAGS)]
+
+    # Add a single legend for all plots
+    fig.legend(handles=patches, loc='upper center', ncol=len(EXPERT_ERROR_TAGS), fontsize=20)
+
+    plt.savefig(os.path.join(save_folder_path, "expert_error_tags.png"))
+
 if __name__ == "__main__":
     # get_input_to_generate_summary()
     # main()
     # human_main()
     # expert_main("pref")
     consolidate_expert_pref_scores()
+    gen_consolidated_expert_pref_scores()
+    # count_expert_error_tags()
