@@ -504,7 +504,7 @@ class BinaryPromptDatasetProcessor(DatasetProcessor):
     #     with open(prompt_template_file, "r") as file:
     #         self.prompt_template = Template(file.read())
 
-    def tokenize(self, dataset: Union[Dataset, DatasetDict], domain: str):
+    def tokenize(self, dataset: Union[Dataset, DatasetDict], domain: str, include_reason: bool = True):
         '''
         Converts the prompt and agent rollout to a chat template and extracts label 
         '''
@@ -536,7 +536,7 @@ class BinaryPromptDatasetProcessor(DatasetProcessor):
 
             row[PROMPT_KEY] = prompt_template.render(**input_data)
 
-            output_data = {'mode': 'output', 'reason': row['reason_action']['reason'], 'action': row['reason_action']['action']}
+            output_data = {'mode': 'output' if include_reason else 'output_no_reason', 'reason': row['reason_action']['reason'] if include_reason else "", 'action': row['reason_action']['action']}
             row[COMPLETION_KEY] = prompt_template.render(**output_data)
 
             messages = [{"role": "user", "content": row[PROMPT_KEY]},

@@ -1,17 +1,18 @@
 domain: twenty_questions # alfworld, twenty_questions
 rolloutdirs: 
-  - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/3B-PSFT-all-data-3epoches_250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/
-iter: 1
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all  # iter1
+  - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi1-60pct_Q0-80pct-lr=5e-6_250312_091827_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_pen=-10_Q0-80pct-lr=5e-6 # iter2
+output_folder: iter1
 
 # Either one is used
 train_split: null
 split_name: null
 
-balance_data: true # Whether to only use 50% successful trajectories and 50% failed trajectories
+balance_data: true # Whether to enforce that 50% of data has Q-estimate >= 0.5 and 50% has Q-estimate < 0.5
 
 cpu_count: null
 max_files_per_dir: null 
-outputdir: data/${domain}/prm/iter${iter}
+outputdir: data/${domain}/prm/${output_folder}
 gamma: 0.95
 seed: 42
 

@@ -44,9 +44,9 @@ accelerate launch \
     --data_dirs "${DATA_DIRS}" \
     --output_dir ${SAVE_DIR} \
     --model_name_or_path ${MODEL} \
-    --per_device_train_batch_size 2 \
-    --per_device_eval_batch_size 2 \
-    --gradient_accumulation_steps 8 \
+    --per_device_train_batch_size 4 \
+    --per_device_eval_batch_size 4 \
+    --gradient_accumulation_steps 16 \
     --num_train_epochs 3 \
     --gradient_checkpointing True \
     --max_seq_length 4000 \
@@ -57,8 +57,8 @@ accelerate launch \
     --evaluation_strategy steps \
     --eval_steps 20 \
     --save_strategy steps \
-    --save_steps 160 \
-    --save_total_limit 3 \
+    --save_steps 30 \
+    --save_total_limit 5 \
     --load_best_model_at_end False \
     --metric_for_best_model eval_loss \
     --use_peft $USE_PEFT \

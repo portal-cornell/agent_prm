@@ -296,7 +296,7 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
         
     dataset_processor = BinaryPromptDatasetProcessor(tokenizer=tokenizer, config=dataset_config)
     with accelerator.main_process_first():
-        dataset = dataset_processor.tokenize(dataset, domain=args.domain_name)
+        dataset = dataset_processor.tokenize(dataset, domain=args.domain_name, include_reason="no-reason" not in args.dataset_name)
         dataset = dataset_processor.filter(dataset)
 
     # some more runtime logging

@@ -1,13 +1,13 @@
 #!/bin/bash
 
 DOMAIN=twenty_questions # alfworld, twenty_questions
-DATA_DIR=iter1
+DATA_DIR=iter1_no-reason
 
-MODEL="/share/portal/hw575/agent_prm/save/sft/250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/merged_checkpoint-480"
+MODEL="/share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
 
 TRAIN_SPLITS=train
 TEST_SPLITS=val
-TRAIN_EPOCHS=2
+TRAIN_EPOCHS=1
 
 current_date=$(date +"%y%m%d_%H%M%S")
 
@@ -41,6 +41,9 @@ EVAL_DIR=save/rm/${current_date}_${DATA_DIR}_${MODEL//\//-}_peft=${USE_PEFT}${NO
 echo "Save directory: $SAVE_DIR"
 echo "Eval directory: $EVAL_DIR"
 
+
+# Default learning rate was 5e-5
+
 accelerate launch  --num-processes 2 \
     --config_file configs/ds_configs/deepspeed_zero3.yaml scripts/train/rm.py \
     --dataset_train_splits ${TRAIN_SPLITS} \
@@ -48,7 +51,7 @@ accelerate launch  --num-processes 2 \
     --model_name_or_path ${MODEL} \
     --dataset_name ${DATASET} \
     --domain_name ${DOMAIN} \
-    --learning_rate 5e-5 \
+    --learning_rate 5e-6 \
     --use_peft ${USE_PEFT} \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 4 \
@@ -57,7 +60,7 @@ accelerate launch  --num-processes 2 \
     --max_prompt_token_length 2048 \
     --num_train_epochs ${TRAIN_EPOCHS} \
     --num_evals 20 \
-    --save_freq 500 \
+    --save_freq 250 \
     --output_dir ${SAVE_DIR} \
     --eval_dir ${EVAL_DIR} \
     --gradient_checkpointing \

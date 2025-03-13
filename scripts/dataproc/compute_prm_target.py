@@ -12,12 +12,13 @@ from multiprocessing import Pool, cpu_count
 from functools import partial
 from omegaconf import DictConfig, OmegaConf
 import hydra
+from typing import List, Dict
 
 """================================================================================
     Alfworld processing functions
 ================================================================================"""
 
-def alfworld_process_file(file_path, gamma):
+def alfworld_process_file(file_path, gamma, exclude_reason=False):
     try:
         with open(file_path, 'r') as file:
             data = json.load(file)
@@ -29,7 +30,7 @@ def alfworld_process_file(file_path, gamma):
         trajectory = data['trajectory']
         outcome_reward = 2 * trajectory[-1]['score'] - 1  # transform from [-1, 1]
         for t in range(len(trajectory) - 1, -1, -1):
-            state, reason_action = alfworld_extract_state_reason_action(trajectory, data['task'], t)
+            state, reason_action = alfworld_extract_state_reason_action(trajectory, data['task'], t, exclude_reason=exclude_reason)
             state_hash = sha256(json.dumps({'state': state, 'action': reason_action['action']}, sort_keys=True).encode()).hexdigest()
             update_Q(state, reason_action, state_hash, Q_target, outcome_reward, gamma, t)
         return Q_target
@@ -37,7 +38,7 @@ def alfworld_process_file(file_path, gamma):
         print(f"Error processing {file_path}: {e}")
         return {}
     
-def alfworld_extract_state_reason_action(trajectory, task, t):
+def alfworld_extract_state_reason_action(trajectory, task, t, exclude_reason=False):
     history = []
     for i in range(t):
         step = trajectory[i]
@@ -52,10 +53,16 @@ def alfworld_extract_state_reason_action(trajectory, task, t):
         'history': history,
         'task': task
     }
-    reason_action = {
-        'reason': trajectory[t]['reason'],
-        'action': trajectory[t]['action'],
-    }
+
+    if exclude_reason:
+        reason_action = {
+            'action': trajectory[t]['action'],
+        }
+    else:
+        reason_action = {
+            'reason': trajectory[t]['reason'],
+            'action': trajectory[t]['action'],
+        }
 
     return state, reason_action
 
@@ -69,7 +76,7 @@ def alfworld_success_file_condition(file_name):
 """================================================================================
     20 Questions processing functions
 ================================================================================"""
-def twenty_questions_process_file(file_path, gamma):
+def twenty_questions_process_file(file_path, gamma, exclude_reason=False):
     try:
         with open(file_path, 'r') as file:
             trajectory = json.load(file)
@@ -77,7 +84,7 @@ def twenty_questions_process_file(file_path, gamma):
         Q_target = {}
         outcome_reward = twenty_questions_normalize_reward(trajectory[-1]['reward'])  # transform from [-1, 1]
         for t in range(len(trajectory) - 1, -1, -1):
-            state, reason_action = twenty_questions_extract_state_reason_action(trajectory, t)
+            state, reason_action = twenty_questions_extract_state_reason_action(trajectory, t, exclude_reason=exclude_reason)
             state_hash = sha256(json.dumps({'state': state, 'action': reason_action['action']}, sort_keys=True).encode()).hexdigest()
             update_Q(state, reason_action, state_hash, Q_target, outcome_reward, gamma, k=t, T=len(trajectory))
         return Q_target
@@ -85,7 +92,7 @@ def twenty_questions_process_file(file_path, gamma):
         print(f"Error processing {file_path}: {e}")
         return {}
 
-def twenty_questions_extract_state_reason_action(trajectory, t):
+def twenty_questions_extract_state_reason_action(trajectory, t, exclude_reason=False):
     history = []
     for i in range(t-1):
         step = trajectory[i]
@@ -98,10 +105,15 @@ def twenty_questions_extract_state_reason_action(trajectory, t):
         'history': history,
     }
 
-    reason_action = {
-        'reason': trajectory[t]['reason'],
-        'action': trajectory[t]['action'],
-    }
+    if exclude_reason:
+        reason_action = {
+            'action': trajectory[t]['action'],
+        }
+    else:
+        reason_action = {
+            'reason': trajectory[t]['reason'],
+            'action': trajectory[t]['action'],
+        }
 
     return state, reason_action
     
@@ -124,12 +136,21 @@ def twenty_questions_success_file_condition(file_name):
     General functions shared by all tasks
 ================================================================================"""
 
-def print_qestimate_histogram(Q_target, bins=10):
-    qestimates = [entry['qestimate'] for entry in Q_target.values()]
-    counts, bin_edges = np.histogram(qestimates, bins=bins)
-    
+def print_histogram(val_list, name, bins):
+    counts, bin_edges = np.histogram(val_list, bins=bins)
+
+    print(f"========== {name} histogram ==========")
     for i in range(len(counts)):
         print(f"{bin_edges[i]:.2f} - {bin_edges[i+1]:.2f}: {counts[i]}")
+    print("=====================================")
+
+def print_qestimate_histogram(Q_target, bins=10):
+    qestimates = [entry['qestimate'] for entry in Q_target.values()]
+    print_histogram(qestimates, "Q-estimate", bins)
+
+def print_count_histogram(Q_target, bins):
+    counts = [entry['count'] for entry in Q_target.values()]
+    print_histogram(counts, "Count", bins)
 
 def update_Q(state, reason_action, state_hash, Q_target, outcome_reward, gamma, k, T):
     """
@@ -189,8 +210,83 @@ def merge_results(results):
                 merged_Q_target[key]['count'] += value['count']
     return merged_Q_target
 
+def subsample_data(data: List[Dict], count: int, bins: int = 5, low_or_high: str = "low"):
+    """
+    Parameters:
+        data: List of dictionaries, each containing 'qestimate' and 'state' and 'reason_action'
+        count: The number of datapoints to subsample to
+        bins: The number of bins to use for the histogram
+    """
+    if len(data) > count:
+        q_val_list = [entry['qestimate'] for entry in data]
+
+        num_datapoints_to_reduce = len(q_val_list) - count
+        print(f"num_datapoints_to_reduce: {num_datapoints_to_reduce}")
+
+        # list of bins (0, 1/bins), (1/bins, 2/bins), ..., (1-1/bins, 1)
+        if low_or_high == "low":
+            bins_list = np.linspace(0, 0.5, bins+1)
+        else:
+            bins_list = np.linspace(0.5, 1, bins+1)
+        
+        # Find the bin that has the highest count of datapoints
+        counts, bin_edges = np.histogram(q_val_list, bins=bins_list)
+        print("========== Initial histogram ==========")
+        print(f"counts: {counts}")
+        print(f"bin_edges: {bin_edges}")
+        print("==========================================")
+
+        # Subsample the data in the bin with the highest count of datapoints until we have count datapoints
+        new_data = []
+        data_to_process = data
+
+        total_removal_count = 0
+
+        while total_removal_count < num_datapoints_to_reduce:
+            sorted_indices = np.argsort(-counts)  # Sort in descending order
+            highest_bin_index = sorted_indices[0]
+            third_highest_bin_index = sorted_indices[1]  # Assume there's always at least 3 bins
+
+            # Calculate the number of datapoints to remove from the highest bin
+            #   Remove datapoints from the highest bin until the second highest bin becomes the new highest bin
+            removal_count = min(counts[highest_bin_index]-counts[third_highest_bin_index]+1, num_datapoints_to_reduce - total_removal_count)
+            
+            if (num_datapoints_to_reduce - total_removal_count)/removal_count > 10:
+                # Manually increase the removal count to be more aggressive
+                #   This is to ensure that we don't remove too many datapoints from the highest bin
+                removal_count *= int((num_datapoints_to_reduce - total_removal_count)/removal_count/10)
+
+            bin_to_remove_min = bin_edges[highest_bin_index]
+            bin_to_remove_max = bin_edges[highest_bin_index + 1]
+            
+            count = 0
+            new_data = []
+            for entry in data_to_process:
+                if entry['qestimate'] >= bin_to_remove_min and entry['qestimate'] < bin_to_remove_max and count < removal_count:
+                    # Removing the datapoint
+                    count += 1
+                else:
+                    new_data.append(entry)
+
+            total_removal_count += count
+            
+            # Recalculate the histogram
+            new_q_val_list = [entry['qestimate'] for entry in new_data]
+            counts, bin_edges = np.histogram(new_q_val_list, bins=bins_list)
+            print(f"================ Removed {count} datapoints from bin {bin_to_remove_min} to {bin_to_remove_max}, {num_datapoints_to_reduce - total_removal_count} remaining =================")
+            print(f"counts: {counts}")
+            
+            data_to_process = new_data
+        
+        print_histogram([entry['qestimate'] for entry in new_data], f"Final Q-estimate for {low_or_high} data (len={len(new_data)})", bins_list)
+
+        return new_data
+    else:
+        return data
+
+    
 # Main function using multiprocessing
-def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_split=None, split_name=None):
+def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_split=None, split_name=None, balance_data=False):
     if domain == "alfworld":
         process_file = alfworld_process_file
     elif domain == "twenty_questions":
@@ -223,17 +319,38 @@ def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_sp
         Q_target[key]['qestimate'] = 0.5 * (Q_target[key]['qestimate'] + 1)
 
     print_qestimate_histogram(Q_target)
+    print_count_histogram(Q_target, bins=np.array(list(range(1, 6)) + list(range(6, 10, 2)) +list(range(10, 100, 10)) + list(range(100, max([x['count'] for x in Q_target.values()]), 100))))
 
     keys = list(Q_target.keys())
     random.shuffle(keys)
 
     if split_name is not None:
-        data_to_save = [
+        original_data_to_save = [
             {'state': Q_target[k]['state'], 
             'reason_action': Q_target[k]['reason_action'], 
             'qestimate': Q_target[k]['qestimate']}
             for k in keys
         ]
+
+        if balance_data:
+            # Find the data that has Q-estimate >= 0.5
+            low_data = [x for x in original_data_to_save if x['qestimate'] < 0.5]
+            high_data = [x for x in original_data_to_save if x['qestimate'] >= 0.5]
+
+            count = min(len(low_data), len(high_data))
+
+            # Subsample the data
+            low_data_subsampled = subsample_data(low_data, count, low_or_high="low")
+            high_data_subsampled = subsample_data(high_data, count, low_or_high="high")
+
+            print(f"Reducing low_data from {len(low_data)} to {count}")
+            print(f"Reducing high_data from {len(high_data)} to {count}")
+
+            input("Press any key to continue...")
+
+            data_to_save = low_data_subsampled + high_data_subsampled
+        else:
+            data_to_save = original_data_to_save
 
         data_table = pa.Table.from_pylist(data_to_save)
         
@@ -245,7 +362,22 @@ def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_sp
         
         if split_name == "train":
             # Subsample the data to strictly having 10k datapoints
-            pq.write_table(data_table.slice(0, 10000), os.path.join(outputdir, f"{split_name}_10k.parquet"))
+            if balance_data:
+                count = 10000/2
+                
+                low_data_subsampled = subsample_data(low_data, count, low_or_high="low")
+                high_data_subsampled = subsample_data(high_data, count, low_or_high="high")
+
+                print(f"Reducing low_data from {len(low_data)} to {count}")
+                print(f"Reducing high_data from {len(high_data)} to {count}")
+
+                data_to_save = low_data_subsampled + high_data_subsampled
+
+                data_table_10k = pa.Table.from_pylist(data_to_save)
+            else:
+                data_table_10k = data_table.slice(0, 10000)
+
+            pq.write_table(data_table_10k, os.path.join(outputdir, f"{split_name}_10k.parquet"))
     else:
         # Split into train/val and save
         split_idx = int(len(keys) * train_split)
@@ -280,13 +412,11 @@ def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_sp
         train_table_10k = train_table.slice(0, 10000)
         pq.write_table(train_table_10k, os.path.join(outputdir, 'train_10k.parquet'))
 
-def compute_file_list(rolloutdirs, domain, balance_data=False, max_files_per_dir=None):
+def compute_file_list(rolloutdirs, domain, max_files_per_dir=None):
     if domain == "alfworld":
         skip_condition = alfworld_skip_file_condition
-        success_condition = alfworld_success_file_condition
     elif domain == "twenty_questions":
         skip_condition = twenty_questions_skip_file_condition
-        success_condition = twenty_questions_success_file_condition
     else:
         raise ValueError(f"Invalid domain: {domain}")
 
@@ -301,19 +431,6 @@ def compute_file_list(rolloutdirs, domain, balance_data=False, max_files_per_dir
             if (max_files_per_dir is not None) and (len(files_per_dir) >= max_files_per_dir):
                 break
         files = files + files_per_dir
-
-    if balance_data:
-        # Shuffle the files
-        random.shuffle(files)
-
-        # Ensure that there are 50% successful and 50% failed trajectories
-        successful_files = [file for file in files if success_condition(file)]
-        failed_files = [file for file in files if not success_condition(file)]
-        
-        print(f"Number of successful files: {len(successful_files)}, Number of failed files: {len(failed_files)}")
-        num_files = min(len(successful_files), len(failed_files))
-
-        files = successful_files[:num_files] + failed_files[:num_files]
 
     return files
         
@@ -331,8 +448,8 @@ def main(cfg: DictConfig):
     else:
         rolloutdirs = cfg.rolloutdirs
 
-    files = compute_file_list(rolloutdirs, cfg.domain, cfg.balance_data, cfg.max_files_per_dir)
-    compute_prm_target(files, cfg.domain, cfg.outputdir, cfg.gamma, cfg.cpu_count, cfg.train_split, cfg.split_name)
+    files = compute_file_list(rolloutdirs, cfg.domain, cfg.max_files_per_dir)
+    compute_prm_target(files, cfg.domain, cfg.outputdir, cfg.gamma, cfg.cpu_count, cfg.train_split, cfg.split_name, cfg.balance_data)
 
 if __name__ == "__main__":
     main()
