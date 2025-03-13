@@ -3,6 +3,7 @@ import json
 import re
 import os
 import math
+import pandas as pd
 import numpy as np
 from matplotlib import color_sequences
 import matplotlib.pyplot as plt
@@ -11,7 +12,12 @@ import argparse
 from agent_prm.utils.general_utils import load_json
 
 total_epochs = 1
-baselines = ["gpt-4o", "base-3B", "pi0-lora", "pi0", "pi0_Q0*"]
+baselines = ["gpt-4o", "base-3B", "pi0"]
+baseline_to_name_in_csv = {
+    "gpt-4o": "gpt4o",
+    "base-3B": "3B",
+    "pi0": "pi0-all-data-3epoches",
+}
 
 folder_to_regex = {
     "sft-pi0": [r'(pi0-(\d+)pct)-all-data-3epoches', r'pi0-all-data-3epoches'],
@@ -30,6 +36,7 @@ folder_to_plot_models = {
 }
 
 eval_dir = "data/twenty_questions/eval/iter0"
+CSV_PATH = "data/twenty_questions/eval/online_eval_table.csv"
 ROLLOUT_PER_TASK_DICT = {
     "train": 1,
     "val": 3,
@@ -218,108 +225,21 @@ if __name__ == "__main__":
         """
 
         # Get the models to plot
-        models_to_plot = {
-            "gpt-4o": {
-                "train": {
-                    "mean_reward": -15.272727272727272,
-                    "se_reward": 0.5212681756006831,
-                    "mean_success_rate": 0.5181818181818182,
-                    "se_success_rate": 0.0476415996113025
-                },
-                "val": {
-                    "mean_reward": -15.857142857142858,
-                    "se_reward": 0.8123948687310406,
-                    "mean_success_rate": 0.5714285714285714,
-                    "se_success_rate": 0.0935219529582824
-                },
-                "test": {
-                    "mean_reward": -14.4,
-                    "se_reward": 1.1562871615649808,
-                    "mean_success_rate": 0.6,
-                    "se_success_rate": 0.1095445115010332
+        models_to_plot = {}
+
+        # Load the current CSV for baselines
+        df = pd.read_csv(CSV_PATH)
+
+        for baseline_plot_name in baselines:
+            models_to_plot[baseline_plot_name] = {}
+            for data_type in ["train", "val", "test"]:
+                baseline_csv_name = baseline_to_name_in_csv[baseline_plot_name]
+                models_to_plot[baseline_plot_name][data_type] = {
+                    "mean_reward": df[df["model"] == baseline_csv_name][f"{data_type} (avg reward)"].values[0],
+                    "se_reward": df[df["model"] == baseline_csv_name][f"{data_type} (se reward)"].values[0],
+                    "mean_success_rate": df[df["model"] == baseline_csv_name][f"{data_type} (avg success rate)"].values[0],
+                    "se_success_rate": df[df["model"] == baseline_csv_name][f"{data_type} (se success rate)"].values[0]
                 }
-            },
-            "base-3B": {
-                "train": {
-                    "mean_reward": -19.79090909090909,
-                    "se_reward": 0.1029285674995681,
-                    "mean_success_rate": 0.1181818181818181,
-                    "se_success_rate": 0.0307799929164528
-                },
-                "val": {
-                    "mean_reward": -19.75,
-                    "se_reward": 0.0818317088384971,
-                    "mean_success_rate": 0.25,
-                    "se_success_rate": 0.0818317088384971
-                },
-                "test": {
-                    "mean_reward": -19.85,
-                    "se_reward": 0.0798435971133565,
-                    "mean_success_rate": 0.15,
-                    "se_success_rate": 0.0798435971133565
-                }
-            },
-            "pi0-lora": {
-                "train": {
-                    "mean_reward": -16.681818181818183,
-                    "se_reward": 0.4697338473037469,
-                    "mean_success_rate": 0.3909090909090909,
-                    "se_success_rate":0.0465245950159423
-                },
-                "val": {
-                    "mean_reward": -16.571428571428573,
-                    "se_reward": 0.8841411309053551,
-                    "mean_success_rate": 0.4285714285714285,
-                    "se_success_rate": 0.0935219529582824
-                },
-                "test": {
-                    "mean_reward": -16.45,
-                    "se_reward": 0.9911483239152452,
-                    "mean_success_rate": 0.45,
-                    "se_success_rate": 0.1112429773064349
-                }
-            },
-            "pi0": {
-                "train": {
-                    "mean_reward": -14.627272727272729,
-                    "se_reward": 0.5161617868778234,
-                    "mean_success_rate": 0.6181818181818182,
-                    "se_success_rate":0.0463222956185777
-                },
-                "val": {
-                    "mean_reward": -14.535714285714286,
-                    "se_reward": 1.0406068466666198,
-                    "mean_success_rate": 0.5714285714285714,
-                    "se_success_rate": 0.0935219529582824
-                },
-                "test": {
-                    "mean_reward": -16.7,
-                    "se_reward": 1.0933892262136111,
-                    "mean_success_rate": 0.4,
-                    "se_success_rate": 0.1095445115010332
-                }
-            },
-            "pi0_Q0*": {
-                "train": {
-                    "mean_reward": -14.418181818181818,
-                    "se_reward": 0.5583893333807142,
-                    "mean_success_rate": 0.5636363636363636,
-                    "se_success_rate": 0.0472854401214908
-                },
-                "val": {
-                    "mean_reward": -13.357142857142858,
-                    "se_reward": 1.0799828580866146,
-                    "mean_success_rate": 0.6428571428571429,
-                    "se_success_rate": 0.0905522415780553
-                },
-                "test": {
-                    "mean_reward": -14.0,
-                    "se_reward": 1.1423659658795862,
-                    "mean_success_rate": 0.7,
-                    "se_success_rate": 0.1024695076595959
-                }
-            }
-        }
 
         for agent_config in cfg["agents"]:
             for regex in regex_to_use:

@@ -302,7 +302,10 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
             "total (avg reward)": [],
             "total (se reward)": [],
             "total (avg success rate)": [],
-            "total (se success rate)": []
+            "total (se success rate)": [],
+            "train (enough rollouts)": [],
+            "val (enough rollouts)": [],
+            "test (enough rollouts)": []
         }
     else:
         table = pd.read_csv(table_fp)
@@ -342,6 +345,12 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
             # Get all the rollouts that are used to consolidate the results
             json_files = [f for f in os.listdir(os.path.join(agent_rollout_dir, data_type)) if is_valid_rollout(f, data_type)]
 
+            if not any([f.endswith(f"{rollout_per_task_dict[data_type]-1}.json") for f in json_files]):
+                print(f"WARNING: {agent_name} does not have all the rollouts for {data_type}, which needs {rollout_per_task_dict[data_type]} rollouts per task")
+                has_enough_rollouts = False
+            else:
+                has_enough_rollouts = True
+
             # Compute rewards efficiently
             all_rewards = [sum(t["reward"] for t in load_json(os.path.join(agent_rollout_dir, data_type, f))) for f in json_files]
             mean_reward = np.mean(all_rewards)
@@ -357,12 +366,14 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
                 table_dict[f"{data_type} (se reward)"][table_dict["model"].index(agent_name)] = se_reward
                 table_dict[f"{data_type} (avg success rate)"][table_dict["model"].index(agent_name)] = mean_success_rate
                 table_dict[f"{data_type} (se success rate)"][table_dict["model"].index(agent_name)] = se_success_rate
+                table_dict[f"{data_type} (enough rollouts)"][table_dict["model"].index(agent_name)] = has_enough_rollouts
             else:
                 table_dict[f"{data_type} (avg reward)"].append(mean_reward)
                 table_dict[f"{data_type} (se reward)"].append(se_reward)
                 table_dict[f"{data_type} (avg success rate)"].append(mean_success_rate)
                 table_dict[f"{data_type} (se success rate)"].append(se_success_rate)
-
+                table_dict[f"{data_type} (enough rollouts)"].append(has_enough_rollouts)
+            
             total_rewards.append(mean_reward)
             total_success_rates.append(mean_success_rate)
 
@@ -378,21 +389,23 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
 
 @hydra.main(version_base=None, config_path="../../configs/eval_config", config_name="twenty_questions.yaml")
 def main(cfg: DictConfig):
+
     elogger.set_activate(cfg.elogger)
 
     dstdir = os.path.join(cfg.logdir, f"iter{cfg.iter}")
     os.makedirs(dstdir, exist_ok=True)
 
-    if cfg.mode == "consolidate_online" and cfg.consolidate_online.use_existing_table:
-        # Save a copy of the existing table in the current folder
-        table = pd.read_csv(os.path.join(cfg.logdir, f"iter{cfg.iter}", "online_eval_table.csv"))
-
-        # Save a copy of the existing table in the current folder
+    if cfg.mode == "consolidate_online":
+        # The table for this hydra run is saved in the hydra folder
         hydra_folder_path = get_output_path()
         table_fp = os.path.join(hydra_folder_path, f"online_eval_table{'_' + cfg.consolidate_online.table_notes if cfg.consolidate_online.table_notes else ''}.csv")
 
-        # Save a copy of the existing table in the current folder
-        table.to_csv(table_fp, index=False)
+        if cfg.consolidate_online.use_existing_table:
+            # Save a copy of the existing table in the current folder
+            table = pd.read_csv(os.path.join(cfg.logdir, "online_eval_table.csv"))
+
+            # Save a copy of the existing table in the current folder
+            table.to_csv(table_fp, index=False)
 
     # Load the model
     for agent_i in tqdm(range(len(cfg.agents))):
@@ -421,7 +434,7 @@ def main(cfg: DictConfig):
             consolidate_online_eval(cfg, table_fp, agent_rollout_dir=logdir, agent_name=agent_config.log_name, rollout_per_task_dict=cfg.consolidate_online.rollout_per_task_dict, use_existing_table=cfg.consolidate_online.use_existing_table)
 
             # Check if the file or symlink exists, then remove it
-            dst_link_fp = os.path.join(dstdir, "online_eval_table.csv")
+            dst_link_fp = os.path.join(cfg.logdir, "online_eval_table.csv")
             if os.path.exists(dst_link_fp) or os.path.islink(dst_link_fp):
                 os.remove(dst_link_fp)
 
