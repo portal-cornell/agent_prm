@@ -6,8 +6,12 @@ TRAIN_SPLITS=train_10k
 TEST_SPLITS=val
 TRAIN_EPOCHS=1
 
-POLICY_MODEL="/share/portal/hw575/agent_prm/save/sft/250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/merged_checkpoint-480"
-REWARD_MODEL="/share/portal/hw575/agent_prm/save/rm/250303_235634_iter1_-share-portal-hw575-agent_prm-save-sft-250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all-merged_checkpoint-480_peft=false_10k-data/checkpoint-1250"
+POLICY_MODEL="/share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+
+# 5e-5, best is 60pct
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/rm/250311_155205_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_peft=false_lr=5e-5/model/checkpoint-750"
+# 5e-6, best is 80pct
+REWARD_MODEL="/share/portal/hw575/agent_prm/save/rm/250311_155325_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_peft=false_lr=5e-6/model/checkpoint-1000"
 
 current_date=$(date +"%y%m%d_%H%M%S")
 
@@ -45,15 +49,17 @@ accelerate launch  --num-processes 5 \
     --model_name_or_path ${POLICY_MODEL} \
     --reward_model_path ${REWARD_MODEL} \
     --non_stop_penalty \
+    --penalty_reward_value -10.0 \
     --stop_token eos \
     --learning_rate 8e-7 \
-    --total_episodes 50000 \
+    --total_episodes 10000 \
     --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 2 \
-    --gradient_accumulation_steps 6 \
+    --gradient_accumulation_steps 8 \
     --gradient_checkpointing True \
     --max_prompt_token_length 2000 \
     --response_length 256 \
+    --min_response_length 1 \
     --num_train_epochs ${TRAIN_EPOCHS} \
     --beta 0.03 \
     --temperature 0.7 \
@@ -61,7 +67,7 @@ accelerate launch  --num-processes 5 \
     --sanity_check_max_samples 128 \
     --output_dir ${SAVE_DIR} \
     --checkpoint_output_dir tmp/chkpts/ \
-    --save_freq 50 \
+    --save_freq 25 \
     --vllm_device cuda:5 \
     --vllm_gpu_memory_utilization 0.9 \
     --hf_metadata_dataset "" \
