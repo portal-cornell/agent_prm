@@ -209,6 +209,11 @@ def get_default_word_list(data_split: str = "all") -> List[WordVariants]:
 
 
 def is_done(word_var: WordVariants, question: str):
+    # For example, some questions are like
+    # "Is it used for painting?", where painting is the object
+    # "Is it a type of tree?", where tree is the object
+    bad_phrases = ["used for", "type of", "used in", "related to", "than", "with"]
+
     # cut out punctuations at the end
     while len(question) > 0 and not question[-1].isalpha():
         question = question[:-1]
@@ -253,7 +258,7 @@ def is_done(word_var: WordVariants, question: str):
             if var_i_word != q_i_word:
                 all_same = False
                 break
-        if all_same:
+        if all_same and not any(bad_phrase in question.lower() for bad_phrase in bad_phrases):
             return True
 
     return False

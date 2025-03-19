@@ -163,12 +163,16 @@ class BatchedTwentyQuestionsEnvironment(object):
                 rewards.append(0.0)
                 dones.append(True)
             else:
-                if "yes" in answers[i] and "no" not in answers[i] and is_done(words_to_guess[i], actions[i]):
+                if is_done(words_to_guess[i], actions[i]):
                     reward = 0.0
                     done = True
+
+                    # Edit the response of the env just in case the env is wrong
+                    histories[i][-1]["answer"] = "yes"
                 else:
                     reward = -1.0
                     done = False
+
                 rewards.append(reward)
                 dones.append(done)
 
