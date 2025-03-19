@@ -10,38 +10,66 @@ import matplotlib.pyplot as plt
 import argparse
 
 from agent_prm.utils.general_utils import load_json
+from agent_prm.utils.cfg_utils import find_matching_iter
 
 total_epochs = 1
-baselines = ["gpt-4o", "base-3B", "pi0"]
+# baselines = ["gpt-4o", "base-3B", "pi0"]
+# baselines = ["gpt-4o", "base-3B", "pi0", "BoN_pi0_Q0-80pct-lr=5e-5", "BoN_pi0_Q0-80pct-lr=5e-6"]
+# baselines = ["gpt-4o", "base-3B", "pi0", "BoN_pi0_Q0*", "pi1"]  # prm-pi1-q1
+# baselines = ["gpt-4o", "base-3B", "pi0", "pi1", "BoN_pi1_Q1*"]  # rl-pi2, rl-pi2-with-4gpus
+baselines = ["gpt-4o", "base-3B", "pi0", "pi1", "pi2"]  # prm-pi2-q2
 baseline_to_name_in_csv = {
     "gpt-4o": "gpt4o",
     "base-3B": "3B",
     "pi0": "pi0-all-data-3epoches",
-}
+    "BoN_pi0_Q0-80pct-lr=5e-5": "BoN_pi0_Q0-80pct-lr=5e-5",
+    "BoN_pi0_Q0-80pct-lr=5e-6": "BoN_pi0_Q0-80pct-lr=5e-6",
+    "BoN_pi0_Q0*": "BoN_pi0_Q0-80pct-lr=5e-6",
+    "pi1": "pi1-80pct_Q0-80pct-lr=5e-5",
+    "BoN_pi1_Q1*": "BoN_pi1_Q1-60pct-lr=5e-6",
+    "pi2": "pi2-60pct_Q1-60pct-lr=5e-6"
+}  # in online_eval_table.csv
 
 folder_to_regex = {
     "sft-pi0": [r'(pi0-(\d+)pct)-all-data-3epoches', r'pi0-all-data-3epoches'],
     # "prm-pi0-q0": [r'BoN-pi0\+(\d+)pct', r'BoN-(\d+)pct-balanced-Q', r'BoN-pi0\+Q0', r'BoN-balanced-Q'],
     "prm-pi0-q0": [r'BoN_pi0_(Q0-(\d+)pct)', r'BoN_pi0_Q0-lr'],
+    "prm-pi0-q0-best": [r'BoN_pi0_(Q0-(\d+)pct)', r'BoN_pi0_Q0-lr'],
+    "prm-pi0-q0-for-rl": [r'BoN_pi0_(Q0-(\d+)pct)', r'BoN_pi0_Q0-lr'],
     "rl-pi1": [r'^(pi1-(\d+)pct)_Q0-80', r'^pi1_Q0-80'],
+    "rl-pi1-with-best-pi0-bon": [r'^(pi1-(\d+)pct)_Q0-80', r'^pi1_Q0-80'],
     # 'rl-pi1-q0': [r'^pi1-(\d+)pct$', r'^pi1$', r'^BoN_pi1-(\d+)pct_Q0\*$', r'^BoN_pi1_Q0\*$']
+    "prm-pi1-q1": [r'BoN_pi1_(Q1-(\d+)pct)', r'BoN_pi1_Q1-lr'],
+    "rl-pi2": [r'^(pi2-(\d+)pct)_Q1-60', r'^pi2_Q1-60'],
+    "rl-pi2-with-4gpus": [r'^(pi2-(\d+)pct)_Q1-60', r'^pi2_Q1-60'],
+    "prm-pi2-q2": [r'BoN_pi2_(Q2-(\d+)pct)', r'BoN_pi2_Q2-lr'],
 }
 
 folder_to_plot_models = {
     "sft-pi0": ['gpt-4o', 'base-3B', 'pi0-lora', 'pi0-all-data-3epoches'],
     # "prm-pi0-q0": ['gpt-4o', 'pi0-lora', 'pi0', 'BoN-balanced-Q-3B-PSFT-all-data-3epoches', 'BoN-balanced-Q-lr=5e-6-3B-PSFT-all-data-3epoches', 'BoN-pi0+Q0', 'BoN-pi0+Q0-lr=5e-6'],
-    "prm-pi0-q0": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-5', 'BoN_pi0_Q0-lr=5e-6', 'BoN_pi0_Q0-lr=5e-7'],
-    "rl-pi1": ['gpt-4o', 'base-3B', 'pi0', 'pi1_Q0-80pct-lr=5e-6'],
-    # "rl-pi1-q0": ['gpt-4o', 'pi0', 'pi0_Q0*', 'pi1', 'BoN_pi1_Q0*']
+    "prm-pi0-q0": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-5', 'BoN_pi0_Q0-lr=5e-6', 'BoN_pi0_Q0-lr=5e-7-no-reason', 'BoN_pi0_Q0-lr=5e-7'],
+    "prm-pi0-q0-best": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-5'],
+    "prm-pi0-q0-for-rl": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-5', 'BoN_pi0_Q0-lr=5e-6'],
+    "rl-pi1": ['gpt-4o', 'pi0', 'pi0', 'pi1_Q0-80pct-lr=5e-5', 'pi1_Q0-80pct-lr=5e-6'],
+    "rl-pi1-with-best-pi0-bon": ['gpt-4o', 'base-3B', 'pi0', 'pi1_Q0-80pct-lr=5e-5', 'pi1_Q0-80pct-lr=5e-6', 'BoN_pi0_Q0-80pct-lr=5e-5', 'BoN_pi0_Q0-80pct-lr=5e-6'],
+    # "rl-pi1-q0": ['gpt-4o', 'pi0', 'pi0_Q0*', 'pi1', 'BoN_pi1_Q0*'],
+    'prm-pi1-q1': ['gpt-4o', 'pi0', 'BoN_pi0_Q0*', 'pi1', 'BoN_pi1_Q1-lr=5e-6'],
+    "rl-pi2": ['gpt-4o', 'pi0', 'pi1', 'BoN_pi1_Q1*', 'pi2_Q1-60pct-lr=5e-6'],
+    "rl-pi2-with-4gpus": ['gpt-4o', 'pi0', 'pi1', 'BoN_pi1_Q1*', 'pi2_Q1-60pct-lr=5e-6', 'pi2_Q1-60pct-lr=5e-6_4gpus'],
+    "prm-pi2-q2": ['gpt-4o', 'pi0', 'pi1', 'pi2', 'BoN_pi2_Q2-lr=5e-6'],
 }
 
-eval_dir = "data/twenty_questions/eval/iter0"
+EVAL_DIR = "data/twenty_questions/eval"
 CSV_PATH = "data/twenty_questions/eval/online_eval_table.csv"
 ROLLOUT_PER_TASK_DICT = {
     "train": 1,
     "val": 3,
     "test": 3
 }
+
+REWARD_MIN, REWARD_MAX = -17, -10
+SUCCESS_RATE_MIN, SUCCESS_RATE_MAX = 0.3, 1.2
 
 def is_valid_rollout(f: str, data_type: str) -> bool:
     """
@@ -120,7 +148,7 @@ def update_models_with_eval_results(models_to_plot: dict):
                 }
 
 
-def plot_models(models_to_plot: dict, plot_path: str, models_to_plot_names: list):
+def plot_models(models_to_plot: dict, plot_path: str, models_to_plot_names: list, error_bar: bool = False, error_bar_baseline: bool = False):
     """
     Plot the models and save the models at 
     """
@@ -140,17 +168,26 @@ def plot_models(models_to_plot: dict, plot_path: str, models_to_plot_names: list
             if model in baselines:
                 # Draw a horizontal line with standard error
                 ax.axhline(y=models_to_plot[model][data_type]["mean_reward"], color=colors[j], linestyle='--', label=model, linewidth=linewidth)
+
+                # Draw standard error
+                if error_bar_baseline:
+                    ax.fill_between(
+                        [0, total_epochs],
+                        models_to_plot[model][data_type]["mean_reward"] - models_to_plot[model][data_type]["se_reward"],
+                        models_to_plot[model][data_type]["mean_reward"] + models_to_plot[model][data_type]["se_reward"],
+                        color=colors[j], alpha=0.2)
             else:
                 epochs = np.array([int(pct)/100.0*total_epochs for pct in models_to_plot[model].keys()])
                 rewards = np.array([models_to_plot[model][pct][data_type]["mean_reward"] for pct in models_to_plot[model].keys()])
                 se_rewards = np.array([models_to_plot[model][pct][data_type]["se_reward"] for pct in models_to_plot[model].keys()])
 
                 ax.plot(epochs, rewards, label=model, color=colors[j], marker='o', linewidth=linewidth, markersize=markersize)
-                ax.fill_between(epochs, rewards - se_rewards, 
-                                rewards + se_rewards, color=colors[j], alpha=0.2)
+                if error_bar:
+                    ax.fill_between(epochs, rewards - se_rewards, 
+                                    rewards + se_rewards, color=colors[j], alpha=0.2)
             
         # Set the y axis range to be -20 and 0
-        ax.set_ylim(-20, -10)
+        ax.set_ylim(REWARD_MIN, REWARD_MAX)
         ax.set_xticks(np.arange(0, total_epochs+total_epochs/10, total_epochs/10))
         ax.set_title(f'Reward - {data_type}', fontsize=fontsize)
         ax.set_xlabel('Epochs', fontsize=fontsize)
@@ -163,6 +200,14 @@ def plot_models(models_to_plot: dict, plot_path: str, models_to_plot_names: list
             if model in baselines:
                 # Draw a horizontal line with standard error
                 ax.axhline(y=models_to_plot[model][data_type]["mean_success_rate"], color=colors[j], linestyle='--', label=model, linewidth=linewidth)
+
+                # Draw standard error
+                if error_bar_baseline:
+                    ax.fill_between(
+                        [0, total_epochs],
+                        models_to_plot[model][data_type]["mean_success_rate"] - models_to_plot[model][data_type]["se_success_rate"],
+                        models_to_plot[model][data_type]["mean_success_rate"] + models_to_plot[model][data_type]["se_success_rate"],
+                        color=colors[j], alpha=0.2)
             else:
                 # Calculate the epoch (x-axis)
                 epochs = np.array([int(pct)/100.0*total_epochs for pct in models_to_plot[model].keys()])
@@ -172,11 +217,12 @@ def plot_models(models_to_plot: dict, plot_path: str, models_to_plot_names: list
                 se_success_rates = np.array([models_to_plot[model][pct][data_type]["se_success_rate"] for pct in models_to_plot[model].keys()])
                 
                 ax.plot(epochs, success_rates, label=model, color=colors[j], marker='o', linewidth=linewidth, markersize=markersize)
-                ax.fill_between(epochs, success_rates - se_success_rates, 
-                                success_rates + se_success_rates, color=colors[j], alpha=0.2)
+                if error_bar:
+                    ax.fill_between(epochs, success_rates - se_success_rates, 
+                                    success_rates + se_success_rates, color=colors[j], alpha=0.2)
         
         # Set the y axis range to be 0 and 1
-        ax.set_ylim(0, 1)
+        ax.set_ylim(SUCCESS_RATE_MIN, SUCCESS_RATE_MAX)
         ax.set_xticks(np.arange(0, total_epochs+total_epochs/10, total_epochs/10))
         ax.set_title(f'Success - {data_type}', fontsize=fontsize)
         ax.set_xlabel('Epochs', fontsize=fontsize)
@@ -197,6 +243,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", "--name", type=str, required=True, help="The name of folder to save the plot")
     parser.add_argument("-e", "--use_existing_table", action="store_true")
+    parser.add_argument("-b", "--error_bar", action="store_true")
+    parser.add_argument("-bb", "--error_bar_baseline", action="store_true")
     args = parser.parse_args()
 
     save_path = os.path.join("playground/eval", args.name)
@@ -255,7 +303,7 @@ if __name__ == "__main__":
 
                     agent_name = f"{agent_config['log_name']}_{agent_name}"
 
-                    agent_eval_dir = os.path.join(eval_dir, agent_name)
+                    agent_eval_dir = os.path.join(EVAL_DIR, find_matching_iter(agent_config['log_name']), agent_name)
 
                     if class_name not in models_to_plot:
                         models_to_plot[class_name] = {}
@@ -280,4 +328,4 @@ if __name__ == "__main__":
             models_to_plot = json.load(f)
 
     print("Plotting models")
-    plot_models(models_to_plot, os.path.join(save_path, f"{args.name}_plot.png"), models_to_plot_names)
+    plot_models(models_to_plot, os.path.join(save_path, f"{args.name}_plot.png"), models_to_plot_names, args.error_bar, args.error_bar_baseline)
