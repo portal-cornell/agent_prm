@@ -30,7 +30,7 @@ from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, VALIDATION_O
 from agent_prm.envs.twenty_questions.env import setup_twenty_questions_env, setup_batched_twenty_questions_env
 from agent_prm.utils.logger_email import elogger
 from agent_prm.utils.general_utils import start_sglang_server
-from agent_prm.utils.cfg_utils import get_output_path
+from agent_prm.utils.cfg_utils import get_output_path, find_matching_iter
 
 def offline_eval(cfg: dict, agent: Agent):
     """
@@ -129,7 +129,6 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
     """
     Evaluate the model by interacting with the environment
     """
-    rollout_per_obj = cfg.online.rollout_per_task
     batched_env = setup_batched_twenty_questions_env(port=cfg.sim_port)
     all_obj_list = [wv[0] for wv in get_default_word_list("all")]
     bs = cfg.online.batch_size
@@ -158,7 +157,7 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
         else:
             raise ValueError(f"Invalid data type: {data_type}")
         
-        for rollout_idx in range(rollout_per_obj):
+        for rollout_idx in range(cfg.online.rollout_per_task_range_min, cfg.online.rollout_per_task_range_max):
             rollout_idx_str = str(rollout_idx)
             if rollout_idx_str not in summary_dict:
                 summary_dict[rollout_idx_str] = []
@@ -392,9 +391,6 @@ def main(cfg: DictConfig):
 
     elogger.set_activate(cfg.elogger)
 
-    dstdir = os.path.join(cfg.logdir, f"iter{cfg.iter}")
-    os.makedirs(dstdir, exist_ok=True)
-
     if cfg.mode == "consolidate_online":
         # The table for this hydra run is saved in the hydra folder
         hydra_folder_path = get_output_path()
@@ -428,7 +424,9 @@ def main(cfg: DictConfig):
 
             agent_name = f"{agent_config.log_name}_{agent_name}"
 
-            logdir = os.path.join(dstdir, agent_name)
+            logdir = os.path.join(cfg.logdir, find_matching_iter(agent_config.log_name), agent_name)
+        
+        os.makedirs(logdir, exist_ok=True)
 
         if cfg.mode == "consolidate_online":
             consolidate_online_eval(cfg, table_fp, agent_rollout_dir=logdir, agent_name=agent_config.log_name, rollout_per_task_dict=cfg.consolidate_online.rollout_per_task_dict, use_existing_table=cfg.consolidate_online.use_existing_table)
@@ -438,15 +436,14 @@ def main(cfg: DictConfig):
             if os.path.exists(dst_link_fp) or os.path.islink(dst_link_fp):
                 os.remove(dst_link_fp)
 
-            # Copy the table to the dstdir
+            # Copy the table to the dst_link_fp
             shutil.copy(table_fp, dst_link_fp)
         else:
             agent = initialize_agent(agent_config,
                                         parse_reason_action_fn=parse_reason_and_action_twenty_questions,
                                         verbose=cfg["verbose"],
                                         debug=cfg["debug"])
-                 
-            os.makedirs(logdir, exist_ok=True)
+            
             print(f"Evaluating {agent_name} in {logdir}")
 
             if cfg.mode == "offline":
@@ -466,7 +463,7 @@ def main(cfg: DictConfig):
 
     if cfg.mode == "online":
         # Because this takes a long time, we notify when the online eval is done
-        elogger.log(f"Online eval results saved in {dstdir}\nAgents: {[agent_config.log_name for agent_config in cfg.agents]}")
+        elogger.log(f"Online eval results saved for Agents: {[agent_config.log_name for agent_config in cfg.agents]}")
     
 
 if __name__ == "__main__":

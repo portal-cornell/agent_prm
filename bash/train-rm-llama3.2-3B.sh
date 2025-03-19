@@ -1,9 +1,24 @@
 #!/bin/bash
 
-DOMAIN=twenty_questions # alfworld, twenty_questions
-DATA_DIR=iter1_no-reason
+########################################################################################
+# Checklist
+# - Verify DATA_DIR
+# - Verify MODEL
+# - Verify MODEL_LOG_NAME
+########################################################################################
 
-MODEL="/share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+DOMAIN=twenty_questions # alfworld, twenty_questions
+DATA_DIR=iter3 # add '_no-reason' if you want to train on the no-reason dataset
+
+# iter1
+# MODEL="/share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# iter2
+# MODEL="/share/portal/hw575/agent_prm/save/online_dpo/250312_091827_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_pen=-10_Q0-80pct-lr=5e-6/checkpoint-100"
+# MODEL_LOG_NAME="pi1-80pct_Q0-80pct-lr=5e-6"
+# iter3
+MODEL="/share/portal/hw575/agent_prm/save/online_dpo/250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct/checkpoint-75"
+MODEL_LOG_NAME="pi2-60pct_Q1-60pct-lr=5e-6"
+
 
 TRAIN_SPLITS=train
 TEST_SPLITS=val
@@ -36,8 +51,8 @@ export TRITON_CACHE_DIR=/share/portal/hw575
 TRITON_CACHE_DIR=/share/portal/hw575/.triton
 
 DATASET=data/${DOMAIN}/prm/${DATA_DIR}
-SAVE_DIR=save/rm/${current_date}_${DATA_DIR}_${MODEL//\//-}_peft=${USE_PEFT}${NOTE}/model
-EVAL_DIR=save/rm/${current_date}_${DATA_DIR}_${MODEL//\//-}_peft=${USE_PEFT}${NOTE}/eval
+SAVE_DIR=save/rm/${current_date}_${DATA_DIR}_${MODEL_LOG_NAME}_peft=${USE_PEFT}${NOTE}/model
+EVAL_DIR=save/rm/${current_date}_${DATA_DIR}_${MODEL_LOG_NAME}_peft=${USE_PEFT}${NOTE}/eval
 echo "Save directory: $SAVE_DIR"
 echo "Eval directory: $EVAL_DIR"
 
