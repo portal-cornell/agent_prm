@@ -1,3 +1,11 @@
+"""
+Typical usage:
+
+If you are debugging (not using gpt4o), you can set the debug flag to True
+
+python scripts/dataproc/create_sft_data/get_rollout_twenty_questions.py -t train -d
+"""
+
 import sys
 import os
 import argparse
@@ -18,7 +26,6 @@ def preprocess_args():
     parser.add_argument('--config', type=str, default="configs/create_sft_training_data/twenty_questions.yaml", help='Path to 20 questions dataproc config file')
     parser.add_argument('-t', '--data-type', type=str, required=True, choices=["train", "val", "test"], help='Whether to use the train, or validation, or test set')
     parser.add_argument('-d', '--debug', default=False, action="store_true", help='Whether to run in debug mode (Human instead of gpt4o as the agent)')
-    parser.add_argument('-i', '--iter', type=int, default=0, help='The iteration number')
     parser.add_argument('-e', '--activate-email', default=False, action="store_true", help='Whether to activate email logging')
     args = parser.parse_args()
 
@@ -73,10 +80,8 @@ def main():
     with open(cfg["expert_template"], "r") as file:
         expert_agent_prompt_template = Template(file.read())
 
-    iter_str = f"iter{args.iter}"
-
-    os.makedirs(os.path.join(cfg["logs_dir"], iter_str, args.data_type), exist_ok=True)
-    summary_dict_fp = os.path.join(cfg["logs_dir"], iter_str, args.data_type, "_summary_dict.json")
+    os.makedirs(os.path.join(cfg["logs_dir"], args.data_type), exist_ok=True)
+    summary_dict_fp = os.path.join(cfg["logs_dir"], args.data_type, "_summary_dict.json")
     
     if not os.path.exists(summary_dict_fp):
         print(f"Summary dict not found at {summary_dict_fp}. Creating a new one.")
@@ -128,7 +133,7 @@ def main():
 
                     traj_list.append({
                         "reason": reason,
-                        "question": action,
+                        "action": action,
                         "answerer_reason": answerer_reason,
                         "answer": answer,
                         "reward": reward,
@@ -140,7 +145,7 @@ def main():
                 summary_dict[rollout_idx_str].append(obj)
 
                 save_json(summary_dict_fp, summary_dict)
-                save_json(os.path.join(cfg["logs_dir"], iter_str, args.data_type, f"{obj}_{rollout_idx_str}.json"), traj_list)
+                save_json(os.path.join(cfg["logs_dir"], args.data_type, f"{obj}_{rollout_idx_str}.json"), traj_list)
 
                 print(f"======== collected idx={rollout_idx_str} obj={obj} with total reward {total_reward} and total cost {total_cost}")
 

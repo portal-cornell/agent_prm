@@ -1,6 +1,6 @@
 prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-logs_dir: data/twenty_questions/rollout/
-data_dir: data/twenty_questions/sft/
+logs_dir: data/twenty_questions/eval/baseline/gpt4o
+data_dir: data/twenty_questions/sft
 expert_template: prompts/twenty_questions/twenty_questions_gpt_agent_template.j2
 rollout_per_obj: 3
 train_split: 0.85
