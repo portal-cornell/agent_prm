@@ -279,7 +279,7 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
             save_json(os.path.join(logdir, obj_data_type, f"{obj}_{obj_rollout_idx_str}.json"), traj_list[i])
 
 
-def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, agent_name: str, rollout_per_task_dict: Dict[str, int], use_existing_table: bool = False):
+def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, agent_name: str, rollout_per_task_dict: Dict[str, int], use_existing_table: bool = False, overwrite_existing_entry: bool = False):
     """
     Consolidate the online eval results and save it as a csv file
     """
@@ -311,7 +311,7 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
         table_dict = table.to_dict(orient="list")
     
     # Check if the agent_name is already in the table
-    if use_existing_table and (agent_name in table_dict["model"]):
+    if use_existing_table and (agent_name in table_dict["model"]) and not overwrite_existing_entry:
         print(f"Agent {agent_name} already exists in the table. Skipping the consolidation.")
     else:
         if agent_name in table_dict["model"]:
@@ -376,10 +376,21 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
             total_rewards.append(mean_reward)
             total_success_rates.append(mean_success_rate)
 
-        table_dict["total (avg reward)"].append(np.mean(total_rewards))
-        table_dict["total (se reward)"].append(np.std(total_rewards)/math.sqrt(len(total_rewards)))
-        table_dict["total (avg success rate)"].append(np.mean(total_success_rates))
-        table_dict["total (se success rate)"].append(np.std(total_success_rates)/math.sqrt(len(total_success_rates)))
+        total_avg_reward = np.mean(total_rewards)
+        total_se_reward = np.std(total_rewards)/math.sqrt(len(total_rewards))
+        total_avg_success_rate = np.mean(total_success_rates)
+        total_se_success_rate = np.std(total_success_rates)/math.sqrt(len(total_success_rates))
+
+        if overwrite:
+            table_dict["total (avg reward)"][table_dict["model"].index(agent_name)] = total_avg_reward
+            table_dict["total (se reward)"][table_dict["model"].index(agent_name)] = total_se_reward
+            table_dict["total (avg success rate)"][table_dict["model"].index(agent_name)] = total_avg_success_rate
+            table_dict["total (se success rate)"][table_dict["model"].index(agent_name)] = total_se_success_rate
+        else:
+            table_dict["total (avg reward)"].append(total_avg_reward)
+            table_dict["total (se reward)"].append(total_se_reward)
+            table_dict["total (avg success rate)"].append(total_avg_success_rate)
+            table_dict["total (se success rate)"].append(total_se_success_rate)
 
         # Convert the table dict to a dataframe and save it
         table = pd.DataFrame(table_dict)
@@ -429,7 +440,7 @@ def main(cfg: DictConfig):
         os.makedirs(logdir, exist_ok=True)
 
         if cfg.mode == "consolidate_online":
-            consolidate_online_eval(cfg, table_fp, agent_rollout_dir=logdir, agent_name=agent_config.log_name, rollout_per_task_dict=cfg.consolidate_online.rollout_per_task_dict, use_existing_table=cfg.consolidate_online.use_existing_table)
+            consolidate_online_eval(cfg, table_fp, agent_rollout_dir=logdir, agent_name=agent_config.log_name, rollout_per_task_dict=cfg.consolidate_online.rollout_per_task_dict, use_existing_table=cfg.consolidate_online.use_existing_table, overwrite_existing_entry=cfg.consolidate_online.overwrite_existing_entry)
 
             # Check if the file or symlink exists, then remove it
             dst_link_fp = os.path.join(cfg.logdir, "online_eval_table.csv")
