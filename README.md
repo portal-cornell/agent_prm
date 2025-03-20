@@ -10,10 +10,40 @@ To set up the project, clone the repository and create a Conda environment:
 
 ```bash
 cd agent_prm
-conda env create -f environment.yml
+conda create -n agent_prm python=3.10.16
 conda activate agent_prm
+pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cu121  # torch must be installed before requirements.txt
+pip install -r requirements.txt
 pip install -e .
 ```
+
+### Set up external dependencies
+
+#### OpenInstruct
+We build on [OpenInstruct](https://github.com/allenai/open-instruct) for training, with some minor compatibility fixes so it needs to be installed locally. 
+```bash
+# You should make sure that you are NOT in the agent_prm directory (but you have agent_prm conda environment activated)
+cd ..
+# Clone and install Open-Instruct
+git clone --branch fix_vllm https://github.com/sanjibanc/open-instruct.git
+cd open-instruct
+pip install -e .
+cd ..
+```
+
+#### SGLang
+Our eval scripts allow you to directly spawn SGLang servers in the background for fast inference.
+
+To install SGLang, 
+```bash
+# Clone and install SGLang
+git clone --branch new_llama_model https://github.com/sanjibanc/sglang.git
+cd sglang
+pip install flashinfer-python -i https://flashinfer.ai/whl/cu121/torch2.5/
+pip install -e "python[all]"
+```
+You should make sure `cu121` is changed to match the correct CUDA version.
+
 
 ### Optional: Set up OpenAI / Gemini / Anthropic environment keys 
 Ensure you have a `.env` file with the requisite keys:
@@ -24,23 +54,6 @@ OPENAI_ORGANIZATION=your_openai_organization_id
 GEMINI_API_KEY=your_gemini_key
 ANTHROPIC_API_KEY=your_anthropic_key
 ```
-
-### Set up external dependencies
-
-We build on [OpenInstruct](https://github.com/allenai/open-instruct) for training, with some minor compatibility fixes so it needs to be installed locally. 
-```bash
-# Clone and install Open-Instruct
-git clone --branch fix_vllm https://github.com/sanjibanc/open-instruct.git
-cd open-instruct
-pip install -e .
-cd ..
-```
-
-To use SGLang server, [got to SGlang instructions](#sglang-instructions)
-
-To use slgang server, [got to SGlang instructions](#sglang-instructions)
-
-To set up external environments like AlfWorld, [go to external environment instructions](#external-environment-instructions).
 
 ## Agent PRM Training
 
@@ -174,45 +187,10 @@ bash bash/online-dpo-shaped-prm-llama3.2-3B.sh
 
 ## SGLang instructions
 
-### Install SGLang
-SGLang has some compatibility issues with agent_prm conda environment, so we recommend using the sglang environment
-```bash
-conda create -n sglang python=3.10.16
-```
-
-We use [SGLang](https://github.com/sgl-project/sglang) for fast inference, with some minor compatibility fixes with LLama so it needs to be installed locally. 
-```bash
-# Clone and install SGLang
-git clone --branch new_llama_model https://github.com/sanjibanc/sglang.git
-cd sglang
-pip install -e "python[all]" --find-links https://flashinfer.ai/whl/cu121/torch2.5/flashinfer-python
-pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cu121
-```
-You should make sure `cu121` is changed to match the correct CUDA version.
-
 To use SGLang for inference, grab a node from the same network as your inference scripts so they can communicate over the network. 
-
-SGLang has some compatibility issues with agent_prm conda environment, so we recommend using the sglang environment
-```bash
-conda env create -f sglang_environment.yml
-conda activate sglang
-```
-To host a model, run
-```bash
-python -m sglang.launch_server --model-path <model_name> --port <port_number, e.g. 30000>
-```
 
 When doing inference for Best-of-N with a PRM, you might want to grab two such nodes, one for the generator, and one for the verifier and assign them two different ports 3000 and 30010.
 
-## External environment instructions
-
-### Setup AlfWorld
-Clone AlfWorld from [AlfWorld github repository](https://github.com/alfworld/alfworld). Follow the instructions in its README to get the game files.
-
-Create an env_assets folder and copy over data to `env_assets/alfworld`. Set the following environment variable:
-```bash
-export ALFWORLD_DATA=</path/to/env_assets/alfworld>
-```
 
 ## Contact
 
