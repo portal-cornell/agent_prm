@@ -448,6 +448,9 @@ def main(cfg: DictConfig):
     else:
         rolloutdirs = cfg.rolloutdirs
 
+    print(f"Confirm the following\n- rolloutdirs: {rolloutdirs}\n- domain: {cfg.domain}\n- outputdir: {cfg.outputdir}")
+    input("Press any key to continue...")
+
     files = compute_file_list(rolloutdirs, cfg.domain, cfg.max_files_per_dir)
     compute_prm_target(files, cfg.domain, cfg.outputdir, cfg.gamma, cfg.cpu_count, cfg.train_split, cfg.split_name, cfg.balance_data)
 
