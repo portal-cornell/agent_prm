@@ -1,3 +1,9 @@
+"""
+Use case:
+
+python scripts/eval/tools/plot_checkpoint_performance.py -n prm-pi1-q1-hd-with-original -b -bb
+"""
+
 import yaml
 import json
 import re
@@ -13,11 +19,6 @@ from agent_prm.utils.general_utils import load_json
 from agent_prm.utils.cfg_utils import find_matching_iter
 
 total_epochs = 1
-# baselines = ["gpt-4o", "base-3B", "pi0"]
-# baselines = ["gpt-4o", "base-3B", "pi0", "BoN_pi0_Q0-80pct-lr=5e-5", "BoN_pi0_Q0-80pct-lr=5e-6"]
-# baselines = ["gpt-4o", "base-3B", "pi0", "BoN_pi0_Q0*", "pi1"]  # prm-pi1-q1
-# baselines = ["gpt-4o", "base-3B", "pi0", "pi1", "BoN_pi1_Q1*"]  # rl-pi2, rl-pi2-with-4gpus
-baselines = ["gpt-4o", "base-3B", "pi0", "pi1", "pi2"]  # prm-pi2-q2
 baseline_to_name_in_csv = {
     "gpt-4o": "gpt4o",
     "base-3B": "3B",
@@ -27,8 +28,29 @@ baseline_to_name_in_csv = {
     "BoN_pi0_Q0*": "BoN_pi0_Q0-80pct-lr=5e-6",
     "pi1": "pi1-80pct_Q0-80pct-lr=5e-5",
     "BoN_pi1_Q1*": "BoN_pi1_Q1-60pct-lr=5e-6",
-    "pi2": "pi2-60pct_Q1-60pct-lr=5e-6"
+    "pi2": "pi2-60pct_Q1-60pct-lr=5e-6",
+    "BoN_pi2_Q2*": "BoN_pi2_Q2-80pct-lr=5e-6",
+    # Using hindsight to collect data for training PRMs
+    "BoN_pi0_Q0*_hindsight": "BoN_pi0_Q0-80pct-lr=5e-6_hindsight",
+    "pi1_hindsight": "pi1-77pct_Q0-80pct-lr=5e-6-hindsight"
 }  # in online_eval_table.csv
+
+folder_to_baselines = {
+    "prm-pi0-q0": ["gpt-4o", "base-3B", "pi0"],
+    "prm-pi0-q0-best-rl": ["gpt-4o", "base-3B", "pi0"],
+    "rl-pi1": ["gpt-4o", "pi0", "BoN_pi0_Q0*"],
+    "prm-pi1-q1": ["gpt-4o", "pi0", "BoN_pi0_Q0*", "pi1"],
+    "rl-pi2": ["gpt-4o", "pi0", "pi1", "BoN_pi1_Q1*"],
+    "rl-pi2-with-4gpus": ["gpt-4o", "pi0", "pi1", "BoN_pi1_Q1*"],
+    "prm-pi2-q2": ["gpt-4o", "pi0", "pi1", "pi2"],
+    "rl-pi3": ["gpt-4o", "pi0", "pi1", "pi2", "BoN_pi2_Q2*"],
+    # Using hindsight to collect data for training PRMs
+    "prm-pi0-q0-hd": ["gpt-4o", "base-3B", "pi0"],
+    "prm-pi0-q0-hd-with-original": ["gpt-4o", "base-3B", "pi0"],
+    "prm-pi0-q0-hd-with-pi0-pi2-mix": ["gpt-4o", "base-3B", "pi0"],
+    "rl-pi1-hd": ["gpt-4o", "pi0", "BoN_pi0_Q0*_hindsight"],
+    "prm-pi1-q1-hd-with-original": ["gpt-4o", "pi0", "pi1_hindsight"]
+}
 
 folder_to_regex = {
     "sft-pi0": [r'(pi0-(\d+)pct)-all-data-3epoches', r'pi0-all-data-3epoches'],
@@ -36,6 +58,7 @@ folder_to_regex = {
     "prm-pi0-q0": [r'BoN_pi0_(Q0-(\d+)pct)', r'BoN_pi0_Q0-lr'],
     "prm-pi0-q0-best": [r'BoN_pi0_(Q0-(\d+)pct)', r'BoN_pi0_Q0-lr'],
     "prm-pi0-q0-for-rl": [r'BoN_pi0_(Q0-(\d+)pct)', r'BoN_pi0_Q0-lr'],
+    "prm-pi0-q0-best-rl": [r'BoN_pi0_(Q0-(\d+)pct)', r'BoN_pi0_Q0-lr'],
     "rl-pi1": [r'^(pi1-(\d+)pct)_Q0-80', r'^pi1_Q0-80'],
     "rl-pi1-with-best-pi0-bon": [r'^(pi1-(\d+)pct)_Q0-80', r'^pi1_Q0-80'],
     # 'rl-pi1-q0': [r'^pi1-(\d+)pct$', r'^pi1$', r'^BoN_pi1-(\d+)pct_Q0\*$', r'^BoN_pi1_Q0\*$']
@@ -43,6 +66,13 @@ folder_to_regex = {
     "rl-pi2": [r'^(pi2-(\d+)pct)_Q1-60', r'^pi2_Q1-60'],
     "rl-pi2-with-4gpus": [r'^(pi2-(\d+)pct)_Q1-60', r'^pi2_Q1-60'],
     "prm-pi2-q2": [r'BoN_pi2_(Q2-(\d+)pct)', r'BoN_pi2_Q2-lr'],
+    "rl-pi3": [r'^(pi3-(\d+)pct)_Q2-80', r'^pi3_Q2-80'],
+    # Using hindsight to collect data for training PRMs
+    "prm-pi0-q0-hd": [r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight', r'BoN_pi0_Q0-lr=5e-6_hindsight'],
+    "prm-pi0-q0-hd-with-original": [r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6$', r'BoN_pi0_Q0-lr=5e-6$', r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight', r'BoN_pi0_Q0-lr=5e-6_hindsight'],
+    "prm-pi0-q0-hd-with-pi0-pi2-mix": [r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6$', r'BoN_pi0_Q0-lr=5e-6$', r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight', r'BoN_pi0_Q0-lr=5e-6_hindsight', r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_pi0-pi2-mix', r'BoN_pi0_Q0-lr=5e-6_pi0-pi2-mix'],
+    "rl-pi1-hd": [r'^(pi1-(\d+)pct)_Q0-80pct-lr=5e-6-hindsight$', r'^pi1_Q0-80pct-lr=5e-6-hindsight$', r'^(pi1-(\d+)pct)_Q0-80pct-lr=5e-6$', r'^pi1_Q0-80pct-lr=5e-6$'],
+    "prm-pi1-q1-hd-with-original": [r'BoN_pi1_(Q1-(\d+)pct)-lr=5e-6$', r'BoN_pi1_Q1-lr=5e-6$', r'BoN_pi1_(Q1-(\d+)pct)-lr=5e-6_hindsight', r'BoN_pi1_Q1-lr=5e-6_hindsight']
 }
 
 folder_to_plot_models = {
@@ -51,6 +81,7 @@ folder_to_plot_models = {
     "prm-pi0-q0": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-5', 'BoN_pi0_Q0-lr=5e-6', 'BoN_pi0_Q0-lr=5e-7-no-reason', 'BoN_pi0_Q0-lr=5e-7'],
     "prm-pi0-q0-best": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-5'],
     "prm-pi0-q0-for-rl": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-5', 'BoN_pi0_Q0-lr=5e-6'],
+    "prm-pi0-q0-best-rl": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-6'],
     "rl-pi1": ['gpt-4o', 'pi0', 'pi0', 'pi1_Q0-80pct-lr=5e-5', 'pi1_Q0-80pct-lr=5e-6'],
     "rl-pi1-with-best-pi0-bon": ['gpt-4o', 'base-3B', 'pi0', 'pi1_Q0-80pct-lr=5e-5', 'pi1_Q0-80pct-lr=5e-6', 'BoN_pi0_Q0-80pct-lr=5e-5', 'BoN_pi0_Q0-80pct-lr=5e-6'],
     # "rl-pi1-q0": ['gpt-4o', 'pi0', 'pi0_Q0*', 'pi1', 'BoN_pi1_Q0*'],
@@ -58,6 +89,13 @@ folder_to_plot_models = {
     "rl-pi2": ['gpt-4o', 'pi0', 'pi1', 'BoN_pi1_Q1*', 'pi2_Q1-60pct-lr=5e-6'],
     "rl-pi2-with-4gpus": ['gpt-4o', 'pi0', 'pi1', 'BoN_pi1_Q1*', 'pi2_Q1-60pct-lr=5e-6', 'pi2_Q1-60pct-lr=5e-6_4gpus'],
     "prm-pi2-q2": ['gpt-4o', 'pi0', 'pi1', 'pi2', 'BoN_pi2_Q2-lr=5e-6'],
+    "rl-pi3": ['gpt-4o', 'pi0', 'pi1', 'pi2', 'BoN_pi2_Q2*', 'pi3_Q2-80pct-lr=5e-6'],
+    # Using hindsight to collect data for training PRMs
+    "prm-pi0-q0-hd": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-6_hindsight-baseline', 'BoN_pi0_Q0-lr=5e-6_hindsight'],
+    "prm-pi0-q0-hd-with-original": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-6', 'BoN_pi0_Q0-lr=5e-6_hindsight-baseline', 'BoN_pi0_Q0-lr=5e-6_hindsight'],
+    "prm-pi0-q0-hd-with-pi0-pi2-mix": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-6', 'BoN_pi0_Q0-lr=5e-6_hindsight-baseline', 'BoN_pi0_Q0-lr=5e-6_hindsight', 'BoN_pi0_Q0-lr=5e-6_pi0-pi2-mix'],
+    "rl-pi1-hd": ['gpt-4o', 'pi0', 'BoN_pi0_Q0*_hindsight', 'pi1_Q0-80pct-lr=5e-6', 'pi1_Q0-80pct-lr=5e-6-hindsight'],
+    "prm-pi1-q1-hd-with-original": ['gpt-4o', 'pi0', 'pi1_hindsight', 'BoN_pi1_Q1-lr=5e-6', 'BoN_pi1_Q1-lr=5e-6_hindsight']
 }
 
 EVAL_DIR = "data/twenty_questions/eval"
@@ -68,8 +106,8 @@ ROLLOUT_PER_TASK_DICT = {
     "test": 3
 }
 
-REWARD_MIN, REWARD_MAX = -17, -10
-SUCCESS_RATE_MIN, SUCCESS_RATE_MAX = 0.3, 1.2
+REWARD_MIN, REWARD_MAX = -20, -8
+SUCCESS_RATE_MIN, SUCCESS_RATE_MAX = 0.0, 1.1
 
 def is_valid_rollout(f: str, data_type: str) -> bool:
     """
@@ -103,22 +141,22 @@ def get_pct_of_training_progress(log_name: str, regex: str) -> int:
         try:
             # 2 allows us to directly get the number
             pct = int(re.search(regex, log_name).group(2))
+
+            part_with_pct = re.search(regex, log_name).group(1)
+            part_with_pct_removed = part_with_pct.replace(f"-{pct}pct", "")
+
+            class_name = log_name.replace(part_with_pct, part_with_pct_removed)
+
+            return pct, class_name
         except Exception as e:
             print(f"Error:\n{e}")
-            raise ValueError(f"Invalid log name: {log_name}, or regex: {regex}")
-        
-        part_with_pct = re.search(regex, log_name).group(1)
-        part_with_pct_removed = part_with_pct.replace(f"-{pct}pct", "")
-
-        class_name = log_name.replace(part_with_pct, part_with_pct_removed)
-
-        return pct, class_name
+            return 100, log_name
     else:
         # Assuming that it's fully trained
         return 100, log_name
     
 
-def update_models_with_eval_results(models_to_plot: dict):
+def update_models_with_eval_results(models_to_plot: dict, baselines: list):
     for data_type in ["train", "val", "test"]:
         for class_name in models_to_plot:
             if class_name in baselines:
@@ -129,6 +167,10 @@ def update_models_with_eval_results(models_to_plot: dict):
 
                 # Get all the rollouts that are used to consolidate the results
                 json_files = [f for f in os.listdir(os.path.join(agent_eval_dir, data_type)) if is_valid_rollout(f, data_type)]
+
+                if not any([f.endswith(f"{ROLLOUT_PER_TASK_DICT[data_type]-1}.json") for f in json_files]):
+                    print(f"WARNING: {agent_name} does not have all the rollouts for {data_type}, which needs {ROLLOUT_PER_TASK_DICT[data_type]} rollouts per task")
+                    # input("Press Enter to continue...")
 
                 # Compute rewards efficiently
                 all_rewards = [sum(t["reward"] for t in load_json(os.path.join(agent_eval_dir, data_type, f))) for f in json_files]
@@ -148,7 +190,7 @@ def update_models_with_eval_results(models_to_plot: dict):
                 }
 
 
-def plot_models(models_to_plot: dict, plot_path: str, models_to_plot_names: list, error_bar: bool = False, error_bar_baseline: bool = False):
+def plot_models(models_to_plot: dict, plot_path: str, models_to_plot_names: list, baselines: list, error_bar: bool = False, error_bar_baseline: bool = False):
     """
     Plot the models and save the models at 
     """
@@ -253,6 +295,7 @@ if __name__ == "__main__":
     try:
         regex_to_use = folder_to_regex[args.name]
         models_to_plot_names = folder_to_plot_models[args.name]
+        baselines = folder_to_baselines[args.name]
     except KeyError:
         raise ValueError(f"Invalid name: {args.name}, available names are: {folder_to_regex.keys()}")
 
@@ -319,7 +362,7 @@ if __name__ == "__main__":
         input("Press Enter to continue...")
 
         print("Updating models with eval results")
-        update_models_with_eval_results(models_to_plot)
+        update_models_with_eval_results(models_to_plot, baselines)
 
         with open(os.path.join(save_path, "models_to_plot_with_eval_results.json"), "w") as f:
             json.dump(models_to_plot, f, indent=4)
@@ -328,4 +371,4 @@ if __name__ == "__main__":
             models_to_plot = json.load(f)
 
     print("Plotting models")
-    plot_models(models_to_plot, os.path.join(save_path, f"{args.name}_plot.png"), models_to_plot_names, args.error_bar, args.error_bar_baseline)
+    plot_models(models_to_plot, os.path.join(save_path, f"{args.name}_plot.png"), models_to_plot_names, baselines, args.error_bar, args.error_bar_baseline)
