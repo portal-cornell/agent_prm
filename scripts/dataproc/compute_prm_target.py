@@ -66,8 +66,8 @@ def alfworld_extract_state_reason_action(trajectory, task, t, exclude_reason=Fal
 
     return state, reason_action
 
-def alfworld_skip_file_condition(file_name):
-    return not file_name.endswith(".json")
+def alfworld_skip_file_condition(file_name, max_rollout_per_task_per_dir=None):
+    return not file_name.endswith(".json") or (max_rollout_per_task_per_dir is not None and int(file_name.split("_")[-1].split(".")[0]) >= max_rollout_per_task_per_dir)
 
 def alfworld_success_file_condition(file_name):
     # TODO: Implement this
@@ -123,8 +123,8 @@ def twenty_questions_normalize_reward(reward):
     #   We assume that the reward before the last step is still 0
     return 2 * reward + 1
 
-def twenty_questions_skip_file_condition(file_name):
-    return (not file_name.endswith(".json")) or ('_summary_dict' in file_name)
+def twenty_questions_skip_file_condition(file_name, max_rollout_per_task_per_dir=None):
+    return (not file_name.endswith(".json")) or ('_summary_dict' in file_name) or ('original' in file_name) or (max_rollout_per_task_per_dir is not None and int(file_name.split("_")[-1].split(".")[0]) >= max_rollout_per_task_per_dir)
 
 def twenty_questions_success_file_condition(file_name):
     # Read the file and check the last reward is 0
@@ -412,7 +412,7 @@ def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_sp
         train_table_10k = train_table.slice(0, 10000)
         pq.write_table(train_table_10k, os.path.join(outputdir, 'train_10k.parquet'))
 
-def compute_file_list(rolloutdirs, domain, max_files_per_dir=None):
+def compute_file_list(rolloutdirs, domain, max_files_per_dir=None, max_rollout_per_task_per_dir_list=None):
     if domain == "alfworld":
         skip_condition = alfworld_skip_file_condition
     elif domain == "twenty_questions":
@@ -421,16 +421,20 @@ def compute_file_list(rolloutdirs, domain, max_files_per_dir=None):
         raise ValueError(f"Invalid domain: {domain}")
 
     files = []
-    for rolloutdir in rolloutdirs:
+    for i in range(len(rolloutdirs)):
+        rolloutdir = rolloutdirs[i]
         files_per_dir = []
         for file_name in tqdm(os.listdir(rolloutdir)):
-            if skip_condition(file_name):
+            if skip_condition(file_name, max_rollout_per_task_per_dir_list[i]):
                 continue
             file_path = os.path.join(rolloutdir, file_name)
             files_per_dir.append(file_path)
             if (max_files_per_dir is not None) and (len(files_per_dir) >= max_files_per_dir):
                 break
         files = files + files_per_dir
+
+        print(f"Found {len(files_per_dir)} files in {rolloutdir}")
+    print(f"== Found {len(files)} files in total ==")
 
     return files
         
@@ -451,7 +455,7 @@ def main(cfg: DictConfig):
     print(f"Confirm the following\n- rolloutdirs: {rolloutdirs}\n- domain: {cfg.domain}\n- outputdir: {cfg.outputdir}")
     input("Press any key to continue...")
 
-    files = compute_file_list(rolloutdirs, cfg.domain, cfg.max_files_per_dir)
+    files = compute_file_list(rolloutdirs, cfg.domain, cfg.max_files_per_dir, cfg.max_rollout_per_task_per_dir_list)
     compute_prm_target(files, cfg.domain, cfg.outputdir, cfg.gamma, cfg.cpu_count, cfg.train_split, cfg.split_name, cfg.balance_data)
 
 if __name__ == "__main__":
