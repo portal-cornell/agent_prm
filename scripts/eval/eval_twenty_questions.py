@@ -12,6 +12,7 @@ import os
 import time
 import math
 import shutil
+import torch
 from omegaconf import DictConfig, OmegaConf
 import hydra
 from datasets import load_dataset
@@ -62,34 +63,39 @@ def setup_sglang_server(agent_config: dict):
                                                 dist_url_port=agent_config.dist_url_port)
         processes.append(process)
     elif agent_config.type == "best_of_n" or agent_config.type == "sglang_server_with_critic":
+        # Start the critic
+        port = int(agent_config.critic.server_url.split(":")[-1][:-1])
+        print(f"Starting SGLang server for the critic on port {port}, serving on the highest ID GPU")
+        process, _, base_gpu_id = start_sglang_server(model_path=agent_config.critic.model_id,
+                                                port=port, 
+                                                tp=1,
+                                                dist_url_port=agent_config.critic.dist_url_port)
+        processes.append(process)
+
         # Start the generator
+        #    One condition to not host sglang: if generator has the field host_sglang and it is False
+        gpu_id = max(0, base_gpu_id - 1)
         if agent_config.type == "best_of_n":
-            port = int(agent_config.generator.server_url.split(":")[-1][:-1])
-            print(f"Starting SGLang server for the generator on port {port}, serving on the highest ID GPU")
-            process, _, base_gpu_id = start_sglang_server(model_path=agent_config.generator.model_id,
-                                                    port=port, 
-                                                    tp=1,
-                                                    dist_url_port=agent_config.generator.dist_url_port)
+            if not (hasattr(agent_config.generator, 'host_sglang') and not agent_config.generator.host_sglang):
+                port = int(agent_config.generator.server_url.split(":")[-1][:-1])
+                print(f"Starting SGLang server for the generator on port {port}, serving on the next highest ID GPU {gpu_id}")
+                process, _, _ = start_sglang_server(model_path=agent_config.generator.model_id,
+                                                        port=port, 
+                                                        tp=1,
+                                                        dist_url_port=agent_config.generator.dist_url_port,
+                                                        gpu_id=gpu_id)
+                
+                processes.append(process)
         elif agent_config.type == "sglang_server_with_critic":
             port = int(agent_config.server_url.split(":")[-1][:-1])
             print(f"Starting SGLang server for the critic on port {port}, serving on the highest ID GPU")
-            process, _, base_gpu_id = start_sglang_server(model_path=agent_config.model_id,
+            process, _, _ = start_sglang_server(model_path=agent_config.model_id,
                                                 port=port, 
                                                 tp=1,
-                                                dist_url_port=agent_config.dist_url_port)
-        
-        processes.append(process)
-
-        # Start the critic
-        port = int(agent_config.critic.server_url.split(":")[-1][:-1])
-        gpu_id = max(0, base_gpu_id - 1)
-        print(f"Starting SGLang server for the critic on port {port}, serving on the next highest ID GPU {gpu_id}")
-        process, _, _ = start_sglang_server(model_path=agent_config.critic.model_id,
-                                                port=port, 
-                                                tp=1,
-                                                dist_url_port=agent_config.critic.dist_url_port,
-                                                gpu_id=gpu_id)
-        processes.append(process)
+                                                dist_url_port=agent_config.dist_url_port,
+                                                gpu_id=base_gpu_id)
+                
+            processes.append(process)
 
     return processes
 
@@ -98,7 +104,7 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
     """
     Evaluate the model by interacting with the environment
     """
-    batched_env = setup_batched_twenty_questions_env(port=cfg.sim_port)
+    batched_env = setup_batched_twenty_questions_env(host=cfg.sim_host, port=cfg.sim_port)
     all_obj_list = [wv[0] for wv in get_default_word_list("all")]
     bs = cfg.online.batch_size
 
@@ -292,7 +298,6 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
 
 @hydra.main(version_base=None, config_path="../../configs/eval_config", config_name="twenty_questions.yaml")
 def main(cfg: DictConfig):
-
     elogger.set_activate(cfg.elogger)
 
     if cfg.mode == "consolidate_online":
@@ -343,19 +348,23 @@ def main(cfg: DictConfig):
             # Copy the table to the dst_link_fp
             shutil.copy(table_fp, dst_link_fp)
         else:
-            agent = initialize_agent(agent_config,
-                                        parse_reason_action_fn=parse_reason_and_action_twenty_questions,
-                                        verbose=cfg["verbose"],
-                                        debug=cfg["debug"])
-            
-            print(f"Evaluating {agent_name} in {logdir}")
+            try:
+                agent = initialize_agent(agent_config,
+                                            parse_reason_action_fn=parse_reason_and_action_twenty_questions,
+                                            verbose=cfg["verbose"],
+                                            debug=cfg["debug"])
+                
+                print(f"Evaluating {agent_name} in {logdir}")
 
-            if cfg.mode == "offline":
-                offline_eval(cfg, logdir, agent)
-            elif cfg.mode == "online":
-                online_eval(cfg, logdir, agent)
-            else:
-                raise ValueError(f"Invalid mode: {cfg.mode}")
+                if cfg.mode == "offline":
+                    offline_eval(cfg, logdir, agent)
+                elif cfg.mode == "online":
+                    online_eval(cfg, logdir, agent)
+                else:
+                    raise ValueError(f"Invalid mode: {cfg.mode}")
+            except Exception as e:
+                elogger.log(f"Error: {e}")
+                raise e
             
         if cfg.host_sglang:
             if processes is not None:

@@ -693,18 +693,19 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
 
         # save model
         if ((training_step - 1) % args.save_freq == 0):
-            save_dir = f"{args.output_dir}/checkpoint-{training_step-1}"
-            os.makedirs(os.path.dirname(save_dir), exist_ok=True)
-            original_tokenizer = AutoTokenizer.from_pretrained(
-                model_config.model_name_or_path, revision=model_config.model_revision
-            )
-            print(f"***** Saving model to {save_dir} *****")
-            save_with_accelerate(
-                accelerator,
-                model,
-                original_tokenizer,
-                save_dir,
-            )
+            if training_step-1 != 0:  # Skip saving checkpoint at step 0
+                save_dir = f"{args.output_dir}/checkpoint-{training_step-1}"
+                os.makedirs(os.path.dirname(save_dir), exist_ok=True)
+                original_tokenizer = AutoTokenizer.from_pretrained(
+                    model_config.model_name_or_path, revision=model_config.model_revision
+                )
+                print(f"***** Saving model to {save_dir} *****")
+                save_with_accelerate(
+                    accelerator,
+                    model,
+                    original_tokenizer,
+                    save_dir,
+                )
 
         if accelerator.is_main_process:
             try:

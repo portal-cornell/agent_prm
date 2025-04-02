@@ -111,10 +111,11 @@ class BatchedTwentyQuestionsEnvironment(object):
 
     We will use the trick that our simulator is essentially a simulator, which can accept batched inputs.
     """
-    def __init__(self, answerer: TwentyQuestionsSimulator,  word_list: List[WordVariants],  max_conversation_length: int=20):
+    def __init__(self, answerer: TwentyQuestionsSimulator,  word_list: List[WordVariants], ensemble_size: int = 5, max_conversation_length: int=20):
         self.answerer = answerer
         self.word_list = word_list
         self.max_conversation_length = max_conversation_length
+        self.ensemble_size = ensemble_size
 
     
     def step(self, words_to_guess: List[WordVariants], histories: List[Dict], actions: List[str], prev_dones: List[bool]):
@@ -143,7 +144,7 @@ class BatchedTwentyQuestionsEnvironment(object):
         """
         # Get batched answers
         start_time = time.time()
-        answer_reasons, answers = self.answerer.generate_answer_batch(words_to_guess, actions)
+        answer_reasons, answers = self.answerer.generate_answer_batch(words_to_guess, actions, ensemble_size=self.ensemble_size)
         end_time = time.time()
         print(f"[ENV] time taken to generate answers: {end_time - start_time} seconds")
 
@@ -216,11 +217,12 @@ def setup_twenty_questions_env(data_split: str='all') -> TwentyQuestionsEnvironm
     return env
 
 
-def setup_batched_twenty_questions_env(data_split: str='all', use_sglang_server: bool = True, port: int = 40042) -> BatchedTwentyQuestionsEnvironment:
+def setup_batched_twenty_questions_env(data_split: str='all', use_sglang_server: bool = True, host: str = 'localhost', port: int = 40042) -> BatchedTwentyQuestionsEnvironment:
     if use_sglang_server:
+        print(f"Using SGLang server at {host}:{port}")
         sim = SGLangServerTwentyQuestionsSimulator(
             model_id="meta-llama/Llama-3.2-3B-Instruct",
-            server_url=f"http://localhost:{port}",
+            server_url=f"http://{host}:{port}",
             prompt_template_file="prompts/twenty_questions/twenty_questions_simulator_template_with-reasoning.j2",
             verbose=0
         )
@@ -234,6 +236,7 @@ def setup_batched_twenty_questions_env(data_split: str='all', use_sglang_server:
     env = BatchedTwentyQuestionsEnvironment(
         answerer=sim,
         word_list=get_default_word_list(data_split),
+        ensemble_size=5,
         max_conversation_length=20,
     )
     return env
