@@ -1,10 +1,32 @@
 """
-Given a rollout folder, 
-    for curr_sample_iter in range(sample_iters):
-        - Get the rollouts in the previous sample iterations
-        - We sample N rollouts
-        - For each rollout, randomly sample M distinct timesteps to get expert query
-        - Use the agent to complete the rollout
+Example usage:
+
+When getting export's alternative actions:
+    python scripts/dataproc/rollout_expert_alt_actions.py -e -m g -i 1 -d val
+
+    where
+        -e indicates that we are using elogger
+        -m g indicates that we are generating rollouts with alt actions
+        -i 1 indicates the iteration that we are on (which affects the rollout directory)
+        -d val indicates that we are processing the validation set.
+
+When completing the rollouts:
+    python scripts/dataproc/rollout_expert_alt_actions.py -e -m r -i 1 -d train --rollout_idx_min 4 --rollout_idx_max 12 -si 0 -ei 27 -s -p 40
+
+    where
+        -e indicates that we are using elogger
+        -m r indicates that we are completing the rollouts
+        -i 1 indicates the iteration that we are on (which affects the rollout directory and the agent config)
+        -d train indicates that we are processing the training set
+        --rollout_idx_min 4 --rollout_idx_max 12 indicates that we are completing the rollouts from idx 4 to 12
+        -si 0 -ei 27 indicates that we are starting from object 0 and ending at object 27 (not inclusive)
+        -s indicates that we are serving the model
+        -p 40 indicates that we are using port 40
+
+    python scripts/dataproc/rollout_expert_alt_actions.py -e -m g -i 1 -d train --curr_sample_iter 1 --starting_num_rollouts 4
+
+When merging the summary dicts:
+    python scripts/dataproc/rollout_expert_alt_actions.py -m merge -i 1 -d train,val
 """
 import argparse
 import os
@@ -26,21 +48,42 @@ from agent_prm.utils.parser import parse_json, parse_reason_and_action_twenty_qu
 from agent_prm.utils.logger_email import elogger
 from agent_prm.utils.general_utils import start_sglang_server
 
-ROLLOUT_DIR = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight_pi0-all-data-3epoches_250307_212417_peft=false_epoch3+all"
 ALL_OBJ_LIST = [wv[0] for wv in get_default_word_list("all")]
 
-AGENT_CONFIG = {
-    "type": "sglang_server",
-    "log_name": "pi0-all-data-3epoches",
-    "model_id": "/share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120",
-    "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
-    "server_url": "http://localhost:30040/",
-    "dist_url_port": 29540,
-    "temperature": 0.3,
-    "batch_limit": 32,
-    "verbose": 0,
-    "debug": False,
+iter_to_rollout_dir = {
+    # pi0 3 epochs
+    0: "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight_pi0-all-data-3epoches_250307_212417_peft=false_epoch3+all",
+    # pi1-77pct_Q0-80pct-lr=5e-6-hindsight
+    1: "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-77pct_Q0-80pct-lr=5e-6-hindsight_250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight"
 }
+
+iter_to_agent_config = {
+    0: {
+        "type": "sglang_server",
+        "log_name": "pi0-all-data-3epoches",
+        "model_id": "/share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120",
+        "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
+        "server_url": "http://localhost:30040/",
+        "dist_url_port": 29540,
+        "temperature": 0.3,
+        "batch_limit": 32,
+        "verbose": 0,
+        "debug": False,
+    },
+    1: {
+        "type": "sglang_server",
+        "log_name": "pi1-77pct_Q0-80pct-lr=5e-6-hindsight",
+        "model_id": "/share/portal/hw575/agent_prm/save/online_dpo/250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight/checkpoint-160",
+        "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
+        "server_url": "http://localhost:30040/",
+        "dist_url_port": 29540,
+        "temperature": 0.3,
+        "batch_limit": 32,
+        "verbose": 0,
+        "debug": False,
+    }
+}
+
 NUM_ALT_RESPONSES = 5
 SIM_PORT = 40042
 
@@ -54,7 +97,7 @@ def is_valid_rollout(f: str) -> bool:
     """
     Check if the rollout is valid
     """
-    return f.endswith(".json") and not f.endswith("_original.json") and not f.endswith("_summary_dict.json")
+    return f.endswith(".json") and not f.endswith("_original.json") and not "summary_dict" in f
 
 def is_within_valid_range(file_name: str, rollout_idx_min: int, rollout_idx_max: int) -> bool:
     """
@@ -148,113 +191,124 @@ def gen_alt_actions(summary: str, rollout: List[Dict], t: int, num_alt_actions_t
     return reason_action_list, cost
     
 
-def generate_rollouts_with_alt_actions(total_sample_iters: int, n_rollouts_to_sample: int, m_timesteps_to_gen_from: int, actions_to_gen_at_each_timestep: int, starting_num_rollouts: int = 4):
+def generate_rollouts_with_alt_actions(rollout_dir: str, curr_sample_iter: int, n_rollouts_to_sample: int, m_timesteps_to_gen_from: int, actions_to_gen_at_each_timestep: int, starting_num_rollouts: int = 4, data_types: List[str]=["train", "val"], start_obj_idx: int=-1, end_obj_idx: int=-1):
     total_cost = 0
 
-    for data_type in ["val"]:
+    for data_type in data_types:
         if data_type == "train":
             object_dict_to_use = TRAIN_OBJECT_DICT
         elif data_type == "val":
             object_dict_to_use = VALIDATION_OBJECT_DICT
 
         objects_to_eval_on = [(obj, data_type) for category in object_dict_to_use.keys() for obj in object_dict_to_use[category]]
+        if start_obj_idx != -1:
+            objects_to_eval_on = objects_to_eval_on[start_obj_idx:]
+        if end_obj_idx != -1:
+            objects_to_eval_on = objects_to_eval_on[:end_obj_idx]
+        print(f"Evaluating on {len(objects_to_eval_on)} objects [{start_obj_idx},{end_obj_idx}): {objects_to_eval_on}")
 
-        for curr_sample_iter in range(total_sample_iters):
-            # Get all the rollout files
-            json_files = [f for f in os.listdir(os.path.join(ROLLOUT_DIR, data_type)) if is_valid_rollout(f)]
+        if not os.path.exists(os.path.join(rollout_dir, data_type, f"_summary_dict_gen-iter={curr_sample_iter}_si={start_obj_idx}_ei={end_obj_idx}.json")):
+            summary_dict = load_json(os.path.join(rollout_dir, data_type, "_summary_dict.json"))  # Assume that the summary dict is already generated
+            save_json(os.path.join(rollout_dir, data_type, f"_summary_dict_gen-iter={curr_sample_iter}_si={start_obj_idx}_ei={end_obj_idx}.json"), summary_dict)
 
-            # Determine the range of rollout idx that we can sample from
-            if curr_sample_iter == 0:
-                # We assume that
-                #   - initiallly, all the rollout files are available 
-                #   - for each task, we have the same number of rollouts
-                rollout_idx_min = 0
-                rollout_idx_max = starting_num_rollouts
-            else:
-                rollout_idx_min = rollout_idx_max
-                rollout_idx_max = rollout_idx_min + curr_sample_iter * n_rollouts_to_sample * m_timesteps_to_gen_from * actions_to_gen_at_each_timestep
+        # Get all the rollout files
+        json_files = [f for f in os.listdir(os.path.join(rollout_dir, data_type)) if is_valid_rollout(f)]
 
-            print(f"Rollout idx range: {rollout_idx_min} - {rollout_idx_max}")
-            input("stop")
-            # For each task, we sample N rollouts
-            for obj, _ in tqdm(objects_to_eval_on, desc="Processing objects"):
-                # Get the task specific rollout files
-                task_rollout_files = [f for f in json_files if obj in f and is_within_valid_range(f, rollout_idx_min, rollout_idx_max)]
+        # Determine the range of rollout idx that we can sample from
+        if curr_sample_iter == 0:
+            # We assume that
+            #   - initiallly, all the rollout files are available 
+            #   - for each task, we have the same number of rollouts
+            rollout_idx_min = 0
+            rollout_idx_max = starting_num_rollouts
+        else:
+            rollout_idx_min = starting_num_rollouts
+            rollout_idx_max = rollout_idx_min + curr_sample_iter * n_rollouts_to_sample * m_timesteps_to_gen_from * actions_to_gen_at_each_timestep
 
-                # Randomly select N rollouts (no replacement)
-                selected_rollouts = random.sample(task_rollout_files, n_rollouts_to_sample)
+        print(f"Rollout idx range: {rollout_idx_min} - {rollout_idx_max}")
+        input("stop")
 
-                rollout_idx = rollout_idx_max
+        # For each task, we sample N rollouts
+        for obj, _ in tqdm(objects_to_eval_on, desc="Processing objects"):
+            # Get the task specific rollout files
+            task_rollout_files = [f for f in json_files if obj in f and is_within_valid_range(f, rollout_idx_min, rollout_idx_max)]
 
-                # For each rollout, we sample M actions
-                for rollout_file in selected_rollouts:
-                    rollout = load_json(os.path.join(ROLLOUT_DIR, data_type, rollout_file))
+            # Randomly select N rollouts (no replacement)
+            selected_rollouts = random.sample(task_rollout_files, n_rollouts_to_sample)
 
-                    if "summary" not in rollout[0]:
-                        summary, cost = gen_summary_from_rollout(rollout_file, rollout)
-                        rollout[0]["summary"] = summary
-                        save_json(os.path.join(ROLLOUT_DIR, data_type, rollout_file), rollout)
-                        total_cost += cost
-                    else:
-                        summary = rollout[0]["summary"]
-                        total_cost += 0
+            print(f"Selected rollouts: {selected_rollouts}")
 
-                    print(f"Summary (cost: {total_cost:.2f}):\n{summary}")
+            rollout_idx = rollout_idx_max
 
-                    # Randomly sample M distinct timesteps (from 25% of the trajectory to 75% of the trajectory) to generate expert queries.
-                    timestep_to_gen_from = random.sample(range(len(rollout) // 4, len(rollout) * 3 // 4), m_timesteps_to_gen_from)
+            # For each rollout, we sample M actions
+            for rollout_file in selected_rollouts:
+                rollout = load_json(os.path.join(rollout_dir, data_type, rollout_file))
 
-                    print(f"Rollout file: {rollout_file}, range: {range(len(rollout) // 4, len(rollout) * 3 // 4)},Timesteps to generate from: {timestep_to_gen_from}")
+                if "summary" not in rollout[0]:
+                    summary, cost = gen_summary_from_rollout(rollout_file, rollout)
+                    rollout[0]["summary"] = summary
+                    save_json(os.path.join(rollout_dir, data_type, rollout_file), rollout)
+                    total_cost += cost
+                else:
+                    summary = rollout[0]["summary"]
+                    total_cost += 0
 
-                    for t in timestep_to_gen_from:
-                        # Check if the rollout has already been generated
-                        summary_dict = load_json(os.path.join(ROLLOUT_DIR, data_type, "_summary_dict.json"))
-                        if str(rollout_idx) in summary_dict and obj in summary_dict[str(rollout_idx)]:
-                            print(f"Rollout {rollout_idx} for {obj} has already been generated. Skipping...")
-                            rollout_idx += 1
-                            continue
+                print(f"Summary for {rollout_file} (cost: {total_cost:.2f}):\n{summary}")
 
-                        alt_reason_actions, cost = gen_alt_actions(summary, rollout, t, actions_to_gen_at_each_timestep)
+                # Randomly sample M distinct timesteps (from 25% of the trajectory to 75% of the trajectory) to generate expert queries.
+                timestep_to_gen_from = random.sample(range(len(rollout) // 4, len(rollout) * 3 // 4), m_timesteps_to_gen_from)
 
-                        # Edit the rollout file to save the alt actions
-                        if "expert_alternatives" not in rollout[t]:
-                            rollout[t]["expert_alternatives"] = []
+                print(f"Rollout file: {rollout_file}, range: {range(len(rollout) // 4, len(rollout) * 3 // 4)},Timesteps to generate from: {timestep_to_gen_from}")
 
-                        rollout[t]["expert_alternatives"].extend(alt_reason_actions)
+                for t in timestep_to_gen_from:
+                    # Check if the rollout has already been generated
+                    summary_dict = load_json(os.path.join(rollout_dir, data_type, "_summary_dict.json"))
+                    if str(rollout_idx) in summary_dict and obj in summary_dict[str(rollout_idx)]:
+                        print(f"Rollout {rollout_idx} for {obj} has already been generated. Skipping...")
+                        rollout_idx += 1
+                        continue
 
-                        save_json(os.path.join(ROLLOUT_DIR, data_type, rollout_file), rollout)
+                    alt_reason_actions, cost = gen_alt_actions(summary, rollout, t, actions_to_gen_at_each_timestep)
 
-                        # Make copy of the rollout file
-                        for i in range(actions_to_gen_at_each_timestep):
-                            new_partial_rollout = rollout.copy()
-                            new_partial_rollout[0].pop("summary", None)  # Safely remove the summary
+                    # Edit the rollout file to save the alt actions
+                    if "expert_alternatives" not in rollout[t]:
+                        rollout[t]["expert_alternatives"] = []
 
-                            # Edit the action at t
-                            new_partial_rollout[t] = {
-                                "step": t,
-                                "reason": alt_reason_actions[i]["reason"],
-                                "action": alt_reason_actions[i]["action"],
-                                "raw_text": "",  # Because we are using gpt-4o, it has less parsing issues. 
-                            }
-                            new_partial_rollout = new_partial_rollout[:t+1]
+                    rollout[t]["expert_alternatives"].extend(alt_reason_actions)
 
-                            # Save the new partial rollout
-                            task_name = rollout_file.split("_")[0]
+                    save_json(os.path.join(rollout_dir, data_type, rollout_file), rollout)
 
-                            print(f"Saving new partial rollout: {os.path.join(ROLLOUT_DIR, data_type, f'{task_name}_{rollout_idx}.json')}")
+                    # Make copy of the rollout file
+                    for i in range(actions_to_gen_at_each_timestep):
+                        new_partial_rollout = rollout.copy()
+                        new_partial_rollout[0].pop("summary", None)  # Safely remove the summary
 
-                            save_json(os.path.join(ROLLOUT_DIR, data_type, f"{task_name}_{rollout_idx}.json"), new_partial_rollout)
+                        # Edit the action at t
+                        new_partial_rollout[t] = {
+                            "step": t,
+                            "reason": alt_reason_actions[i]["reason"],
+                            "action": alt_reason_actions[i]["action"],
+                            "raw_text": "",  # Because we are using gpt-4o, it has less parsing issues. 
+                        }
+                        new_partial_rollout = new_partial_rollout[:t+1]
 
-                            # Update the summary dict
-                            summary_dict = load_json(os.path.join(ROLLOUT_DIR, data_type, "_summary_dict.json"))
-                            if str(rollout_idx) not in summary_dict:
-                                summary_dict[str(rollout_idx)] = []
-                            summary_dict[str(rollout_idx)].append(obj)
-                            save_json(os.path.join(ROLLOUT_DIR, data_type, "_summary_dict.json"), summary_dict)
+                        # Save the new partial rollout
+                        task_name = rollout_file.split("_")[0]
 
-                            rollout_idx += 1
+                        print(f"Saving new partial rollout: {os.path.join(rollout_dir, data_type, f'{task_name}_{rollout_idx}.json')}")
 
-                        print(f"Total cost: {total_cost:.2f}")
+                        save_json(os.path.join(rollout_dir, data_type, f"{task_name}_{rollout_idx}.json"), new_partial_rollout)
+
+                        # Update the summary dict
+                        summary_dict = load_json(os.path.join(rollout_dir, data_type, f"_summary_dict_gen-iter={curr_sample_iter}_si={start_obj_idx}_ei={end_obj_idx}.json"))
+                        if str(rollout_idx) not in summary_dict:
+                            summary_dict[str(rollout_idx)] = []
+                        summary_dict[str(rollout_idx)].append(obj)
+                        save_json(os.path.join(rollout_dir, data_type, f"_summary_dict_gen-iter={curr_sample_iter}_si={start_obj_idx}_ei={end_obj_idx}.json"), summary_dict)
+
+                        rollout_idx += 1
+
+                    print(f"Total cost: {total_cost:.2f}")
 
 
 def prepare_batch(batch_json_files: List[str], batched_env: BatchedTwentyQuestionsEnvironment):
@@ -269,7 +323,7 @@ def prepare_batch(batch_json_files: List[str], batched_env: BatchedTwentyQuestio
     actions = []
     traj_list = []
     for file, data_type in batch_json_files:
-        rollout = load_json(os.path.join(ROLLOUT_DIR, data_type, file))
+        rollout = load_json(os.path.join(rollout_dir, data_type, file))
         traj_list.append(rollout)
         actions.append(rollout[-1]["action"])  # The last action is the expert's action
 
@@ -300,29 +354,49 @@ def prepare_batch(batch_json_files: List[str], batched_env: BatchedTwentyQuestio
     return histories, words_to_guess, traj_list, prev_dones
 
 
-def complete_rollouts(bs: int, rollout_idx_min: int=-1, rollout_idx_max: int=-1):
+def complete_rollouts(rollout_dir: str, agent_config: Dict, bs: int, rollout_idx_min: int=-1, rollout_idx_max: int=-1, data_types: List[str]=["train", "val"], start_obj_idx: int=-1, end_obj_idx: int=-1):
     """
     Complete the rollouts
     """
     # Initialize the agent
-    print(f"Initializing agent {AGENT_CONFIG['log_name']}, {AGENT_CONFIG['model_id']}")
-    agent = initialize_agent(AGENT_CONFIG,
+    print(f"Initializing agent {agent_config['log_name']}, {agent_config['model_id']}")
+    agent = initialize_agent(agent_config,
                             parse_reason_action_fn=parse_reason_and_action_twenty_questions,
-                            verbose=AGENT_CONFIG["verbose"],
-                            debug=AGENT_CONFIG["debug"])
+                            verbose=agent_config["verbose"],
+                            debug=agent_config["debug"])
     batched_env = setup_batched_twenty_questions_env(port=SIM_PORT)
 
     # Collect all the rollouts that need to be completed
     json_files_to_complete = []
 
-    for data_type in ["train", "val"]:
-        summary_dict = load_json(os.path.join(ROLLOUT_DIR, data_type, "_rollout_complete_summary_dict.json"))
+    for data_type in data_types:
+        summary_dict = load_json(os.path.join(rollout_dir, data_type, "_rollout_complete_summary_dict.json"))
 
-        json_files = [(f, data_type) for f in os.listdir(os.path.join(ROLLOUT_DIR, data_type)) if is_valid_rollout(f) and need_to_complete(f, summary_dict) and is_within_valid_range(f, rollout_idx_min, rollout_idx_max)]
+        json_files = [(f, data_type) for f in os.listdir(os.path.join(rollout_dir, data_type)) if is_valid_rollout(f) and need_to_complete(f, summary_dict) and is_within_valid_range(f, rollout_idx_min, rollout_idx_max)]
+
+        if start_obj_idx != -1 or end_obj_idx != -1:
+            if data_type == "train":
+                object_dict_to_use = TRAIN_OBJECT_DICT
+            elif data_type == "val":
+                object_dict_to_use = VALIDATION_OBJECT_DICT
+
+            objects_to_eval_on = [obj for category in object_dict_to_use.keys() for obj in object_dict_to_use[category]]
+            if start_obj_idx != -1:
+                objects_to_eval_on = objects_to_eval_on[start_obj_idx:]
+            if end_obj_idx != -1:
+                objects_to_eval_on = objects_to_eval_on[:end_obj_idx]
+
+            json_files = [(f, data_type) for f, data_type in json_files if f.split("_")[0] in objects_to_eval_on]
+            print(f"Filtering json files to {len(json_files)} rollouts range [{start_obj_idx},{end_obj_idx}): {objects_to_eval_on}")
 
         json_files_to_complete.extend(json_files)
 
+        # Save a copy of the summary dict
+        if not os.path.exists(os.path.join(rollout_dir, data_type, f"_rollout_complete_summary_dict_si={start_obj_idx}_ei={end_obj_idx}.json")):
+            save_json(os.path.join(rollout_dir, data_type, f"_rollout_complete_summary_dict_si={start_obj_idx}_ei={end_obj_idx}.json"), summary_dict)
+
     print(f"Total number of rollouts to complete: {json_files_to_complete}\nlen: {len(json_files_to_complete)}")
+    input("stop")
 
     for batch in tqdm(range(math.ceil(len(json_files_to_complete) / bs))):
         batch_json_files = json_files_to_complete[batch * bs:(batch + 1) * bs]
@@ -339,59 +413,140 @@ def complete_rollouts(bs: int, rollout_idx_min: int=-1, rollout_idx_max: int=-1)
         for i in range(len(batch_json_files)):
             data_type = batch_json_files[i][1]
             file = batch_json_files[i][0]
-            save_json(os.path.join(ROLLOUT_DIR, data_type, file), traj_list[i])
+            save_json(os.path.join(rollout_dir, data_type, file), traj_list[i])
 
             obj = file.split("_")[0]
             rollout_idx = str(int(file.split("_")[-1].split(".")[0]))
 
+            summary_dict = load_json(os.path.join(rollout_dir, data_type, f"_rollout_complete_summary_dict_si={start_obj_idx}_ei={end_obj_idx}.json"))
             if rollout_idx not in summary_dict:
                 summary_dict[rollout_idx] = []
 
             summary_dict[rollout_idx].append(obj)
+            save_json(os.path.join(rollout_dir, data_type, f"_rollout_complete_summary_dict_si={start_obj_idx}_ei={end_obj_idx}.json"), summary_dict)
 
-        save_json(os.path.join(ROLLOUT_DIR, data_type, "_rollout_complete_summary_dict.json"), summary_dict)
+def merge_rollout_summary_dicts(rollout_dir: str, data_types: List[str]) -> Dict:
+    """
+    Merge the summary dicts
+    """
+    for data_type in data_types:
+        original_rollout_summary_dict_path = os.path.join(rollout_dir, data_type, "_rollout_complete_summary_dict.json")
+        rollout_summary_dicts_path = [f for f in os.listdir(os.path.join(rollout_dir, data_type)) if "_rollout_complete_summary_dict" in f and  "_rollout_complete_summary_dict.json" not in f and "copy" not in f]
+        rollout_summary_dicts_path.sort()
+        print(f"Rollout summary dicts path: {rollout_summary_dicts_path}")
+        input("stop")
+        
+        main_summary_dict = load_json(original_rollout_summary_dict_path)
 
+        for rollout_summary_dict_path in rollout_summary_dicts_path:
+            summary_dict = load_json(os.path.join(rollout_dir, data_type, rollout_summary_dict_path))
+
+            for rollout_idx, obj_list in summary_dict.items():
+                if rollout_idx not in main_summary_dict:
+                    main_summary_dict[rollout_idx] = []
+
+                main_summary_dict[rollout_idx].extend(obj_list)
+        
+        save_json(os.path.join(rollout_dir, data_type, "_rollout_complete_summary_dict.json"), main_summary_dict)
+
+        input("Please check the merged summary dict before we delete the intermediate summary dicts")
+
+        for rollout_summary_dict_path in rollout_summary_dicts_path:
+            print(f"Deleting {os.path.join(rollout_dir, data_type, rollout_summary_dict_path)}")
+            input("stop")
+            os.remove(os.path.join(rollout_dir, data_type, rollout_summary_dict_path))
+
+
+def merge_generation_summary_dicts(rollout_dir: str, data_types: List[str]) -> Dict:
+    """
+    Merge the summary dicts
+    """
+    for data_type in data_types:
+        original_rollout_summary_dict_path = os.path.join(rollout_dir, data_type, "_summary_dict.json")
+        rollout_summary_dicts_path = [f for f in os.listdir(os.path.join(rollout_dir, data_type)) if "_summary_dict" in f and  "rollout_complete" not in f and "copy" not in f and "_summary_dict.json" not in f]
+        rollout_summary_dicts_path.sort()
+        print(f"Rollout summary dicts path: {rollout_summary_dicts_path}")
+        input("stop")
+        
+        main_summary_dict = load_json(original_rollout_summary_dict_path)
+
+        for rollout_summary_dict_path in rollout_summary_dicts_path:
+            summary_dict = load_json(os.path.join(rollout_dir, data_type, rollout_summary_dict_path))
+
+            for rollout_idx, obj_list in summary_dict.items():
+                if rollout_idx not in main_summary_dict:
+                    main_summary_dict[rollout_idx] = []
+
+                main_summary_dict[rollout_idx].extend(obj_list)
+        
+        save_json(os.path.join(rollout_dir, data_type, "_summary_dict.json"), main_summary_dict)
+
+        input("Please check the merged summary dict before we delete the intermediate summary dicts")
+
+        for rollout_summary_dict_path in rollout_summary_dicts_path:
+            print(f"Deleting {os.path.join(rollout_dir, data_type, rollout_summary_dict_path)}")
+            input("stop")
+            os.remove(os.path.join(rollout_dir, data_type, rollout_summary_dict_path))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--mode", type=str, choices=["g", "gen_actions", "r", "rollout"], required=True)
+    parser.add_argument("-i", "--iter", type=int, choices=list(range(3)), required=True)
+    parser.add_argument("-m", "--mode", type=str, choices=["g", "gen_actions", "r", "rollout", "merge_gen", "merge_rollout"], required=True)
+    parser.add_argument("-d", "--data_types", help="List of data types to process", nargs="+", choices=["train", "val"])
     parser.add_argument("-e", "--elogger", action="store_true", default=False)
-    parser.add_argument("--total_sample_iters", type=int, default=3)
+    parser.add_argument("--curr_sample_iter", type=int, default=0, help="The current sample iteration. Determines which rollouts to sample from")
     parser.add_argument("--n_rollouts_to_sample", type=int, default=4)
     parser.add_argument("--m_timesteps_to_gen_from", type=int, default=1)
     parser.add_argument("--actions_to_gen_at_each_timestep", type=int, default=2)
     parser.add_argument("--starting_num_rollouts", type=int, default=4)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("-min", "--rollout_idx_min", type=int, default=-1)
+    parser.add_argument("-min", "--rollout_idx_min", type=int, default=-1, help="Determine which rollouts to complete rolling out")
     parser.add_argument("-max", "--rollout_idx_max", type=int, default=-1)
-    parser.add_argument("-s", "--serve_mode", action="store_true", default=False)
+    parser.add_argument("-s", "--serve_model", action="store_true", default=False)
     parser.add_argument("-p", "--port", type=str, default="40")
+    parser.add_argument("-si", "--start_obj_idx", type=int, default=-1, help="Within a data_type, start from this object idx")
+    parser.add_argument("-ei", "--end_obj_idx", type=int, default=-1, help="Within a data_type, end at this object idx")
     args = parser.parse_args()
     random.seed(args.seed)
 
     elogger.set_activate(args.elogger)
 
     if args.mode == "g" or args.mode == "gen_actions":
+        rollout_dir = iter_to_rollout_dir[args.iter]
+
+        print(f"Generating rollouts with alt actions for data_type={args.data_types} in {rollout_dir}")
+
         try:
-            generate_rollouts_with_alt_actions(total_sample_iters=args.total_sample_iters, n_rollouts_to_sample=args.n_rollouts_to_sample, m_timesteps_to_gen_from=args.m_timesteps_to_gen_from, actions_to_gen_at_each_timestep=args.actions_to_gen_at_each_timestep, starting_num_rollouts=args.starting_num_rollouts)
+            generate_rollouts_with_alt_actions(rollout_dir=rollout_dir, curr_sample_iter=args.curr_sample_iter, n_rollouts_to_sample=args.n_rollouts_to_sample, m_timesteps_to_gen_from=args.m_timesteps_to_gen_from, actions_to_gen_at_each_timestep=args.actions_to_gen_at_each_timestep, starting_num_rollouts=args.starting_num_rollouts, data_types=args.data_types, start_obj_idx=args.start_obj_idx, end_obj_idx=args.end_obj_idx)
         except Exception as e:
             elogger.log(f"Error generating rollouts with alt actions: {e}")
             raise e
 
-        elogger.log(f"Successfully generated rollouts with alt actions for {ROLLOUT_DIR}")
+        elogger.log(f"Successfully generated rollouts with alt actions for data_type={args.data_types} in {rollout_dir}")
     elif args.mode == "r" or args.mode == "rollout":
+        rollout_dir = iter_to_rollout_dir[args.iter]
+        agent_config = iter_to_agent_config[args.iter]
+
         if args.serve_model:
-            port = int(args.port)
-            dist_url_port = AGENT_CONFIG["dist_url_port"][:-2] + str(port)
-            print(f"Starting SGLang server on port {port} with dist_url_port {dist_url_port}")
-            input("stop")
-            process, _, base_gpu_id = start_sglang_server(model_path=AGENT_CONFIG["model_id"],
+            # Example of server_url: http://localhost:30040/
+            agent_config['server_url'] = agent_config['server_url'][:-3] + str(args.port) + "/"
+            port = int(agent_config['server_url'].split(":")[-1][:-1])
+            # Example of dist_url_port: 29540
+            dist_url_port = str(agent_config["dist_url_port"])[:-2] + str(args.port)
+            print(f"Starting SGLang server on port {port} with dist_url_port {dist_url_port} and server_url {agent_config['server_url']}")
+            process, _, base_gpu_id = start_sglang_server(model_path=agent_config["model_id"],
                                                     port=port, 
                                                     tp=1,
-                                                    dist_url_port=AGENT_CONFIG["dist_url_port"])
+                                                    dist_url_port=dist_url_port)
 
-        complete_rollouts(bs=AGENT_CONFIG["batch_limit"], rollout_idx_min=args.rollout_idx_min, rollout_idx_max=args.rollout_idx_max)
+        complete_rollouts(rollout_dir=rollout_dir, agent_config=agent_config, bs=agent_config["batch_limit"], rollout_idx_min=args.rollout_idx_min, rollout_idx_max=args.rollout_idx_max, data_types=args.data_types, start_obj_idx=args.start_obj_idx, end_obj_idx=args.end_obj_idx)
 
-        elogger.log(f"Successfully completed rollouts for {ROLLOUT_DIR}")
+        elogger.log(f"Successfully completed rollouts for data_type={args.data_types} in {rollout_dir}")
+    elif args.mode == "merge_gen":
+        rollout_dir = iter_to_rollout_dir[args.iter]
+        merge_generation_summary_dicts(rollout_dir=rollout_dir, data_types=args.data_types)
+    elif args.mode == "merge_rollout":
+        rollout_dir = iter_to_rollout_dir[args.iter]
+        merge_rollout_summary_dicts(rollout_dir=rollout_dir, data_types=args.data_types)
     else:
         raise ValueError(f"Invalid mode: {args.mode}")
