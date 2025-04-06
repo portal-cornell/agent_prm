@@ -14,6 +14,8 @@ from omegaconf import DictConfig, OmegaConf
 import hydra
 from typing import List, Dict
 
+from agent_prm.utils.general_utils import load_json
+
 """================================================================================
     Alfworld processing functions
 ================================================================================"""
@@ -66,8 +68,11 @@ def alfworld_extract_state_reason_action(trajectory, task, t, exclude_reason=Fal
 
     return state, reason_action
 
-def alfworld_skip_file_condition(file_name, max_rollout_per_task_per_dir=None):
-    return not file_name.endswith(".json") or (max_rollout_per_task_per_dir is not None and int(file_name.split("_")[-1].split(".")[0]) >= max_rollout_per_task_per_dir)
+def alfworld_skip_file_condition(rolloutdir, file_name, max_rollout_per_task_per_dir=None, include_only_success=False):
+    """
+    For now, cannot handle include_only_success
+    """
+    return file_name.endswith(".json") or (max_rollout_per_task_per_dir is not None and int(file_name.split("_")[-1].split(".")[0]) >= max_rollout_per_task_per_dir)
 
 def alfworld_success_file_condition(file_name):
     # TODO: Implement this
@@ -123,8 +128,35 @@ def twenty_questions_normalize_reward(reward):
     #   We assume that the reward before the last step is still 0
     return 2 * reward + 1
 
-def twenty_questions_skip_file_condition(file_name, max_rollout_per_task_per_dir=None):
+def twenty_questions_skip_file_condition(rolloutdir, file_name, max_rollout_per_task_per_dir=None):
     return (not file_name.endswith(".json")) or ('_summary_dict' in file_name) or ('original' in file_name) or (max_rollout_per_task_per_dir is not None and int(file_name.split("_")[-1].split(".")[0]) >= max_rollout_per_task_per_dir)
+
+def twenty_questions_filter_condition_checker(rolloutdir, file_name):
+    """
+    Return
+        - True if the file failed
+        - True if the file is an expert rollout that led to success
+    """
+    rollout = load_json(os.path.join(rolloutdir, file_name))
+
+    is_expert_rollout = False
+    idx_of_expert_action = 0
+    for t in range(len(rollout)):
+        if rollout[t]['raw_text'] == "":
+            is_expert_rollout = True
+            idx_of_expert_action = t
+
+    failed = rollout[-1]['reward'] != 0
+    if is_expert_rollout:
+        # Filtering out the following cases:
+        # 1. The expert rollout failed
+        # 2. The expert action led to success
+        expert_action_led_to_success = rollout[idx_of_expert_action]['reward'] == 0
+
+        return failed, expert_action_led_to_success
+    else:
+        return failed, False
+    
 
 def twenty_questions_success_file_condition(file_name):
     # Read the file and check the last reward is 0
@@ -258,11 +290,13 @@ def subsample_data(data: List[Dict], count: int, bins: int = 5, low_or_high: str
 
             bin_to_remove_min = bin_edges[highest_bin_index]
             bin_to_remove_max = bin_edges[highest_bin_index + 1]
+
+            print(f"Removing {removal_count} datapoints from bin {bin_to_remove_min} to {bin_to_remove_max}")
             
             count = 0
             new_data = []
             for entry in data_to_process:
-                if entry['qestimate'] >= bin_to_remove_min and entry['qestimate'] < bin_to_remove_max and count < removal_count:
+                if entry['qestimate'] >= bin_to_remove_min and entry['qestimate'] <= bin_to_remove_max and count < removal_count:
                     # Removing the datapoint
                     count += 1
                 else:
@@ -319,7 +353,8 @@ def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_sp
         Q_target[key]['qestimate'] = 0.5 * (Q_target[key]['qestimate'] + 1)
 
     print_qestimate_histogram(Q_target)
-    print_count_histogram(Q_target, bins=np.array(list(range(1, 6)) + list(range(6, 10, 2)) +list(range(10, 100, 10)) + list(range(100, max([x['count'] for x in Q_target.values()]), 100))))
+    # print_count_histogram(Q_target, bins=np.array(list(range(1, 6)) + list(range(6, 10, 2)) +list(range(10, 100, 10)) + list(range(100, max([x['count'] for x in Q_target.values()]), 100))))
+    input("Press any key to continue...")
 
     keys = list(Q_target.keys())
     random.shuffle(keys)
@@ -332,44 +367,50 @@ def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_sp
             for k in keys
         ]
 
-        if balance_data:
-            # Find the data that has Q-estimate >= 0.5
-            low_data = [x for x in original_data_to_save if x['qestimate'] < 0.5]
-            high_data = [x for x in original_data_to_save if x['qestimate'] >= 0.5]
+        if split_name == "val":
+            if balance_data:
+                # Find the data that has Q-estimate >= 0.5
+                low_data = [x for x in original_data_to_save if x['qestimate'] < 0.5]
+                high_data = [x for x in original_data_to_save if x['qestimate'] >= 0.5]
 
-            count = min(len(low_data), len(high_data))
+                count = min(len(low_data), len(high_data))
 
-            # Subsample the data
-            low_data_subsampled = subsample_data(low_data, count, low_or_high="low")
-            high_data_subsampled = subsample_data(high_data, count, low_or_high="high")
+                # Subsample the data
+                low_data_subsampled = subsample_data(low_data, count, low_or_high="low")
+                high_data_subsampled = subsample_data(high_data, count, low_or_high="high")
 
-            print(f"Reducing low_data from {len(low_data)} to {count}")
-            print(f"Reducing high_data from {len(high_data)} to {count}")
+                print(f"Reducing low_data from {len(low_data)} to {count}")
+                print(f"Reducing high_data from {len(high_data)} to {count}")
 
-            input("Press any key to continue...")
+                input("Press any key to continue...")
 
-            data_to_save = low_data_subsampled + high_data_subsampled
-        else:
-            data_to_save = original_data_to_save
+                data_to_save = low_data_subsampled + high_data_subsampled
+            else:
+                data_to_save = original_data_to_save
 
-        data_table = pa.Table.from_pylist(data_to_save)
-        
-        # Save the Arrow tables to Parquet files
-        os.makedirs(outputdir, exist_ok=True)
-        pq.write_table(data_table, os.path.join(outputdir, f"{split_name}.parquet"))
-        
-        print(f"Saving {len(data_to_save)} datapoints as {split_name}.parquet")
-        
-        if split_name == "train":
+            data_table = pa.Table.from_pylist(data_to_save)
+            
+            # Save the Arrow tables to Parquet files
+            os.makedirs(outputdir, exist_ok=True)
+            pq.write_table(data_table, os.path.join(outputdir, f"{split_name}.parquet"))
+            
+            print(f"Saving {len(data_to_save)} datapoints as {split_name}.parquet")
+        elif split_name == "train":
             # Subsample the data to strictly having 10k datapoints
             if balance_data:
                 count = 10000/2
+
+                # Find the data that has Q-estimate >= 0.5
+                low_data = [x for x in original_data_to_save if x['qestimate'] < 0.5]
+                high_data = [x for x in original_data_to_save if x['qestimate'] >= 0.5]
                 
                 low_data_subsampled = subsample_data(low_data, count, low_or_high="low")
                 high_data_subsampled = subsample_data(high_data, count, low_or_high="high")
 
                 print(f"Reducing low_data from {len(low_data)} to {count}")
                 print(f"Reducing high_data from {len(high_data)} to {count}")
+
+                input("Press any key to continue...")
 
                 data_to_save = low_data_subsampled + high_data_subsampled
 
@@ -425,7 +466,11 @@ def compute_file_list(rolloutdirs, domain, max_files_per_dir=None, max_rollout_p
         rolloutdir = rolloutdirs[i]
         files_per_dir = []
         for file_name in tqdm(os.listdir(rolloutdir)):
-            if skip_condition(file_name, max_rollout_per_task_per_dir_list[i]):
+            if max_rollout_per_task_per_dir_list is not None:
+                max_rollout_per_task_per_dir = max_rollout_per_task_per_dir_list[i]
+            else:
+                max_rollout_per_task_per_dir = None
+            if skip_condition(rolloutdir, file_name, max_rollout_per_task_per_dir):
                 continue
             file_path = os.path.join(rolloutdir, file_name)
             files_per_dir.append(file_path)
@@ -435,6 +480,101 @@ def compute_file_list(rolloutdirs, domain, max_files_per_dir=None, max_rollout_p
 
         print(f"Found {len(files_per_dir)} files in {rolloutdir}")
     print(f"== Found {len(files)} files in total ==")
+
+    return files
+
+def compute_hindsight_file_list(rolloutdirs, domain, onpolicy_idx_range, offpolicy_idx_range, onpolicy_pct_for_success=None, num_failed_expert_rollouts_to_include=None):
+    if domain == "alfworld":
+        skip_condition = alfworld_skip_file_condition
+        filter_condition_checker = lambda rolloutdir, file_name:False, False
+    elif domain == "twenty_questions":
+        skip_condition = twenty_questions_skip_file_condition
+        filter_condition_checker = twenty_questions_filter_condition_checker
+    else:
+        raise ValueError(f"Invalid domain: {domain}")
+
+    onpolicy_rollouts_failed = []
+    onpolicy_rollouts_succeeded = []
+    offpolicy_files_failed = []  # Expert rollout that failed (we could add some rollouts from here to the onpolicy set, so that we have more low-Q datapoints)
+    offpolicy_files_good = []
+
+    onpolicy_rollout_idx = []
+    for i in range(0, len(onpolicy_idx_range), 2):
+        start_idx = onpolicy_idx_range[i]
+        end_idx = onpolicy_idx_range[i+1]
+        onpolicy_rollout_idx.extend(list(range(start_idx, end_idx)))
+
+    offpolicy_rollout_idx = []
+    for i in range(0, len(offpolicy_idx_range), 2):
+        start_idx = offpolicy_idx_range[i]
+        end_idx = offpolicy_idx_range[i+1]
+        offpolicy_rollout_idx.extend(list(range(start_idx, end_idx)))
+
+    print(f"onpolicy_rollout_idx: {onpolicy_rollout_idx}")
+    print(f"offpolicy_rollout_idx: {offpolicy_rollout_idx}")
+
+    for i in range(len(rolloutdirs)):
+        rolloutdir = rolloutdirs[i]
+        for file_name in tqdm(os.listdir(rolloutdir)):
+            if skip_condition(rolloutdir, file_name, max_rollout_per_task_per_dir=None):
+                continue
+            
+            failed, expert_action_led_to_success = filter_condition_checker(rolloutdir, file_name)
+            file_idx = int(file_name.split("_")[-1].split(".")[0])
+
+            if file_idx in onpolicy_rollout_idx:
+                if failed:
+                    onpolicy_rollouts_failed.append(os.path.join(rolloutdir, file_name))
+                else:
+                    onpolicy_rollouts_succeeded.append(os.path.join(rolloutdir, file_name))
+            elif file_idx in offpolicy_rollout_idx:
+                if expert_action_led_to_success:
+                    # Filter out rollouts where the expert directly led to success
+                    continue
+
+                if failed:
+                    offpolicy_files_failed.append(os.path.join(rolloutdir, file_name))
+                else:
+                    offpolicy_files_good.append(os.path.join(rolloutdir, file_name))
+            else:
+                raise ValueError(f"Invalid file index: {file_idx}")
+            
+    # Shuffle the files
+    random.shuffle(onpolicy_rollouts_failed)
+    random.shuffle(onpolicy_rollouts_succeeded)
+    random.shuffle(offpolicy_files_failed)
+    random.shuffle(offpolicy_files_good)
+
+    print(f'========= Raw files collected =========')
+    print(f'onpolicy_rollouts_failed: {len(onpolicy_rollouts_failed)} | onpolicy_rollouts_succeeded: {len(onpolicy_rollouts_succeeded)}')
+    print(f'offpolicy_files_failed: {len(offpolicy_files_failed)} | offpolicy_files_good: {len(offpolicy_files_good)}')
+
+    if onpolicy_pct_for_success is not None:
+        if onpolicy_pct_for_success < 1.0:
+            # Assume that we are using all of the good offpolicy files
+            pct_of_offpolicy_to_include = 1 - onpolicy_pct_for_success
+            total_good_rollouts_needed = int(len(offpolicy_files_good)/pct_of_offpolicy_to_include)
+            num_onpolicy_to_include = total_good_rollouts_needed - len(offpolicy_files_good)
+
+            onpolicy_rollouts_succeeded = onpolicy_rollouts_succeeded[:num_onpolicy_to_include]
+        else:
+            onpolicy_rollouts_succeeded = onpolicy_rollouts_succeeded
+            offpolicy_files_good = []
+    
+    if num_failed_expert_rollouts_to_include is not None:
+        if num_failed_expert_rollouts_to_include != -1:
+            offpolicy_files_failed_to_include = offpolicy_files_failed[:num_failed_expert_rollouts_to_include]
+        else:
+            offpolicy_files_failed_to_include = offpolicy_files_failed
+    else:
+        offpolicy_files_failed_to_include = []
+
+    files = onpolicy_rollouts_failed + onpolicy_rollouts_succeeded + offpolicy_files_failed_to_include + offpolicy_files_good
+    
+    print(f"========= Final files collected ==========")
+    print(f"onpolicy_rollouts_failed: {len(onpolicy_rollouts_failed)} | onpolicy_rollouts_succeeded: {len(onpolicy_rollouts_succeeded)}")
+    print(f"offpolicy_files_failed_to_include: {len(offpolicy_files_failed_to_include)} | offpolicy_files_good: {len(offpolicy_files_good)}")
+    print(f"========= Found {len(files)} files in total =========")
 
     return files
         
@@ -452,10 +592,17 @@ def main(cfg: DictConfig):
     else:
         rolloutdirs = cfg.rolloutdirs
 
-    print(f"Confirm the following\n- rolloutdirs: {rolloutdirs}\n- domain: {cfg.domain}\n- outputdir: {cfg.outputdir}")
+    is_hindsight_data = all(["hindsight" in rolloutdir for rolloutdir in rolloutdirs])
+
+    print(f"Confirm the following\n- rolloutdirs: {rolloutdirs}\n- domain: {cfg.domain}\n- outputdir: {cfg.outputdir}\n- is_hindsight_data: {is_hindsight_data}\n{cfg.hindsight if is_hindsight_data else ''}")
     input("Press any key to continue...")
 
-    files = compute_file_list(rolloutdirs, cfg.domain, cfg.max_files_per_dir, cfg.max_rollout_per_task_per_dir_list)
+    if is_hindsight_data:
+        files = compute_hindsight_file_list(rolloutdirs, cfg.domain, cfg.hindsight.onpolicy_idx_range, cfg.hindsight.offpolicy_idx_range, cfg.hindsight.onpolicy_pct_for_success, cfg.hindsight.num_failed_expert_rollouts_to_include)
+    else:
+        files = compute_file_list(rolloutdirs, cfg.domain, cfg.max_files_per_dir, cfg.max_rollout_per_task_per_dir_list)
+    
+    input("Press any key to continue...")
     compute_prm_target(files, cfg.domain, cfg.outputdir, cfg.gamma, cfg.cpu_count, cfg.train_split, cfg.split_name, cfg.balance_data)
 
 if __name__ == "__main__":
