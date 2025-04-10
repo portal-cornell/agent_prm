@@ -2,6 +2,7 @@ verbose: 0
 debug: false
 elogger: false # Whether to activate email logging
 host_sglang: false  # Whether to host the sglang server through code for the agents
+sim_host: localhost  # The host for the environment simulator's SGLang server (the env must be on the same machine)
 sim_port: 40042  # The port number for the environment simulator's SGLang server (the env must be on the same machine)
 iter: 0
 mode: offline # offline or online
@@ -16,12 +17,14 @@ online:
   batch_size: 32
   num_alt_responses: 5
 consolidate_online:
+  main_table_notes: null
   table_notes: 'until-PRM-eval'
   rollout_per_task_dict:
     train: 1
     val: 3
     test: 3
   use_existing_table: true
+  overwrite_existing_entry: false
 agents:
   # - type: gpt4o_expert
   #   log_name: gpt4o
@@ -76,10 +79,30 @@ agents:
   #   log_name: pi0-all-data-3epoches
   #   model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
   #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #   server_url: http://localhost:30002/
-  #   dist_url_port: 29502
+  #   server_url: http://localhost:30000/
+  #   dist_url_port: 29500
   #   temperature: 0.3
   #   batch_limit: 32
+  #   verbose: 3
+  ############## Hindsight data collection
+  # - type: sglang_server
+  #   log_name: hindsight-redo_pi0-all-data-3epoches
+  #   model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 500
+  #   verbose: 3
+  # Goal: Because there's new improvement with the environment, we want to train PRM from scratch (again...)
+  # - type: sglang_server
+  #   log_name: pi0-new-env
+  #   model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 500
   #   verbose: 3
   # #######################################################################################
   # #=====================================================================================+
@@ -101,7 +124,7 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30010/
   #     temperature: 0.7
-  #     batch_limit: 500
+  #     batch_limit: 32
   #     dist_url_port: 29510
   #   critic:
   #     type: sglang_server
@@ -121,7 +144,7 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30010/
   #     temperature: 0.7
-  #     batch_limit: 500
+  #     batch_limit: 32
   #     dist_url_port: 29510
   #   critic:
   #     type: sglang_server
@@ -141,7 +164,7 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30010/
   #     temperature: 0.7
-  #     batch_limit: 500
+  #     batch_limit: 32
   #     dist_url_port: 29510
   #   critic:
   #     type: sglang_server
@@ -161,7 +184,7 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30010/
   #     temperature: 0.7
-  #     batch_limit: 500
+  #     batch_limit: 32
   #     dist_url_port: 29510
   #   critic:
   #     type: sglang_server
@@ -181,7 +204,7 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30010/
   #     temperature: 0.7
-  #     batch_limit: 500
+  #     batch_limit: 32
   #     dist_url_port: 29510
   #   critic:
   #     type: sglang_server
@@ -202,8 +225,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30020/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250311_155325_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_peft=false_lr=5e-6/model/checkpoint-250
@@ -211,7 +234,7 @@ agents:
   #     server_url: http://localhost:30021/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi0_Q0-40pct-lr=5e-6
@@ -222,8 +245,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30020/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250311_155325_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_peft=false_lr=5e-6/model/checkpoint-500
@@ -231,7 +254,7 @@ agents:
   #     server_url: http://localhost:30021/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi0_Q0-60pct-lr=5e-6
@@ -242,8 +265,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30020/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250311_155325_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_peft=false_lr=5e-6/model/checkpoint-750
@@ -251,10 +274,10 @@ agents:
   #     server_url: http://localhost:30021/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
-  #   log_name: BoN_pi0_Q0-80pct-lr=5e-6
+  #   log_name: BoN_pi0_Q0-80pct-lr=5e-6  # [USED FOR NEXT STEP]
   #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
   #   generator:
   #     type: sglang_server
@@ -262,8 +285,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30020/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250311_155325_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_peft=false_lr=5e-6/model/checkpoint-1000
@@ -271,7 +294,7 @@ agents:
   #     server_url: http://localhost:30021/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi0_Q0-lr=5e-6
@@ -282,8 +305,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30020/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250311_155325_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_peft=false_lr=5e-6/model/checkpoint-1250
@@ -291,7 +314,7 @@ agents:
   #     server_url: http://localhost:30021/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: null
   #   verbose: 3
   # ######################################################### balanced 10k (original learning rate) from fully SFT model pi-0-all-data-3epoches (smaller learning rate = 5e-5 --> 5e-7)
   # - type: best_of_n
@@ -303,7 +326,7 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30030/
   #     temperature: 0.7
-  #     batch_limit: 500
+  #     batch_limit: 32
   #     dist_url_port: 29530
   #   critic:
   #     type: sglang_server
@@ -312,7 +335,7 @@ agents:
   #     server_url: http://localhost:30031/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29531
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi0_Q0-40pct-lr=5e-7
@@ -323,7 +346,7 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30030/
   #     temperature: 0.7
-  #     batch_limit: 500
+  #     batch_limit: 32
   #     dist_url_port: 29530
   #   critic:
   #     type: sglang_server
@@ -332,7 +355,7 @@ agents:
   #     server_url: http://localhost:30031/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29531
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi0_Q0-60pct-lr=5e-7
@@ -343,7 +366,7 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30030/
   #     temperature: 0.7
-  #     batch_limit: 500
+  #     batch_limit: 32
   #     dist_url_port: 29530
   #   critic:
   #     type: sglang_server
@@ -352,7 +375,7 @@ agents:
   #     server_url: http://localhost:30031/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29531
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi0_Q0-80pct-lr=5e-7
@@ -363,7 +386,7 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30030/
   #     temperature: 0.7
-  #     batch_limit: 500
+  #     batch_limit: 32
   #     dist_url_port: 29530
   #   critic:
   #     type: sglang_server
@@ -372,7 +395,7 @@ agents:
   #     server_url: http://localhost:30031/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29531
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi0_Q0-lr=5e-7
@@ -383,7 +406,7 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30030/
   #     temperature: 0.7
-  #     batch_limit: 500
+  #     batch_limit: 32
   #     dist_url_port: 29530
   #   critic:
   #     type: sglang_server
@@ -392,7 +415,7 @@ agents:
   #     server_url: http://localhost:30031/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29531
+  #     dist_url_port: null
   #   verbose: 3
   # ######################################################### [CRITIC TRAINED WITHOUT REASONING] balanced 10k from fully SFT model pi-0-all-data-3epoches (smaller learning rate = 5e-5 --> 5e-7)
   # - type: best_of_n
@@ -404,8 +427,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30040/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29540
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250313_122231_iter1_no-reason_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_peft=false_lr=5e-6_no-reason/model/checkpoint-250
@@ -414,7 +437,7 @@ agents:
   #     server_url: http://localhost:30041/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29541
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi0_Q0-40pct-lr=5e-7-no-reason
@@ -425,8 +448,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30040/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29540
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250313_122231_iter1_no-reason_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_peft=false_lr=5e-6_no-reason/model/checkpoint-500
@@ -435,7 +458,7 @@ agents:
   #     server_url: http://localhost:30041/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29541
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi0_Q0-60pct-lr=5e-7-no-reason
@@ -446,8 +469,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30040/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29540
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250313_122231_iter1_no-reason_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_peft=false_lr=5e-6_no-reason/model/checkpoint-750
@@ -456,7 +479,7 @@ agents:
   #     server_url: http://localhost:30041/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29541
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi0_Q0-80pct-lr=5e-7-no-reason
@@ -467,8 +490,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30040/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29540
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250313_122231_iter1_no-reason_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_peft=false_lr=5e-6_no-reason/model/checkpoint-1250
@@ -477,7 +500,7 @@ agents:
   #     server_url: http://localhost:30041/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29541
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi0_Q0-lr=5e-7-no-reason
@@ -488,8 +511,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30040/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29540
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250313_122231_iter1_no-reason_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_peft=false_lr=5e-6_no-reason/model/checkpoint-1250
@@ -498,53 +521,7 @@ agents:
   #     server_url: http://localhost:30041/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29541
-  #   verbose: 3
-  # ######################################################### Online DPO with the new fully finetuned model (with the best 5e-5 Q0 model (at 60 pct))
-  # - type: sglang_server
-  #   log_name: pi1-20pct_Q0-60pct-lr=5e-5
-  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250311_235337_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_pen=-10_Q0-60pct-lr=5e-5/checkpoint-25
-  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #   server_url: http://localhost:30000/
-  #   dist_url_port: 29500
-  #   temperature: 0.3
-  #   batch_limit: 32
-  #   verbose: 3
-  # - type: sglang_server
-  #   log_name: pi1-40pct_Q0-60pct-lr=5e-5
-  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250311_235337_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_pen=-10_Q0-60pct-lr=5e-5/checkpoint-50
-  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #   server_url: http://localhost:30000/
-  #   dist_url_port: 29500
-  #   temperature: 0.3
-  #   batch_limit: 32
-  #   verbose: 3
-  # - type: sglang_server
-  #   log_name: pi1-60pct_Q0-60pct-lr=5e-5
-  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250311_235337_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_pen=-10_Q0-60pct-lr=5e-5/checkpoint-75
-  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #   server_url: http://localhost:30000/
-  #   dist_url_port: 29500
-  #   temperature: 0.3
-  #   batch_limit: 32
-  #   verbose: 3
-  # - type: sglang_server
-  #   log_name: pi1-80pct_Q0-60pct-lr=5e-5
-  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250311_235337_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_pen=-10_Q0-60pct-lr=5e-5/checkpoint-100
-  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #   server_url: http://localhost:30000/
-  #   dist_url_port: 29500
-  #   temperature: 0.3
-  #   batch_limit: 32
-  #   verbose: 3
-  # - type: sglang_server
-  #   log_name: pi1_Q0-60pct-lr=5e-5
-  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250311_235337_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_pen=-10_Q0-60pct-lr=5e-5
-  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #   server_url: http://localhost:30000/
-  #   dist_url_port: 29500
-  #   temperature: 0.3
-  #   batch_limit: 32
+  #     dist_url_port: null
   #   verbose: 3
   # ######################################################### Online DPO with the new fully finetuned model (with the best 5e-6 Q0 model (at 80 pct))
   # - type: sglang_server_with_critic
@@ -599,7 +576,7 @@ agents:
   #     batch_limit: 32
   #     dist_url_port: 29501
   # - type: sglang_server_with_critic
-  #   log_name: pi1-80pct_Q0-80pct-lr=5e-6
+  #   log_name: pi1-80pct_Q0-80pct-lr=5e-6  # [USED FOR NEXT STEP]
   #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250312_091827_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_pen=-10_Q0-80pct-lr=5e-6/checkpoint-100
   #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #   server_url: http://localhost:30004/
@@ -642,8 +619,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30020/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250314_210211_iter2_pi1-80pct_Q0-80pct-lr=5e-6_peft=false/model/checkpoint-250
@@ -651,7 +628,7 @@ agents:
   #     server_url: http://localhost:30021/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi1_Q1-40pct-lr=5e-6
@@ -662,8 +639,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30020/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250314_210211_iter2_pi1-80pct_Q0-80pct-lr=5e-6_peft=false/model/checkpoint-500
@@ -671,10 +648,10 @@ agents:
   #     server_url: http://localhost:30021/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
-  #   log_name: BoN_pi1_Q1-60pct-lr=5e-6
+  #   log_name: BoN_pi1_Q1-60pct-lr=5e-6  # [USED FOR NEXT STEP]
   #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
   #   generator:
   #     type: sglang_server
@@ -682,8 +659,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30020/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250314_210211_iter2_pi1-80pct_Q0-80pct-lr=5e-6_peft=false/model/checkpoint-750
@@ -691,7 +668,7 @@ agents:
   #     server_url: http://localhost:30021/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi1_Q1-80pct-lr=5e-6
@@ -702,8 +679,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30020/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250314_210211_iter2_pi1-80pct_Q0-80pct-lr=5e-6_peft=false/model/checkpoint-1000
@@ -711,7 +688,7 @@ agents:
   #     server_url: http://localhost:30021/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: null
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi1_Q1-lr=5e-6
@@ -722,8 +699,8 @@ agents:
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #     server_url: http://localhost:30020/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: null
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250314_210211_iter2_pi1-80pct_Q0-80pct-lr=5e-6_peft=false/model/checkpoint-1250
@@ -731,7 +708,7 @@ agents:
   #     server_url: http://localhost:30021/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: null
   #   verbose: 3
   # #######################################################################################
   # #=====================================================================================+
@@ -779,7 +756,7 @@ agents:
   #     batch_limit: 32
   #     dist_url_port: 29503
   # - type: sglang_server_with_critic
-  #   log_name: pi2-60pct_Q1-60pct-lr=5e-6
+  #   log_name: pi2-60pct_Q1-60pct-lr=5e-6  # [USED FOR NEXT STEP]
   #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct/checkpoint-75
   #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
   #   server_url: http://localhost:30000/
@@ -829,6 +806,16 @@ agents:
   #     temperature: 0.3
   #     batch_limit: 32
   #     dist_url_port: 29503
+  ###
+  # - type: sglang_server
+  #   log_name: pi2-60pct_Q1-60pct-lr=5e-6_new-env  # [USED FOR NEXT STEP]
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct/checkpoint-75
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
   # ######################################################### Online DPO (with the best 5e-6 Q0 model (at 60 pct))
   # ##### Trained only using 4 gpus (instead of 6). Total steps: 208
   # - type: sglang_server
@@ -924,18 +911,18 @@ agents:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/online_dpo/250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct/checkpoint-75
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #     server_url: http://localhost:30020/
+  #     server_url: http://localhost:30022/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: 29522
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-250
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #     server_url: http://localhost:30021/
+  #     server_url: http://localhost:30023/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: 29523
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi2_Q2-40pct-lr=5e-6
@@ -944,18 +931,18 @@ agents:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/online_dpo/250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct/checkpoint-75
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #     server_url: http://localhost:30020/
+  #     server_url: http://localhost:30022/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: 29522
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-500
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #     server_url: http://localhost:30021/
+  #     server_url: http://localhost:30023/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: 29523
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi2_Q2-60pct-lr=5e-6
@@ -964,18 +951,18 @@ agents:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/online_dpo/250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct/checkpoint-75
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #     server_url: http://localhost:30020/
+  #     server_url: http://localhost:30022/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: 29522
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-750
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #     server_url: http://localhost:30021/
+  #     server_url: http://localhost:30023/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: 29523
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi2_Q2-80pct-lr=5e-6
@@ -984,18 +971,18 @@ agents:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/online_dpo/250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct/checkpoint-75
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #     server_url: http://localhost:30020/
+  #     server_url: http://localhost:30022/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: 29522
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-1000
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #     server_url: http://localhost:30021/
+  #     server_url: http://localhost:30023/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: 29523
   #   verbose: 3
   # - type: best_of_n
   #   log_name: BoN_pi2_Q2-lr=5e-6
@@ -1004,18 +991,18 @@ agents:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/online_dpo/250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct/checkpoint-75
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #     server_url: http://localhost:30020/
+  #     server_url: http://localhost:30022/
   #     temperature: 0.7
-  #     batch_limit: 500
-  #     dist_url_port: 29520
+  #     batch_limit: 32
+  #     dist_url_port: 29522
   #   critic:
   #     type: sglang_server
   #     model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-1250
   #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-  #     server_url: http://localhost:30021/
+  #     server_url: http://localhost:30023/
   #     temperature: 0.3
   #     batch_limit: 32
-  #     dist_url_port: 29521
+  #     dist_url_port: 29523
   #   verbose: 3
   # ######################################################################################
   # =====================================================================================+
@@ -1027,92 +1014,1765 @@ agents:
 
   # =====================================================================================+
   # ######################################################################################
-  - type: sglang_server
-    log_name: pi3-19pct_Q2-80pct-lr=5e-6
-    model_id: /share/portal/hw575/agent_prm/save/online_dpo/250319_101252_iter3_pi3_Q2-80pct-lr=5e-6/checkpoint-40
-    prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-    server_url: http://localhost:30004/
-    dist_url_port: 29504
-    temperature: 0.3
-    batch_limit: 32
-    verbose: 3
-    critic:
-      type: sglang_server
-      model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-1000
-      prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-      server_url: http://localhost:30005/
-      temperature: 0.3
-      batch_limit: 32
-      dist_url_port: 29505
-  - type: sglang_server
-    log_name: pi3-38pct_Q2-80pct-lr=5e-6
-    model_id: /share/portal/hw575/agent_prm/save/online_dpo/250319_101252_iter3_pi3_Q2-80pct-lr=5e-6/checkpoint-80
-    prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-    server_url: http://localhost:30004/
-    dist_url_port: 29504
-    temperature: 0.3
-    batch_limit: 32
-    verbose: 3
-    critic:
-      type: sglang_server
-      model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-1000
-      prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-      server_url: http://localhost:30005/
-      temperature: 0.3
-      batch_limit: 32
-      dist_url_port: 29505
-  - type: sglang_server
-    log_name: pi3-58pct_Q2-80pct-lr=5e-6
-    model_id: /share/portal/hw575/agent_prm/save/online_dpo/250319_101252_iter3_pi3_Q2-80pct-lr=5e-6/checkpoint-120
-    prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-    server_url: http://localhost:30004/
-    dist_url_port: 29504
-    temperature: 0.3
-    batch_limit: 32
-    verbose: 3
-    critic:
-      type: sglang_server
-      model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-1000
-      prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-      server_url: http://localhost:30005/
-      temperature: 0.3
-      batch_limit: 32
-      dist_url_port: 29505
-  - type: sglang_server
-    log_name: pi3-77pct_Q2-80pct-lr=5e-6
-    model_id: /share/portal/hw575/agent_prm/save/online_dpo/250319_101252_iter3_pi3_Q2-80pct-lr=5e-6/checkpoint-160
-    prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-    server_url: http://localhost:30004/
-    dist_url_port: 29504
-    temperature: 0.3
-    batch_limit: 32
-    verbose: 3
-    critic:
-      type: sglang_server
-      model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-1000
-      prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-      server_url: http://localhost:30005/
-      temperature: 0.3
-      batch_limit: 32
-      dist_url_port: 29505
-  - type: sglang_server
-    log_name: pi3_Q2-80pct-lr=5e-6
-    model_id: /share/portal/hw575/agent_prm/save/online_dpo/250319_101252_iter3_pi3_Q2-80pct-lr=5e-6
-    prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-    server_url: http://localhost:30004/
-    dist_url_port: 29504
-    temperature: 0.3
-    batch_limit: 32
-    verbose: 3
-    critic:
-      type: sglang_server
-      model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-1000
-      prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
-      server_url: http://localhost:30005/
-      temperature: 0.3
-      batch_limit: 32
-      dist_url_port: 29505
-  
+  # - type: sglang_server
+  #   log_name: pi3-19pct_Q2-80pct-lr=5e-6
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250319_101252_iter3_pi3_Q2-80pct-lr=5e-6/checkpoint-40
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30004/
+  #   dist_url_port: 29504
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30005/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29505
+  # - type: sglang_server
+  #   log_name: pi3-38pct_Q2-80pct-lr=5e-6
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250319_101252_iter3_pi3_Q2-80pct-lr=5e-6/checkpoint-80
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30004/
+  #   dist_url_port: 29504
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30005/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29505
+  # - type: sglang_server
+  #   log_name: pi3-58pct_Q2-80pct-lr=5e-6
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250319_101252_iter3_pi3_Q2-80pct-lr=5e-6/checkpoint-120
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30004/
+  #   dist_url_port: 29504
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30005/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29505
+  # - type: sglang_server
+  #   log_name: pi3-77pct_Q2-80pct-lr=5e-6
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250319_101252_iter3_pi3_Q2-80pct-lr=5e-6/checkpoint-160
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30004/
+  #   dist_url_port: 29504
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30005/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29505
+  # - type: sglang_server
+  #   log_name: pi3_Q2-80pct-lr=5e-6
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250319_101252_iter3_pi3_Q2-80pct-lr=5e-6
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30004/
+  #   dist_url_port: 29504
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250318_100344_iter3_pi2-60pct_Q1-60pct-lr=5e-6_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30005/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29505
+  # #######################################################################################
+  # #=====================================================================================+
+
+
+  # # Explore hindsight labeling
+
+
+
+  # #=====================================================================================+
+  # #######################################################################################
+  #=====================================================================================+
+  # Iteration 0
+  #=====================================================================================+
+  # ######### BoN pi0 Q0 (retrained with post-processed data after fixing env bug)
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-20pct-lr=5e-6_hindsight
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30024/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29524
+  #     host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250321_135855_iter1_hindsight_pi0_rollout-hindsight_peft=false/model/checkpoint-250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30027/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29527
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-40pct-lr=5e-6_hindsight
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30024/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29524
+  #     host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250321_135855_iter1_hindsight_pi0_rollout-hindsight_peft=false/model/checkpoint-500
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30027/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29527
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-60pct-lr=5e-6_hindsight
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30024/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29524
+  #     host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250321_135855_iter1_hindsight_pi0_rollout-hindsight_peft=false/model/checkpoint-750
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30039/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29539
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-80pct-lr=5e-6_hindsight
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30030/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29530
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250321_135855_iter1_hindsight_pi0_rollout-hindsight_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30031/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-lr=5e-6_hindsight
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30028/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29528
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250321_135855_iter1_hindsight_pi0_rollout-hindsight_peft=false/model/checkpoint-1250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30029/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29529
+  #   verbose: 3
+  # ######## BoN pi0 Q0 (Mixed pi0 and pi2 training data. Hypothesis: performance should improve)
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-20pct-lr=5e-6_pi0-pi2-mix
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30024/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29524
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250331_225610_iter1_pi0-pi2-mix_pi0_pi0-pi2-mix_peft=false/model/checkpoint-250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30027/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: 29527
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-40pct-lr=5e-6_pi0-pi2-mix
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30024/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29524
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250331_225610_iter1_pi0-pi2-mix_pi0_pi0-pi2-mix_peft=false/model/checkpoint-500
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30027/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: 29527
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-60pct-lr=5e-6_pi0-pi2-mix
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30024/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29524
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250331_225610_iter1_pi0-pi2-mix_pi0_pi0-pi2-mix_peft=false/model/checkpoint-750
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30027/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: 29527
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-80pct-lr=5e-6_pi0-pi2-mix
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30030/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29530
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250331_225610_iter1_pi0-pi2-mix_pi0_pi0-pi2-mix_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30031/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-lr=5e-6_pi0-pi2-mix
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30030/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29530
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250331_225610_iter1_pi0-pi2-mix_pi0_pi0-pi2-mix_peft=false/model/checkpoint-1250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30031/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # ### Debugging (Let's use the (1) PRM trained on pi0-pi2 mix data and (2) PRM on the hindsightbaseline in conjunction with pi2)
+  # - type: best_of_n
+  #   log_name: BoN_pi2_Q0-80pct-lr=5e-6_pi0-pi2-mix
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/online_dpo/250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct/checkpoint-75
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30036/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29536
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250331_225610_iter1_pi0-pi2-mix_pi0_pi0-pi2-mix_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30037/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi2_Q0-80pct-lr=5e-6_hindsight-baseline
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/online_dpo/250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct/checkpoint-75
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30038/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250321_225929_iter1_pi0_peft=false_retrain-on-better-data/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30039/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29539
+  #   verbose: 3
+  # # ####### BoN pi0 Q0-new-env (rolling out pi0 on the new environment)
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-20pct-lr=5e-6_pi0-new-env
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250403_003704_iter1_pi0-new-env_pi0_pi0-new-env_peft=false_pi0-new-env/model/checkpoint-250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-40pct-lr=5e-6_pi0-new-env
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250403_003704_iter1_pi0-new-env_pi0_pi0-new-env_peft=false_pi0-new-env/model/checkpoint-500
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-60pct-lr=5e-6_pi0-new-env
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250403_003704_iter1_pi0-new-env_pi0_pi0-new-env_peft=false_pi0-new-env/model/checkpoint-750
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-80pct-lr=5e-6_pi0-new-env
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250403_003704_iter1_pi0-new-env_pi0_pi0-new-env_peft=false_pi0-new-env/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-lr=5e-6_pi0-new-env
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250403_003704_iter1_pi0-new-env_pi0_pi0-new-env_peft=false_pi0-new-env/model/checkpoint-1250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # # ######## BoN pi0 hindsight-redo (Redid with new and better data)
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-20pct-lr=5e-6_hindsight-redo
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250403_233336_iter1_hindsight-redo_pi0_hindsight-redo_peft=false/model/checkpoint-250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-40pct-lr=5e-6_hindsight-redo
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250403_233336_iter1_hindsight-redo_pi0_hindsight-redo_peft=false/model/checkpoint-500
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-60pct-lr=5e-6_hindsight-redo
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250403_233336_iter1_hindsight-redo_pi0_hindsight-redo_peft=false/model/checkpoint-750
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-80pct-lr=5e-6_hindsight-redo
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250403_233336_iter1_hindsight-redo_pi0_hindsight-redo_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-lr=5e-6_hindsight-redo
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250403_233336_iter1_hindsight-redo_pi0_hindsight-redo_peft=false/model/checkpoint-1250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # ####### BoN pi0 hindsight-50-50 (50-50 rollout from on-policy and off-policy/hindsight)
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-20pct-lr=5e-6_hindsight-50-50
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250404_222848_iter1_hindsight-50-50_pi0_hindsight-50-50_peft=false/model/checkpoint-250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-40pct-lr=5e-6_hindsight-50-50
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250404_222848_iter1_hindsight-50-50_pi0_hindsight-50-50_peft=false/model/checkpoint-500
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-60pct-lr=5e-6_hindsight-50-50
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250404_222848_iter1_hindsight-50-50_pi0_hindsight-50-50_peft=false/model/checkpoint-750
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-80pct-lr=5e-6_hindsight-50-50
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250404_222848_iter1_hindsight-50-50_pi0_hindsight-50-50_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-lr=5e-6_hindsight-50-50
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250404_222848_iter1_hindsight-50-50_pi0_hindsight-50-50_peft=false/model/checkpoint-1250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # # ####### BoN pi0 hindsight-biased
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250406_152011_iter1_hindsight-biased_pi0_hindsight-biased_peft=false/model/checkpoint-250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-40pct-lr=5e-6_hindsight-biased
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250406_152011_iter1_hindsight-biased_pi0_hindsight-biased_peft=false/model/checkpoint-500
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-60pct-lr=5e-6_hindsight-biased
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250406_152011_iter1_hindsight-biased_pi0_hindsight-biased_peft=false/model/checkpoint-750
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-80pct-lr=5e-6_hindsight-biased
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250406_152011_iter1_hindsight-biased_pi0_hindsight-biased_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-lr=5e-6_hindsight-biased
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250406_152011_iter1_hindsight-biased_pi0_hindsight-biased_peft=false/model/checkpoint-1250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # ####### BoN pi0 hindsight-biased (30-70 onpolicy/offpolicy mix)
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-30
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250409_005816_iter1_hindsight-biased-on-30_pi0_hindsight-biased-on-30_peft=false/model/checkpoint-250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-40pct-lr=5e-6_hindsight-biased-on-30
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250409_005816_iter1_hindsight-biased-on-30_pi0_hindsight-biased-on-30_peft=false/model/checkpoint-500
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-60pct-lr=5e-6_hindsight-biased-on-30
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250409_005816_iter1_hindsight-biased-on-30_pi0_hindsight-biased-on-30_peft=false/model/checkpoint-750
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-80pct-lr=5e-6_hindsight-biased-on-30
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250409_005816_iter1_hindsight-biased-on-30_pi0_hindsight-biased-on-30_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-30
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250409_005816_iter1_hindsight-biased-on-30_pi0_hindsight-biased-on-30_peft=false/model/checkpoint-1250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # ######## BoN pi0 hindsight-biased (50-50 onpolicy/offpolicy mix)
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-50
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250409_011522_iter1_hindsight-biased-on-50_pi0_hindsight-biased-on-50_peft=false/model/checkpoint-250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-40pct-lr=5e-6_hindsight-biased-on-50
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250409_011522_iter1_hindsight-biased-on-50_pi0_hindsight-biased-on-50_peft=false/model/checkpoint-500
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-60pct-lr=5e-6_hindsight-biased-on-50
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250409_011522_iter1_hindsight-biased-on-50_pi0_hindsight-biased-on-50_peft=false/model/checkpoint-750
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-80pct-lr=5e-6_hindsight-biased-on-50
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250409_011522_iter1_hindsight-biased-on-50_pi0_hindsight-biased-on-50_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250409_011522_iter1_hindsight-biased-on-50_pi0_hindsight-biased-on-50_peft=false/model/checkpoint-1250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # ######## BoN pi0 hindsight-biased (70-30 onpolicy/offpolicy mix)
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-70
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250410_005042_iter1_hindsight-biased-on-70_pi0_hindsight-biased-on-70_peft=false/model/checkpoint-250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-80pct-lr=5e-6_hindsight-biased-on-70
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250410_005042_iter1_hindsight-biased-on-70_pi0_hindsight-biased-on-70_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-70
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250410_005042_iter1_hindsight-biased-on-70_pi0_hindsight-biased-on-70_peft=false/model/checkpoint-1250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-40pct-lr=5e-6_hindsight-biased-on-70
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250410_005042_iter1_hindsight-biased-on-70_pi0_hindsight-biased-on-70_peft=false/model/checkpoint-500
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-60pct-lr=5e-6_hindsight-biased-on-70
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250410_005042_iter1_hindsight-biased-on-70_pi0_hindsight-biased-on-70_peft=false/model/checkpoint-750
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # #=====================================================================================+
+  # Iteration 1
+  #=====================================================================================+
+  # # ######### Online DPO
+  # - type: sglang_server
+  #   log_name: pi1-19pct_Q0-80pct-lr=5e-6-hindsight
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight/checkpoint-40
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30004/
+  #   dist_url_port: 29504
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: TODO
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30005/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29505
+  # - type: sglang_server
+  #   log_name: pi1-38pct_Q0-80pct-lr=5e-6-hindsight
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight/checkpoint-80
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30004/
+  #   dist_url_port: 29504
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: TODO
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30005/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29505
+  # - type: sglang_server
+  #   log_name: pi1-58pct_Q0-80pct-lr=5e-6-hindsight
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight/checkpoint-120
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30004/
+  #   dist_url_port: 29504
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: TODO
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30005/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29505
+  # - type: sglang_server
+  #   log_name: pi1-77pct_Q0-80pct-lr=5e-6-hindsight
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight/checkpoint-160
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30003/
+  #   dist_url_port: 29503
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250321_135855_iter1_hindsight_pi0_rollout-hindsight_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30001/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29501
+  # - type: sglang_server
+  #   log_name: pi1_Q0-80pct-lr=5e-6-hindsight
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30004/
+  #   dist_url_port: 29504
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: TODO
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30005/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29505
+  # ######### Online DPO (Trained with PRM on pi0-pi2-mix data)
+  # - type: sglang_server
+  #   log_name: pi1-20pct_Q0-60pct-lr=5e-6-pi0-pi2-mix
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250401_211159_iter1_pi0-pi2-mix_pi0_Q0-60pct-lr=5e-6_pi0-pi2-mix/checkpoint-55
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-40pct_Q0-60pct-lr=5e-6-pi0-pi2-mix
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250401_211159_iter1_pi0-pi2-mix_pi0_Q0-60pct-lr=5e-6_pi0-pi2-mix/checkpoint-110
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-60pct_Q0-60pct-lr=5e-6-pi0-pi2-mix
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250401_211159_iter1_pi0-pi2-mix_pi0_Q0-60pct-lr=5e-6_pi0-pi2-mix/checkpoint-165
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-80pct_Q0-60pct-lr=5e-6-pi0-pi2-mix
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250401_211159_iter1_pi0-pi2-mix_pi0_Q0-60pct-lr=5e-6_pi0-pi2-mix/checkpoint-220
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1_Q0-60pct-lr=5e-6-pi0-pi2-mix
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250401_211159_iter1_pi0-pi2-mix_pi0_Q0-60pct-lr=5e-6_pi0-pi2-mix
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  ######### Online DPO (Trained with PRM on pi0-new-env data: BoN_pi0_Q0-60pct-lr=5e-6_pi0-new-env)
+  # - type: sglang_server
+  #   log_name: pi1-20pct_Q0-60pct-lr=5e-6_pi0-new-env
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250403_233428_iter1_pi0-new-env_pi1_Q0-60pct-lr=5e-6_pi0-new-env/checkpoint-55
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-40pct_Q0-60pct-lr=5e-6_pi0-new-env
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250403_233428_iter1_pi0-new-env_pi1_Q0-60pct-lr=5e-6_pi0-new-env/checkpoint-110
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-60pct_Q0-60pct-lr=5e-6_pi0-new-env
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250403_233428_iter1_pi0-new-env_pi1_Q0-60pct-lr=5e-6_pi0-new-env/checkpoint-165
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-80pct_Q0-60pct-lr=5e-6_pi0-new-env
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250403_233428_iter1_pi0-new-env_pi1_Q0-60pct-lr=5e-6_pi0-new-env/checkpoint-220
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1_Q0-60pct-lr=5e-6_pi0-new-env
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250403_233428_iter1_pi0-new-env_pi1_Q0-60pct-lr=5e-6_pi0-new-env
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # ######### Online DPO (Trained with PRM on pi0-new-env data: BoN_pi0_Q0-20pct-lr=5e-6_pi0-new-env)
+  # - type: sglang_server
+  #   log_name: pi1-20pct_Q0-20pct-lr=5e-6_pi0-new-env
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250405_214137_iter1_pi0-new-env_pi1_Q0-20pct-lr=5e-6_pi0-new-env/checkpoint-55
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-40pct_Q0-20pct-lr=5e-6_pi0-new-env
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250405_214137_iter1_pi0-new-env_pi1_Q0-20pct-lr=5e-6_pi0-new-env/checkpoint-110
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-60pct_Q0-20pct-lr=5e-6_pi0-new-env
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250405_214137_iter1_pi0-new-env_pi1_Q0-20pct-lr=5e-6_pi0-new-env/checkpoint-165
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-80pct_Q0-20pct-lr=5e-6_pi0-new-env
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250405_214137_iter1_pi0-new-env_pi1_Q0-20pct-lr=5e-6_pi0-new-env/checkpoint-220
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1_Q0-20pct-lr=5e-6_pi0-new-env
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250405_214137_iter1_pi0-new-env_pi1_Q0-20pct-lr=5e-6_pi0-new-env
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # ############ pi1 (trained with PRM on the new hindsight data: BoN_pi1_Q0-lr=5e-6_hindsight-redo)
+  # - type: sglang_server
+  #   log_name: pi1-20pct_Q0-lr=5e-6_hindsight-redo
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250404_164807_iter1_hindsight-redo_pi1_Q0-lr=5e-6_hindsight-redo/checkpoint-55
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-40pct_Q0-lr=5e-6_hindsight-redo
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250404_164807_iter1_hindsight-redo_pi1_Q0-lr=5e-6_hindsight-redo/checkpoint-110
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-60pct_Q0-lr=5e-6_hindsight-redo
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250404_164807_iter1_hindsight-redo_pi1_Q0-lr=5e-6_hindsight-redo/checkpoint-165
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-80pct_Q0-lr=5e-6_hindsight-redo
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250404_164807_iter1_hindsight-redo_pi1_Q0-lr=5e-6_hindsight-redo/checkpoint-220
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1_Q0-lr=5e-6_hindsight-redo
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250404_164807_iter1_hindsight-redo_pi1_Q0-lr=5e-6_hindsight-redo
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # ############ pi1 (trained with PRM on the new hindsight data: Compared to above (20pct instead of 100pct) BoN_pi1_Q0-20pct-lr=5e-6_hindsight-redo)
+  # - type: sglang_server
+  #   log_name: pi1-20pct_Q0-20pct-lr=5e-6_hindsight-redo
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250404_220618_iter1_hindsight-redo_pi1_Q0-20pct-lr=5e-6_hindsight-redo/checkpoint-55
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-40pct_Q0-20pct-lr=5e-6_hindsight-redo
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250404_220618_iter1_hindsight-redo_pi1_Q0-20pct-lr=5e-6_hindsight-redo/checkpoint-110
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-60pct_Q0-20pct-lr=5e-6_hindsight-redo
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250404_220618_iter1_hindsight-redo_pi1_Q0-20pct-lr=5e-6_hindsight-redo/checkpoint-165
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-80pct_Q0-20pct-lr=5e-6_hindsight-redo
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250404_220618_iter1_hindsight-redo_pi1_Q0-20pct-lr=5e-6_hindsight-redo/checkpoint-220
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1_Q0-20pct-lr=5e-6_hindsight-redo
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250404_220618_iter1_hindsight-redo_pi1_Q0-20pct-lr=5e-6_hindsight-redo
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # ########### pi1 (trained with PRM on the new hindsight data (50-50 rollout from on-policy and off-policy/hindsight):
+  # - type: sglang_server
+  #   log_name: pi1-20pct_Q0-80pct-lr=5e-6_hindsight-50-50
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250405_141754_iter1_hindsight-redo_pi1_Q0-80pct-lr=5e-6_hindsight-50-50/checkpoint-55
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-40pct_Q0-80pct-lr=5e-6_hindsight-50-50
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250405_141754_iter1_hindsight-redo_pi1_Q0-80pct-lr=5e-6_hindsight-50-50/checkpoint-110
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-60pct_Q0-80pct-lr=5e-6_hindsight-50-50
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250405_141754_iter1_hindsight-redo_pi1_Q0-80pct-lr=5e-6_hindsight-50-50/checkpoint-165
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-80pct_Q0-80pct-lr=5e-6_hindsight-50-50
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250405_141754_iter1_hindsight-redo_pi1_Q0-80pct-lr=5e-6_hindsight-50-50/checkpoint-220
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1_Q0-80pct-lr=5e-6_hindsight-50-50
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250405_141754_iter1_hindsight-redo_pi1_Q0-80pct-lr=5e-6_hindsight-50-50
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  ########### pi1 (trained with PRM on biased data)
+  # - type: sglang_server
+  #   log_name: pi1-20pct_Q0-lr=5e-6_hindsight-biased
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250407_102150_iter1_hindsight-biased_pi1_Q0-lr=5e-6_hindsight-biased/checkpoint-55
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-40pct_Q0-lr=5e-6_hindsight-biased
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250407_102150_iter1_hindsight-biased_pi1_Q0-lr=5e-6_hindsight-biased/checkpoint-110
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-60pct_Q0-lr=5e-6_hindsight-biased
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250407_102150_iter1_hindsight-biased_pi1_Q0-lr=5e-6_hindsight-biased/checkpoint-165
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-80pct_Q0-lr=5e-6_hindsight-biased
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250407_102150_iter1_hindsight-biased_pi1_Q0-lr=5e-6_hindsight-biased/checkpoint-220
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1_Q0-lr=5e-6_hindsight-biased
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250407_102150_iter1_hindsight-biased_pi1_Q0-lr=5e-6_hindsight-biased
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # ########### pi1 (trained with PRM on biased data) - 20pct
+  # - type: sglang_server
+  #   log_name: pi1-20pct_Q0-20pct-lr=5e-6_hindsight-biased
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250407_193104_iter1_hindsight-biased_pi1_Q0-20pct-lr=5e-6_hindsight-biased/checkpoint-55
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-40pct_Q0-20pct-lr=5e-6_hindsight-biased
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250407_193104_iter1_hindsight-biased_pi1_Q0-20pct-lr=5e-6_hindsight-biased/checkpoint-110
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-60pct_Q0-20pct-lr=5e-6_hindsight-biased
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250407_193104_iter1_hindsight-biased_pi1_Q0-20pct-lr=5e-6_hindsight-biased/checkpoint-165
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-80pct_Q0-20pct-lr=5e-6_hindsight-biased
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250407_193104_iter1_hindsight-biased_pi1_Q0-20pct-lr=5e-6_hindsight-biased/checkpoint-220
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1_Q0-20pct-lr=5e-6_hindsight-biased
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250407_193104_iter1_hindsight-biased_pi1_Q0-20pct-lr=5e-6_hindsight-biased
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # ########### pi1 (trained with PRM on biased data: 50/50 onpolicy/offpolicy) - 20pct
+  # - type: sglang_server
+  #   log_name: pi1-20pct_Q0-20pct-lr=5e-6_hindsight-biased-on-50
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250410_004916_iter1_hindsight-biased-on-50_pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50/checkpoint-55
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-40pct_Q0-20pct-lr=5e-6_hindsight-biased-on-50
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250410_004916_iter1_hindsight-biased-on-50_pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50/checkpoint-110
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-60pct_Q0-20pct-lr=5e-6_hindsight-biased-on-50
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250410_004916_iter1_hindsight-biased-on-50_pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50/checkpoint-165
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1-80pct_Q0-20pct-lr=5e-6_hindsight-biased-on-50
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250410_004916_iter1_hindsight-biased-on-50_pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50/checkpoint-220
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250410_004916_iter1_hindsight-biased-on-50_pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  ######### PRM
+  # - type: best_of_n
+  #   log_name: BoN_pi1_Q1-20pct-lr=5e-6_hindsight
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/online_dpo/250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight/checkpoint-160
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30030/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29530
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250323_232616_iter2_hindsight_pi1-77pct_Q0-80pct-lr=5e-6-hindsight_peft=false/model/checkpoint-250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30031/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi1_Q1-40pct-lr=5e-6_hindsight
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/online_dpo/250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight/checkpoint-160
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30040/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250323_232616_iter2_hindsight_pi1-77pct_Q0-80pct-lr=5e-6-hindsight_peft=false/model/checkpoint-500
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30041/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi1_Q1-60pct-lr=5e-6_hindsight
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/online_dpo/250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight/checkpoint-160
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30040/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250323_232616_iter2_hindsight_pi1-77pct_Q0-80pct-lr=5e-6-hindsight_peft=false/model/checkpoint-750
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30041/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi1_Q1-80pct-lr=5e-6_hindsight
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/online_dpo/250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight/checkpoint-160
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30050/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29550
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250323_232616_iter2_hindsight_pi1-77pct_Q0-80pct-lr=5e-6-hindsight_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30051/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29551
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi1_Q1-lr=5e-6_hindsight
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/online_dpo/250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight/checkpoint-160
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30052/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: 29552
+  #     # host_sglang: False  # False if we hosted the model on another job
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/rm/250323_232616_iter2_hindsight_pi1-77pct_Q0-80pct-lr=5e-6-hindsight_peft=false/model/checkpoint-1250
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30053/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29553
+  #   verbose: 3
+  #=====================================================================================+
+  # Iteration 2
+  #=====================================================================================+
+  ######### Online DPO
+  # - type: sglang_server
+  #   log_name: pi2-19pct_Q1-80pct-lr=5e-6-hindsight
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250324_162504_iter2_hindsight_pi1_Q1-60pct-lr=5e-6-hindsight/checkpoint-40
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30068/
+  #   dist_url_port: 29568
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: TODO
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30069/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29569
+  # - type: sglang_server
+  #   log_name: pi2-38pct_Q1-80pct-lr=5e-6-hindsight
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250324_162504_iter2_hindsight_pi1_Q1-60pct-lr=5e-6-hindsight/checkpoint-80
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30066/
+  #   dist_url_port: 29566
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: TODO
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30067/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29567
+  # - type: sglang_server
+  #   log_name: pi2-58pct_Q1-80pct-lr=5e-6-hindsight
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250324_162504_iter2_hindsight_pi1_Q1-60pct-lr=5e-6-hindsight/checkpoint-120
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30064/
+  #   dist_url_port: 29564
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: TODO
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30065/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29565
+  # - type: sglang_server
+  #   log_name: pi2-77pct_Q1-80pct-lr=5e-6-hindsight
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250324_162504_iter2_hindsight_pi1_Q1-60pct-lr=5e-6-hindsight/checkpoint-160
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30062/
+  #   dist_url_port: 29562
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: TODO
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30063/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29563
+  # - type: sglang_server
+  #   log_name: pi2_Q1-80pct-lr=5e-6-hindsight
+  #   model_id: /share/portal/hw575/agent_prm/save/online_dpo/250324_162504_iter2_hindsight_pi1_Q1-60pct-lr=5e-6-hindsight
+  #   prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #   server_url: http://localhost:30060/
+  #   dist_url_port: 29560
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  #   critic:
+  #     type: sglang_server
+  #     model_id: TODO
+  #     prompt_template_file: prompts/twenty_questions/twenty_questions_template.j2
+  #     server_url: http://localhost:30061/
+  #     temperature: 0.3
+  #     batch_limit: 32
+  #     dist_url_port: 29561
+
 
 defaults:
   - _self_

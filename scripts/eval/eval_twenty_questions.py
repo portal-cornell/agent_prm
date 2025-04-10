@@ -55,21 +55,37 @@ def setup_sglang_server(agent_config: dict):
     """
     processes = []
     if agent_config.type == "sglang_server":
-        port = int(agent_config.server_url.split(":")[-1][:-1])
+        if "TODO" in agent_config.server_url:
+            port = None
+        else:
+            port = int(agent_config.server_url.split(":")[-1][:-1])
+
         print(f"Starting SGLang server on port {port}")
-        process, _, _ = start_sglang_server(model_path=agent_config.model_id,
+        process, server_url, _ = start_sglang_server(model_path=agent_config.model_id,
                                                 port=port, 
                                                 tp=1,
                                                 dist_url_port=agent_config.dist_url_port)
+        
+        if "TODO" in agent_config.server_url:
+            agent_config.server_url = server_url
+
         processes.append(process)
     elif agent_config.type == "best_of_n" or agent_config.type == "sglang_server_with_critic":
         # Start the critic
-        port = int(agent_config.critic.server_url.split(":")[-1][:-1])
+        if "TODO" in agent_config.critic.server_url:
+            port = None
+        else:
+            port = int(agent_config.critic.server_url.split(":")[-1][:-1])
+
         print(f"Starting SGLang server for the critic on port {port}, serving on the highest ID GPU")
-        process, _, base_gpu_id = start_sglang_server(model_path=agent_config.critic.model_id,
+        process, server_url, base_gpu_id = start_sglang_server(model_path=agent_config.critic.model_id,
                                                 port=port, 
                                                 tp=1,
                                                 dist_url_port=agent_config.critic.dist_url_port)
+        
+        if "TODO" in agent_config.critic.server_url:
+            agent_config.critic.server_url = server_url
+
         processes.append(process)
 
         # Start the generator
@@ -77,24 +93,38 @@ def setup_sglang_server(agent_config: dict):
         gpu_id = max(0, base_gpu_id - 1)
         if agent_config.type == "best_of_n":
             if not (hasattr(agent_config.generator, 'host_sglang') and not agent_config.generator.host_sglang):
-                port = int(agent_config.generator.server_url.split(":")[-1][:-1])
+                if "TODO" in agent_config.generator.server_url:
+                    port = None
+                else:
+                    port = int(agent_config.generator.server_url.split(":")[-1][:-1])
+
                 print(f"Starting SGLang server for the generator on port {port}, serving on the next highest ID GPU {gpu_id}")
-                process, _, _ = start_sglang_server(model_path=agent_config.generator.model_id,
+                process, server_url, _ = start_sglang_server(model_path=agent_config.generator.model_id,
                                                         port=port, 
                                                         tp=1,
                                                         dist_url_port=agent_config.generator.dist_url_port,
                                                         gpu_id=gpu_id)
                 
+                if "TODO" in agent_config.generator.server_url:
+                    agent_config.generator.server_url = server_url
+                
                 processes.append(process)
         elif agent_config.type == "sglang_server_with_critic":
-            port = int(agent_config.server_url.split(":")[-1][:-1])
+            if "TODO" in agent_config.server_url:
+                port = None
+            else:
+                port = int(agent_config.server_url.split(":")[-1][:-1])
+
             print(f"Starting SGLang server for the critic on port {port}, serving on the highest ID GPU")
-            process, _, _ = start_sglang_server(model_path=agent_config.model_id,
+            process, server_url, _ = start_sglang_server(model_path=agent_config.model_id,
                                                 port=port, 
                                                 tp=1,
                                                 dist_url_port=agent_config.dist_url_port,
                                                 gpu_id=base_gpu_id)
-                
+            
+            if "TODO" in agent_config.server_url:
+                agent_config.server_url = server_url
+
             processes.append(process)
 
     return processes
@@ -138,13 +168,14 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
                 summary_dict[rollout_idx_str] = []
 
             # Consolidate the objects to evaluate on
-            objects_to_eval_on = [(obj, data_type, rollout_idx) for category in object_dict_to_use.keys() for obj in object_dict_to_use[category] if obj not in summary_dict[rollout_idx_str]]
+            objects_to_eval_on = [(obj, data_type, rollout_idx, category) for category in object_dict_to_use.keys() for obj in object_dict_to_use[category] if obj not in summary_dict[rollout_idx_str]]
             all_objects_to_eval_on.extend(objects_to_eval_on)
 
     for batch in tqdm(range(math.ceil(len(all_objects_to_eval_on) / bs))):
         # Determine the objects to evaluate on for this batch
         batch_objects_tuples = all_objects_to_eval_on[batch * bs:(batch + 1) * bs]
-        batch_objects = [obj for obj, _, _ in batch_objects_tuples]  # Used to initialize the environment
+        batch_objects = [obj for obj, _, _, _ in batch_objects_tuples]  # Used to initialize the environment
+        batch_obj_categories = [category for _, _, _, category in batch_objects_tuples]
 
         print(f"=========== Batch {batch} has {len(batch_objects_tuples)} objects: {batch_objects_tuples} ===========")
         
@@ -155,12 +186,12 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
         traj_list = [[] for _ in range(len(batch_objects))]
 
         traj_list = rollout_batch(agent, batched_env, all_obj_list, 
-                                  words_to_guess, histories, 
+                                  words_to_guess, batch_obj_categories, histories, 
                                   traj_list, prev_dones, cfg.online.num_alt_responses)
 
         # Save the trajectories
         for i in range(len(batch_objects)):
-            obj, obj_data_type, obj_rollout_idx = batch_objects_tuples[i]
+            obj, obj_data_type, obj_rollout_idx, _ = batch_objects_tuples[i]
             obj_rollout_idx_str = str(obj_rollout_idx)
 
             # Open up the correct summary dict
@@ -240,24 +271,32 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
         for data_type in ["train", "val", "test"]:
             all_rewards = []
 
-            # Get all the rollouts that are used to consolidate the results
-            json_files = [f for f in os.listdir(os.path.join(agent_rollout_dir, data_type)) if is_valid_rollout(f, data_type)]
+            if os.path.exists(os.path.join(agent_rollout_dir, data_type)):
+                # Get all the rollouts that are used to consolidate the results
+                json_files = [f for f in os.listdir(os.path.join(agent_rollout_dir, data_type)) if is_valid_rollout(f, data_type)]
 
-            if not any([f.endswith(f"{rollout_per_task_dict[data_type]-1}.json") for f in json_files]):
-                print(f"WARNING: {agent_name} does not have all the rollouts for {data_type}, which needs {rollout_per_task_dict[data_type]} rollouts per task")
-                has_enough_rollouts = False
+                if not any([f.endswith(f"{rollout_per_task_dict[data_type]-1}.json") for f in json_files]):
+                    print(f"WARNING: {agent_name} does not have all the rollouts for {data_type}, which needs {rollout_per_task_dict[data_type]} rollouts per task")
+                    has_enough_rollouts = False
+                else:
+                    has_enough_rollouts = True
+
+                # Compute rewards efficiently
+                all_rewards = [sum(t["reward"] for t in load_json(os.path.join(agent_rollout_dir, data_type, f))) for f in json_files]
+                mean_reward = np.mean(all_rewards)
+                se_reward = np.std(all_rewards)/math.sqrt(len(all_rewards))
+
+                # Compute success rate
+                all_success_rates = [load_json(os.path.join(agent_rollout_dir, data_type, f))[-1]["reward"] == 0 for f in json_files]
+                mean_success_rate = np.mean(all_success_rates)
+                se_success_rate = np.std(all_success_rates)/math.sqrt(len(all_success_rates))
             else:
-                has_enough_rollouts = True
-
-            # Compute rewards efficiently
-            all_rewards = [sum(t["reward"] for t in load_json(os.path.join(agent_rollout_dir, data_type, f))) for f in json_files]
-            mean_reward = np.mean(all_rewards)
-            se_reward = np.std(all_rewards)/math.sqrt(len(all_rewards))
-
-            # Compute success rate
-            all_success_rates = [load_json(os.path.join(agent_rollout_dir, data_type, f))[-1]["reward"] == 0 for f in json_files]
-            mean_success_rate = np.mean(all_success_rates)
-            se_success_rate = np.std(all_success_rates)/math.sqrt(len(all_success_rates))
+                print(f"WARNING: {agent_name} does not have any rollouts for {data_type}")
+                mean_reward = np.nan
+                se_reward = np.nan
+                mean_success_rate = np.nan
+                se_success_rate = np.nan
+                has_enough_rollouts = False
 
             if overwrite:
                 table_dict[f"{data_type} (avg reward)"][table_dict["model"].index(agent_name)] = mean_reward
@@ -307,12 +346,13 @@ def main(cfg: DictConfig):
 
         if cfg.consolidate_online.use_existing_table:
             # Save a copy of the existing table in the current folder
-            table = pd.read_csv(os.path.join(cfg.logdir, "online_eval_table.csv"))
+            table = pd.read_csv(os.path.join(cfg.logdir, f"online_eval_table{'_' + cfg.consolidate_online.main_table_notes if cfg.consolidate_online.main_table_notes else ''}.csv"))
 
             # Save a copy of the existing table in the current folder
             table.to_csv(table_fp, index=False)
 
     # Load the model
+    print(f"Mode={cfg.mode}, for agents: {[agent_config.log_name for agent_config in cfg.agents]}")
     for agent_i in tqdm(range(len(cfg.agents))):
         agent_config = cfg.agents[agent_i]
         if cfg.host_sglang:
@@ -341,7 +381,7 @@ def main(cfg: DictConfig):
             consolidate_online_eval(cfg, table_fp, agent_rollout_dir=logdir, agent_name=agent_config.log_name, rollout_per_task_dict=cfg.consolidate_online.rollout_per_task_dict, use_existing_table=cfg.consolidate_online.use_existing_table, overwrite_existing_entry=cfg.consolidate_online.overwrite_existing_entry)
 
             # Check if the file or symlink exists, then remove it
-            dst_link_fp = os.path.join(cfg.logdir, "online_eval_table.csv")
+            dst_link_fp = os.path.join(cfg.logdir, f"online_eval_table{'_' + cfg.consolidate_online.main_table_notes if cfg.consolidate_online.main_table_notes else ''}.csv")
             if os.path.exists(dst_link_fp) or os.path.islink(dst_link_fp):
                 os.remove(dst_link_fp)
 

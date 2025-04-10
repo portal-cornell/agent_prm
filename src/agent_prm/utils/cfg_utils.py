@@ -32,13 +32,13 @@ def find_matching_iter(agent_log_name: str) -> str:
     """
     if "3B" in agent_log_name:
         return "baseline"
-    elif "pi0" in agent_log_name:
-        return "iter0"
-    elif "pi1" in agent_log_name:
-        return "iter1"
-    elif "pi2" in agent_log_name:
-        return "iter2"
     elif "pi3" in agent_log_name:
         return "iter3"
+    elif "pi2" in agent_log_name:
+        return "iter2"
+    elif "pi1" in agent_log_name:
+        return "iter1"
+    elif "pi0" in agent_log_name:
+        return "iter0"
     else:
         raise ValueError(f"Unknown agent log name: {agent_log_name}")
