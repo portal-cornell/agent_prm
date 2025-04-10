@@ -20,7 +20,7 @@ from agent_prm.utils.general_utils import load_json
     Alfworld processing functions
 ================================================================================"""
 
-def alfworld_process_file(file_path, gamma, exclude_reason=False):
+def alfworld_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False):
     try:
         with open(file_path, 'r') as file:
             data = json.load(file)
@@ -81,7 +81,7 @@ def alfworld_success_file_condition(file_name):
 """================================================================================
     20 Questions processing functions
 ================================================================================"""
-def twenty_questions_process_file(file_path, gamma, exclude_reason=False):
+def twenty_questions_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False):
     try:
         with open(file_path, 'r') as file:
             trajectory = json.load(file)
@@ -91,7 +91,7 @@ def twenty_questions_process_file(file_path, gamma, exclude_reason=False):
         for t in range(len(trajectory) - 1, -1, -1):
             state, reason_action = twenty_questions_extract_state_reason_action(trajectory, t, exclude_reason=exclude_reason)
             state_hash = sha256(json.dumps({'state': state, 'action': reason_action['action']}, sort_keys=True).encode()).hexdigest()
-            update_Q(state, reason_action, state_hash, Q_target, outcome_reward, gamma, k=t, T=len(trajectory))
+            update_Q(state, reason_action, state_hash, Q_target, outcome_reward, gamma, k=t, T=len(trajectory), is_offpolicy=is_offpolicy)
         return Q_target
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
@@ -184,7 +184,7 @@ def print_count_histogram(Q_target, bins):
     counts = [entry['count'] for entry in Q_target.values()]
     print_histogram(counts, "Count", bins)
 
-def update_Q(state, reason_action, state_hash, Q_target, outcome_reward, gamma, k, T):
+def update_Q(state, reason_action, state_hash, Q_target, outcome_reward, gamma, k, T, is_offpolicy=False):
     """
     Update the Q estimate for a given state-action pair.
 
@@ -203,7 +203,8 @@ def update_Q(state, reason_action, state_hash, Q_target, outcome_reward, gamma, 
             'state': state,
             'reason_action': reason_action,
             'qestimate': 0,
-            'count': 0
+            'count': 0,
+            'contains_offpolicy': is_offpolicy # Contains contribution from the off-policy rollouts
         }
     current_entry = Q_target[state_hash]
     current_qestimate = current_entry['qestimate']
@@ -225,6 +226,9 @@ def update_Q(state, reason_action, state_hash, Q_target, outcome_reward, gamma, 
     Q_target[state_hash]['qestimate'] = updated_qestimate
     Q_target[state_hash]['count'] = current_count + 1
 
+    if is_offpolicy:
+        Q_target[state_hash]['contains_offpolicy'] = True
+
 
 # Function to merge results from multiple processes
 def merge_results(results):
@@ -240,19 +244,26 @@ def merge_results(results):
                                  value['qestimate'] * value['count']) / (current_entry['count'] + value['count'])
                 merged_Q_target[key]['qestimate'] = new_qestimate
                 merged_Q_target[key]['count'] += value['count']
+                merged_Q_target[key]['contains_offpolicy'] = merged_Q_target[key]['contains_offpolicy'] or value['contains_offpolicy']
     return merged_Q_target
 
-def subsample_data(data: List[Dict], count: int, bins: int = 5, low_or_high: str = "low"):
+def subsample_data(data: List[Dict], count_to_reduce: int, bins: int = 5, low_or_high: str = "low"):
     """
     Parameters:
         data: List of dictionaries, each containing 'qestimate' and 'state' and 'reason_action'
-        count: The number of datapoints to subsample to
+        count_to_reduce: The number of datapoints to remove
         bins: The number of bins to use for the histogram
+
+    Returns:
+        - The subsampled data
+        - The number of datapoints left to reduce
     """
-    if len(data) > count:
+    if count_to_reduce == 0:
+        return data, 0
+    elif len(data) > count_to_reduce:
         q_val_list = [entry['qestimate'] for entry in data]
 
-        num_datapoints_to_reduce = len(q_val_list) - count
+        num_datapoints_to_reduce = count_to_reduce
         print(f"num_datapoints_to_reduce: {num_datapoints_to_reduce}")
 
         # list of bins (0, 1/bins), (1/bins, 2/bins), ..., (1-1/bins, 1)
@@ -274,7 +285,7 @@ def subsample_data(data: List[Dict], count: int, bins: int = 5, low_or_high: str
 
         total_removal_count = 0
 
-        while total_removal_count < num_datapoints_to_reduce:
+        while total_removal_count < num_datapoints_to_reduce and (not all(counts == 0)):
             sorted_indices = np.argsort(-counts)  # Sort in descending order
             highest_bin_index = sorted_indices[0]
             third_highest_bin_index = sorted_indices[1]  # Assume there's always at least 3 bins
@@ -314,13 +325,14 @@ def subsample_data(data: List[Dict], count: int, bins: int = 5, low_or_high: str
         
         print_histogram([entry['qestimate'] for entry in new_data], f"Final Q-estimate for {low_or_high} data (len={len(new_data)})", bins_list)
 
-        return new_data
+        return new_data, num_datapoints_to_reduce - total_removal_count
     else:
-        return data
+        count_to_reduce_left = count_to_reduce - len(data)
+        return [], count_to_reduce_left
 
     
 # Main function using multiprocessing
-def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_split=None, split_name=None, balance_data=False):
+def compute_prm_target(files, files_breakdown, domain, outputdir, gamma, cpu_count=None, train_split=None, split_name=None, balance_data=False, onpolicy_pct_for_success=None, track_offpolicy=False):
     if domain == "alfworld":
         process_file = alfworld_process_file
     elif domain == "twenty_questions":
@@ -338,9 +350,32 @@ def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_sp
     print(f"Using {num_cpus} CPUs for parallel processing")
 
     # Use multiprocessing Pool for parallel processing
-    with Pool(processes=num_cpus) as pool:
-        process_func = partial(process_file, gamma=gamma)
-        results = list(tqdm(pool.imap(process_func, files), total=len(files), desc="Processing files"))
+    if track_offpolicy:
+        assert len(files_breakdown) == 4
+        num_cpus_per_type = num_cpus // 4
+        onpolicy_rollouts_failed, onpolicy_rollouts_succeeded, offpolicy_files_failed_to_include, offpolicy_files_good = files_breakdown
+
+        results = []
+
+        with Pool(processes=num_cpus_per_type) as pool:
+            process_func = partial(process_file, gamma=gamma, is_offpolicy=False)
+            results.extend(list(tqdm(pool.imap(process_func, onpolicy_rollouts_failed), total=len(onpolicy_rollouts_failed), desc="Processing onpolicy rollouts failed")))
+
+        with Pool(processes=num_cpus_per_type) as pool:
+            process_func = partial(process_file, gamma=gamma, is_offpolicy=False)
+            results.extend(list(tqdm(pool.imap(process_func, onpolicy_rollouts_succeeded), total=len(onpolicy_rollouts_succeeded), desc="Processing onpolicy rollouts succeeded")))
+
+        with Pool(processes=num_cpus_per_type) as pool:
+            process_func = partial(process_file, gamma=gamma, is_offpolicy=True)
+            results.extend(list(tqdm(pool.imap(process_func, offpolicy_files_failed_to_include), total=len(offpolicy_files_failed_to_include), desc="Processing offpolicy files failed to include")))
+        
+        with Pool(processes=num_cpus_per_type) as pool:
+            process_func = partial(process_file, gamma=gamma, is_offpolicy=True)
+            results.extend(list(tqdm(pool.imap(process_func, offpolicy_files_good), total=len(offpolicy_files_good), desc="Processing offpolicy files good")))
+    else:
+        with Pool(processes=num_cpus) as pool:
+            process_func = partial(process_file, gamma=gamma)
+            results = list(tqdm(pool.imap(process_func, files), total=len(files), desc="Processing files"))
     
     # # First test with single process
     # results = [process_file(file, gamma) for file in files]
@@ -354,72 +389,24 @@ def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_sp
 
     print_qestimate_histogram(Q_target)
     # print_count_histogram(Q_target, bins=np.array(list(range(1, 6)) + list(range(6, 10, 2)) +list(range(10, 100, 10)) + list(range(100, max([x['count'] for x in Q_target.values()]), 100))))
+    if track_offpolicy:
+        Q_target_onpolicy = {k: v for k, v in Q_target.items() if not v['contains_offpolicy']}
+        Q_target_off_policy = {k: v for k, v in Q_target.items() if v['contains_offpolicy']}
+        print("======= On-policy Q-estimate =======")
+        print_qestimate_histogram(Q_target_onpolicy)
+        print("======= Off-policy (Hindsight) Q-estimate =======")
+        print_qestimate_histogram(Q_target_off_policy)
     input("Press any key to continue...")
 
-    keys = list(Q_target.keys())
-    random.shuffle(keys)
-
     if split_name is not None:
-        original_data_to_save = [
-            {'state': Q_target[k]['state'], 
-            'reason_action': Q_target[k]['reason_action'], 
-            'qestimate': Q_target[k]['qestimate']}
-            for k in keys
-        ]
-
-        if split_name == "val":
-            if balance_data:
-                # Find the data that has Q-estimate >= 0.5
-                low_data = [x for x in original_data_to_save if x['qestimate'] < 0.5]
-                high_data = [x for x in original_data_to_save if x['qestimate'] >= 0.5]
-
-                count = min(len(low_data), len(high_data))
-
-                # Subsample the data
-                low_data_subsampled = subsample_data(low_data, count, low_or_high="low")
-                high_data_subsampled = subsample_data(high_data, count, low_or_high="high")
-
-                print(f"Reducing low_data from {len(low_data)} to {count}")
-                print(f"Reducing high_data from {len(high_data)} to {count}")
-
-                input("Press any key to continue...")
-
-                data_to_save = low_data_subsampled + high_data_subsampled
-            else:
-                data_to_save = original_data_to_save
-
-            data_table = pa.Table.from_pylist(data_to_save)
-            
-            # Save the Arrow tables to Parquet files
-            os.makedirs(outputdir, exist_ok=True)
-            pq.write_table(data_table, os.path.join(outputdir, f"{split_name}.parquet"))
-            
-            print(f"Saving {len(data_to_save)} datapoints as {split_name}.parquet")
-        elif split_name == "train":
-            # Subsample the data to strictly having 10k datapoints
-            if balance_data:
-                count = 10000/2
-
-                # Find the data that has Q-estimate >= 0.5
-                low_data = [x for x in original_data_to_save if x['qestimate'] < 0.5]
-                high_data = [x for x in original_data_to_save if x['qestimate'] >= 0.5]
-                
-                low_data_subsampled = subsample_data(low_data, count, low_or_high="low")
-                high_data_subsampled = subsample_data(high_data, count, low_or_high="high")
-
-                print(f"Reducing low_data from {len(low_data)} to {count}")
-                print(f"Reducing high_data from {len(high_data)} to {count}")
-
-                input("Press any key to continue...")
-
-                data_to_save = low_data_subsampled + high_data_subsampled
-
-                data_table_10k = pa.Table.from_pylist(data_to_save)
-            else:
-                data_table_10k = data_table.slice(0, 10000)
-
-            pq.write_table(data_table_10k, os.path.join(outputdir, f"{split_name}_10k.parquet"))
+        if not track_offpolicy:
+            reduce_and_save_data_for_split(Q_target, outputdir, split_name, balance_data)
+        else:
+            reduce_and_save_data_for_split_biased(Q_target, outputdir, split_name, balance_data, onpolicy_pct_for_success)
     else:
+        keys = list(Q_target.keys())
+        random.shuffle(keys)
+
         # Split into train/val and save
         split_idx = int(len(keys) * train_split)
         train_keys, val_keys = keys[:split_idx], keys[split_idx:]
@@ -453,6 +440,182 @@ def compute_prm_target(files, domain, outputdir, gamma, cpu_count=None, train_sp
         train_table_10k = train_table.slice(0, 10000)
         pq.write_table(train_table_10k, os.path.join(outputdir, 'train_10k.parquet'))
 
+def reduce_and_save_data_for_split(Q_target, outputdir, split_name, balance_data=False):
+    keys = list(Q_target.keys())
+    random.shuffle(keys)
+
+    original_data_to_save = [
+        {'state': Q_target[k]['state'], 
+        'reason_action': Q_target[k]['reason_action'], 
+        'qestimate': Q_target[k]['qestimate']}
+        for k in keys
+    ]
+
+    if split_name == "val":
+        if balance_data:
+            # Find the data that has Q-estimate >= 0.5
+            low_data = [x for x in original_data_to_save if x['qestimate'] < 0.5]
+            high_data = [x for x in original_data_to_save if x['qestimate'] >= 0.5]
+
+            count = min(len(low_data), len(high_data))
+
+            # Subsample the data
+            low_data_subsampled = subsample_data(low_data, count, low_or_high="low")
+            high_data_subsampled = subsample_data(high_data, count, low_or_high="high")
+
+            print(f"Reducing low_data from {len(low_data)} to {count}")
+            print(f"Reducing high_data from {len(high_data)} to {count}")
+
+            input("Press any key to continue...")
+
+            data_to_save = low_data_subsampled + high_data_subsampled
+        else:
+            data_to_save = original_data_to_save
+
+        data_table = pa.Table.from_pylist(data_to_save)
+        
+        # Save the Arrow tables to Parquet files
+        os.makedirs(outputdir, exist_ok=True)
+        pq.write_table(data_table, os.path.join(outputdir, f"{split_name}.parquet"))
+        
+        print(f"Saving {len(data_to_save)} datapoints as {split_name}.parquet")
+    elif split_name == "train":
+        # Subsample the data to strictly having 10k datapoints
+        if balance_data:
+            count = 10000/2
+
+            # Find the data that has Q-estimate >= 0.5
+            low_data = [x for x in original_data_to_save if x['qestimate'] < 0.5]
+            high_data = [x for x in original_data_to_save if x['qestimate'] >= 0.5]
+            
+            low_data_subsampled = subsample_data(low_data, count, low_or_high="low")
+            high_data_subsampled = subsample_data(high_data, count, low_or_high="high")
+
+            print(f"Reducing low_data from {len(low_data)} to {count}")
+            print(f"Reducing high_data from {len(high_data)} to {count}")
+
+            input("Press any key to continue...")
+
+            data_to_save = low_data_subsampled + high_data_subsampled
+
+            data_table_10k = pa.Table.from_pylist(data_to_save)
+        else:
+            data_table_10k = data_table.slice(0, 10000)
+
+        pq.write_table(data_table_10k, os.path.join(outputdir, f"{split_name}_10k.parquet"))
+
+
+def reduce_and_save_data_for_split_biased(Q_target, outputdir, split_name, balance_data=True, onpolicy_pct_for_success=None):
+    """
+    Biased in the sense that
+        - For low data, we prioritize removing off-policy rollouts (removing the hindsight data that failed)
+        - For high data, we prioritize removing on-policy rollouts (removing the agent rollouts that failed)
+            We assume that expert's alternative actions would be better
+    """
+    assert balance_data, "Balance data is required for biased subsampling"
+
+    keys = list(Q_target.keys())
+    random.shuffle(keys)
+
+    # This helps us compute the amount that we need to reduce
+    original_data_to_save = [
+        {'state': Q_target[k]['state'], 
+        'reason_action': Q_target[k]['reason_action'], 
+        'qestimate': Q_target[k]['qestimate']}
+        for k in keys
+    ]
+
+    onpolicy_data_to_save = [
+        {'state': Q_target[k]['state'], 
+        'reason_action': Q_target[k]['reason_action'], 
+        'qestimate': Q_target[k]['qestimate']}
+        for k in keys if not Q_target[k]['contains_offpolicy']
+    ]
+
+    offpolicy_data_to_save = [
+        {'state': Q_target[k]['state'], 
+        'reason_action': Q_target[k]['reason_action'],
+        'qestimate': Q_target[k]['qestimate']}
+        for k in keys if Q_target[k]['contains_offpolicy']
+    ]
+
+    # Find the data that has Q-estimate >= 0.5
+    low_data = [x for x in original_data_to_save if x['qestimate'] < 0.5]
+    high_data = [x for x in original_data_to_save if x['qestimate'] >= 0.5]
+
+    # On-policy data
+    onpolicy_low_data = [x for x in onpolicy_data_to_save if x['qestimate'] < 0.5]
+    onpolicy_high_data = [x for x in onpolicy_data_to_save if x['qestimate'] >= 0.5]
+
+    # Off-policy data
+    offpolicy_low_data = [x for x in offpolicy_data_to_save if x['qestimate'] < 0.5]
+    offpolicy_high_data = [x for x in offpolicy_data_to_save if x['qestimate'] >= 0.5]
+
+    if split_name == "val":
+        count = min(len(low_data), len(high_data))
+        low_count_to_reduce = max(0, len(low_data) - count)
+        high_count_to_reduce = max(0, len(high_data) - count)
+    elif split_name == "train":
+        count = 10000/2
+        low_count_to_reduce = max(0, len(low_data) - count)
+        high_count_to_reduce = max(0, len(high_data) - count)
+    else:
+        raise ValueError(f"Invalid split name: {split_name}")
+
+    print("-"*50)
+    print(f"low_count_to_reduce: {low_count_to_reduce} | high_count_to_reduce: {high_count_to_reduce}")
+    print("-"*50)
+
+    # Subsample the low data (off-policy first)
+    offpolicy_low_data_subsampled, low_count_left = subsample_data(offpolicy_low_data, low_count_to_reduce, low_or_high="low")
+    print(f"offpolicy_low_data_subsampled: {len(offpolicy_low_data_subsampled)} | low_count_left: {low_count_left}")
+    onpolicy_low_data_subsampled, _ = subsample_data(onpolicy_low_data, low_count_left, low_or_high="low")
+    print(f"onpolicy_low_data_subsampled: {len(onpolicy_low_data_subsampled)}")
+
+    # Combine the data
+    low_data_subsampled = offpolicy_low_data_subsampled + onpolicy_low_data_subsampled
+    print_histogram([entry['qestimate'] for entry in low_data_subsampled], f"Final Q-estimate for low data (len={len(low_data_subsampled)})", np.linspace(0, 0.5, 6))
+
+    print(f"Reducing low_data from {len(low_data)} to {count} (Reducing {low_count_to_reduce} datapoints in total)\n    (1. offpolicy from {len(offpolicy_low_data)} to {len(offpolicy_low_data_subsampled)} | 2. onpolicy from {len(onpolicy_low_data)} to {len(onpolicy_low_data_subsampled)})\n onpolicy={len(onpolicy_low_data_subsampled)/len(low_data_subsampled):.2f} | offpolicy={len(offpolicy_low_data_subsampled)/len(low_data_subsampled):.2f}")
+    input("Press any key to continue...")
+
+    if onpolicy_pct_for_success is not None:
+        # Determine the number of on-policy rollouts to include
+        onpolicy_count = int(count * onpolicy_pct_for_success)
+        offpolicy_count = count - onpolicy_count
+
+        # Determine the amount of data to reduce from the on-policy and off-policy data
+        onpolicy_high_count_to_reduce = max(0, len(onpolicy_high_data) - onpolicy_count)
+        offpolicy_high_count_to_reduce = max(0, len(offpolicy_high_data) - offpolicy_count)
+
+        # Subsample the on-policy data
+        onpolicy_high_data_subsampled, _ = subsample_data(onpolicy_high_data, onpolicy_high_count_to_reduce, low_or_high="high")
+        offpolicy_high_data_subsampled, _ = subsample_data(offpolicy_high_data, offpolicy_high_count_to_reduce, low_or_high="high")
+    else:
+        # Subsample the high data (on-policy first)
+        onpolicy_high_data_subsampled, high_count_left = subsample_data(onpolicy_high_data, high_count_to_reduce, low_or_high="high")
+        offpolicy_high_data_subsampled, _ = subsample_data(offpolicy_high_data, high_count_left, low_or_high="high")
+
+    # Combine the data
+    high_data_subsampled = onpolicy_high_data_subsampled + offpolicy_high_data_subsampled
+    print_histogram([entry['qestimate'] for entry in high_data_subsampled], f"Final Q-estimate for high data (len={len(high_data_subsampled)})", np.linspace(0.5, 1, 6))
+
+    print(f"Reducing high_data from {len(high_data)} to {count} (Reducing {high_count_to_reduce} datapoints in total)\n    (1. onpolicy from {len(onpolicy_high_data)} to {len(onpolicy_high_data_subsampled)} | 2. offpolicy from {len(offpolicy_high_data)} to {len(offpolicy_high_data_subsampled)})\n onpolicy={len(onpolicy_high_data_subsampled)/len(high_data_subsampled):.2f} | offpolicy={len(offpolicy_high_data_subsampled)/len(high_data_subsampled):.2f}")
+    input("Press any key to continue...")
+
+    data_to_save = low_data_subsampled + high_data_subsampled
+
+    data_table = pa.Table.from_pylist(data_to_save)
+    
+    # Save the Arrow tables to Parquet files
+    os.makedirs(outputdir, exist_ok=True)
+
+    if split_name == "train":
+        pq.write_table(data_table, os.path.join(outputdir, f"{split_name}_10k.parquet"))
+    else:
+        pq.write_table(data_table, os.path.join(outputdir, f"{split_name}.parquet"))
+
+
 def compute_file_list(rolloutdirs, domain, max_files_per_dir=None, max_rollout_per_task_per_dir_list=None):
     if domain == "alfworld":
         skip_condition = alfworld_skip_file_condition
@@ -481,9 +644,9 @@ def compute_file_list(rolloutdirs, domain, max_files_per_dir=None, max_rollout_p
         print(f"Found {len(files_per_dir)} files in {rolloutdir}")
     print(f"== Found {len(files)} files in total ==")
 
-    return files
+    return files, []
 
-def compute_hindsight_file_list(rolloutdirs, domain, onpolicy_idx_range, offpolicy_idx_range, onpolicy_pct_for_success=None, num_failed_expert_rollouts_to_include=None):
+def compute_hindsight_file_list(rolloutdirs, domain, onpolicy_idx_range, offpolicy_idx_range, num_failed_expert_rollouts_to_include=None):
     if domain == "alfworld":
         skip_condition = alfworld_skip_file_condition
         filter_condition_checker = lambda rolloutdir, file_name:False, False
@@ -549,17 +712,17 @@ def compute_hindsight_file_list(rolloutdirs, domain, onpolicy_idx_range, offpoli
     print(f'onpolicy_rollouts_failed: {len(onpolicy_rollouts_failed)} | onpolicy_rollouts_succeeded: {len(onpolicy_rollouts_succeeded)}')
     print(f'offpolicy_files_failed: {len(offpolicy_files_failed)} | offpolicy_files_good: {len(offpolicy_files_good)}')
 
-    if onpolicy_pct_for_success is not None:
-        if onpolicy_pct_for_success < 1.0:
-            # Assume that we are using all of the good offpolicy files
-            pct_of_offpolicy_to_include = 1 - onpolicy_pct_for_success
-            total_good_rollouts_needed = int(len(offpolicy_files_good)/pct_of_offpolicy_to_include)
-            num_onpolicy_to_include = total_good_rollouts_needed - len(offpolicy_files_good)
+    # if onpolicy_pct_for_success is not None:
+    #     if onpolicy_pct_for_success < 1.0:
+    #         # Assume that we are using all of the good offpolicy files
+    #         pct_of_offpolicy_to_include = 1 - onpolicy_pct_for_success
+    #         total_good_rollouts_needed = int(len(offpolicy_files_good)/pct_of_offpolicy_to_include)
+    #         num_onpolicy_to_include = total_good_rollouts_needed - len(offpolicy_files_good)
 
-            onpolicy_rollouts_succeeded = onpolicy_rollouts_succeeded[:num_onpolicy_to_include]
-        else:
-            onpolicy_rollouts_succeeded = onpolicy_rollouts_succeeded
-            offpolicy_files_good = []
+    #         onpolicy_rollouts_succeeded = onpolicy_rollouts_succeeded[:num_onpolicy_to_include]
+    #     else:
+    #         onpolicy_rollouts_succeeded = onpolicy_rollouts_succeeded
+    #         offpolicy_files_good = []
     
     if num_failed_expert_rollouts_to_include is not None:
         if num_failed_expert_rollouts_to_include != -1:
@@ -576,7 +739,7 @@ def compute_hindsight_file_list(rolloutdirs, domain, onpolicy_idx_range, offpoli
     print(f"offpolicy_files_failed_to_include: {len(offpolicy_files_failed_to_include)} | offpolicy_files_good: {len(offpolicy_files_good)}")
     print(f"========= Found {len(files)} files in total =========")
 
-    return files
+    return files, [onpolicy_rollouts_failed, onpolicy_rollouts_succeeded, offpolicy_files_failed_to_include, offpolicy_files_good]
         
 @hydra.main(version_base=None, config_path="../../configs", config_name="compute_prm_target.yaml")
 def main(cfg: DictConfig):
@@ -598,12 +761,12 @@ def main(cfg: DictConfig):
     input("Press any key to continue...")
 
     if is_hindsight_data:
-        files = compute_hindsight_file_list(rolloutdirs, cfg.domain, cfg.hindsight.onpolicy_idx_range, cfg.hindsight.offpolicy_idx_range, cfg.hindsight.onpolicy_pct_for_success, cfg.hindsight.num_failed_expert_rollouts_to_include)
+        files, files_breakdown = compute_hindsight_file_list(rolloutdirs, cfg.domain, cfg.hindsight.onpolicy_idx_range, cfg.hindsight.offpolicy_idx_range, cfg.hindsight.num_failed_expert_rollouts_to_include)
     else:
-        files = compute_file_list(rolloutdirs, cfg.domain, cfg.max_files_per_dir, cfg.max_rollout_per_task_per_dir_list)
+        files, files_breakdown = compute_file_list(rolloutdirs, cfg.domain, cfg.max_files_per_dir, cfg.max_rollout_per_task_per_dir_list)
     
     input("Press any key to continue...")
-    compute_prm_target(files, cfg.domain, cfg.outputdir, cfg.gamma, cfg.cpu_count, cfg.train_split, cfg.split_name, cfg.balance_data)
+    compute_prm_target(files, files_breakdown, cfg.domain, cfg.outputdir, cfg.gamma, cfg.cpu_count, cfg.train_split, cfg.split_name, cfg.balance_data, cfg.hindsight.onpolicy_pct_for_success if is_hindsight_data else None, cfg.hindsight.track_offpolicy if is_hindsight_data else False)
 
 if __name__ == "__main__":
     main()

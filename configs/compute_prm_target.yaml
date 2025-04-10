@@ -46,8 +46,9 @@ hindsight:
     - 12
     - 24
     - 32
-  onpolicy_pct_for_success: 0.2 # Within the successful on-policy rollouts, only X pct of files are from on-policy rollouts
+  onpolicy_pct_for_success: null # Within the successful on-policy rollouts, only X pct of files are from on-policy rollouts
   num_failed_expert_rollouts_to_include: 10 # Only used in hindsight cases. Include X number of failed expert rollouts
+  track_offpolicy: true # Whether to track the off-policy rollouts
 
 outputdir: data/${domain}/prm/${output_folder}
 gamma: 0.95
