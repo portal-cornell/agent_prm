@@ -88,7 +88,9 @@ class TwentyQuestionsSimulator(object):
         return self.model_id
     
     def generate_answer(self, 
-                        word: WordVariants, question: str) -> Tuple[str, str]:
+                        word: WordVariants, 
+                        obj_category: str,
+                        question: str) -> Tuple[str, str]:
         """
         Predicts a reason and an asnwer given the current word and question
 
@@ -102,7 +104,8 @@ class TwentyQuestionsSimulator(object):
         input_data = {
             'mode': 'input',
             'thing': word[0].lower(),
-            'question': question
+            'question': question,
+            'category': obj_category
         }
         input_prompt = self.prompt_template.render(**input_data)
         
@@ -148,6 +151,7 @@ class TwentyQuestionsSimulator(object):
 
     def generate_answer_batch(self, 
                               words: List[WordVariants], 
+                              obj_categories: List[str],
                               questions: List[str],
                               ensemble_size: int = 5) -> Tuple[List[str], List[str]]:
         """
@@ -157,9 +161,10 @@ class TwentyQuestionsSimulator(object):
             {
                 'mode': 'input',
                 'thing': word[0].lower(),
-                'question': question
+                'question': question,
+                'category': obj_category
             }
-            for word, question in zip(words, questions) for _ in range(ensemble_size)
+            for word, question, obj_category in zip(words, questions, obj_categories) for _ in range(ensemble_size)
         ]
 
         messages = [
@@ -242,6 +247,7 @@ class SGLangServerTwentyQuestionsSimulator(object):
 
     def generate_answer_batch(self, 
                               words: List[WordVariants], 
+                              obj_categories: List[str],
                               questions: List[str],
                               ensemble_size: int = 5) -> Tuple[List[str], List[str]]:
         """
@@ -251,9 +257,10 @@ class SGLangServerTwentyQuestionsSimulator(object):
             {
                 'mode': 'input',
                 'thing': word[0].lower(),
-                'question': question
+                'question': question,
+                'category': obj_category
             }
-            for word, question in zip(words, questions) for _ in range(ensemble_size)
+            for word, question, obj_category in zip(words, questions, obj_categories) for _ in range(ensemble_size)
         ]
 
         messages = [

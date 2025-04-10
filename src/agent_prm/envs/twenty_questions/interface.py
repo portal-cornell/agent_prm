@@ -36,7 +36,7 @@ def query_agent_batch(agent: Agent, histories: List[List[Dict[str, str]]], all_o
 
     return reason_actions, generated_texts
 
-def rollout_batch(agent: Agent, batched_env: BatchedTwentyQuestionsEnvironment, all_obj_list: List[WordVariants], words_to_guess: List[WordVariants], histories: List[List[Dict]], traj_list: List[List[Dict]], prev_dones: List[bool], num_alt_responses: int):
+def rollout_batch(agent: Agent, batched_env: BatchedTwentyQuestionsEnvironment, all_obj_list: List[WordVariants], words_to_guess: List[WordVariants], obj_categories: List[str], histories: List[List[Dict]], traj_list: List[List[Dict]], prev_dones: List[bool], num_alt_responses: int):
     while not all(prev_dones):
         # Batched way
         start_time = time.time()
@@ -77,7 +77,7 @@ def rollout_batch(agent: Agent, batched_env: BatchedTwentyQuestionsEnvironment, 
         print(f"[AGENT] time taken for batch_size={len(histories)}: {time.time() - start_time}")
 
         # Step the environment
-        histories, answer_reasons, answers, rewards, dones = batched_env.step(words_to_guess, histories, actions, prev_dones)
+        histories, answer_reasons, answers, rewards, dones = batched_env.step(words_to_guess, obj_categories, histories, actions, prev_dones)
 
         # Log the trajectories
         for i in range(len(histories)):

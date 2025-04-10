@@ -26,7 +26,7 @@ class TwentyQuestionsEnvironment():
         self.random = random.Random(None)
         self.curr_word: Optional[WordVariants] = None
 
-    def step(self, history, action):
+    def step(self, history, action, obj_category: Optional[str] = None):
         """
         Parameters:
             history (List[Dict]): The history of the conversation so far. A list of dictionaries, of the form:
@@ -44,7 +44,7 @@ class TwentyQuestionsEnvironment():
         assert self.curr_word is not None, "call env.reset() first."
         
         start_time = time.time()
-        answerer_reason, answer = self.answerer.generate_answer(self.curr_word, action)
+        answerer_reason, answer = self.answerer.generate_answer(self.curr_word, obj_category, action)
         end_time = time.time()
         print(f"Time taken to generate answer: {end_time - start_time} seconds")
 
@@ -118,10 +118,11 @@ class BatchedTwentyQuestionsEnvironment(object):
         self.ensemble_size = ensemble_size
 
     
-    def step(self, words_to_guess: List[WordVariants], histories: List[Dict], actions: List[str], prev_dones: List[bool]):
+    def step(self, words_to_guess: List[WordVariants], obj_categories: List[Optional[str]], histories: List[Dict], actions: List[str], prev_dones: List[bool]):
         """
         Parameters:
             words_to_guess (List[WordVariants]): The secrete words that the agent is trying to guess.
+            obj_categories (List[Optional[str]]): The categories of the objects to guess.
             histories (List[List[Dict]]): The history of the conversation so far (in the beginning, it's empty). A list of lists of dictionaries, of the form:
             [
                 [
@@ -134,7 +135,6 @@ class BatchedTwentyQuestionsEnvironment(object):
             actions (List[str]): The actions to take in the environment.
                 We assume that even if the conversation is done, there is a placeholder action '' (to make batching easier)
             prev_dones (List[bool]): Whether the conversation is done in the previous step.
-
         Returns:
             histories (List[List[Dict]]): Updated histories.
             answer_reasons (List[List[str]]): The reasons for the answers.
@@ -144,7 +144,7 @@ class BatchedTwentyQuestionsEnvironment(object):
         """
         # Get batched answers
         start_time = time.time()
-        answer_reasons, answers = self.answerer.generate_answer_batch(words_to_guess, actions, ensemble_size=self.ensemble_size)
+        answer_reasons, answers = self.answerer.generate_answer_batch(words_to_guess, obj_categories, actions, ensemble_size=self.ensemble_size)
         end_time = time.time()
         print(f"[ENV] time taken to generate answers: {end_time - start_time} seconds")
 
