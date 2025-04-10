@@ -61,7 +61,19 @@ from agent_prm.utils.cfg_utils import find_matching_iter
 # POLICY_A_NAME = "BoN_pi0_Q0-80pct-lr=5e-6_hindsight-baseline"
 # POLICY_B_NAME = "BoN_pi0_Q0-80pct-lr=5e-6_hindsight"
 
+##### QUESTION [Hindsight-redo]: What's the diff with training on hindsight data vs training on original data? (after we fixed the env and improved hindsight data)
+POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-60pct-lr=5e-6_pi0-new-env_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-lr=5e-6_hindsight-redo_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+POLICY_A_NAME = "BoN_pi0_Q0-60pct-lr=5e-6_pi0-new-env"
+POLICY_B_NAME = "BoN_pi0_Q0-lr=5e-6_hindsight-redo"
+
 save_folder_path = os.path.join("playground/compare_two_policies", f"{POLICY_A_NAME}_vs_{POLICY_B_NAME}")
+
+ROLLOUT_PER_TASK_DICT = {
+    "train": 1,
+    "val": 3,
+    "test": 3
+}
 
 def plot_confusion_matrix(df_confusion_matrix, policy_A_name: str, policy_B_name: str, file_name="confusion_matrix.png", is_percentage=False):
     # Plot the confusion matrix
@@ -138,30 +150,31 @@ def collect_results(policy_A_path: str, policy_B_path: str, policy_A_name: str, 
         objs_list = [(obj, data_type, category) for category in object_dict_to_use.keys() for obj in object_dict_to_use[category]]
 
         for obj, data_type, category in objs_list:
-            policy_A_rollout_path = os.path.join(policy_A_path, data_type, f"{obj}_0.json")
-            policy_B_rollout_path = os.path.join(policy_B_path, data_type, f"{obj}_0.json")
+            for rollout_id in range(ROLLOUT_PER_TASK_DICT[data_type]):
+                policy_A_rollout_path = os.path.join(policy_A_path, data_type, f"{obj}_{rollout_id}.json")
+                policy_B_rollout_path = os.path.join(policy_B_path, data_type, f"{obj}_{rollout_id}.json")
 
-            policy_A_rollout = load_json(policy_A_rollout_path)
-            policy_B_rollout = load_json(policy_B_rollout_path)
+                policy_A_rollout = load_json(policy_A_rollout_path)
+                policy_B_rollout = load_json(policy_B_rollout_path)
 
-            policy_A_success = policy_A_rollout[-1]["reward"] == 0
-            policy_B_success = policy_B_rollout[-1]["reward"] == 0
+                policy_A_success = policy_A_rollout[-1]["reward"] == 0
+                policy_B_success = policy_B_rollout[-1]["reward"] == 0
 
-            if policy_A_success and not policy_B_success:
-                dict_to_add_to = policy_A_1_policy_B_0_dict
-            elif not policy_A_success and policy_B_success:
-                dict_to_add_to = policy_A_0_policy_B_1_dict
-            elif policy_A_success and policy_B_success:
-                dict_to_add_to = policy_A_1_policy_B_1_dict
-            elif not policy_A_success and not policy_B_success:
-                dict_to_add_to = policy_A_0_policy_B_0_dict
+                if policy_A_success and not policy_B_success:
+                    dict_to_add_to = policy_A_1_policy_B_0_dict
+                elif not policy_A_success and policy_B_success:
+                    dict_to_add_to = policy_A_0_policy_B_1_dict
+                elif policy_A_success and policy_B_success:
+                    dict_to_add_to = policy_A_1_policy_B_1_dict
+                elif not policy_A_success and not policy_B_success:
+                    dict_to_add_to = policy_A_0_policy_B_0_dict
 
-            dict_to_add_to["task_id"].append(f"{obj}_0")
-            dict_to_add_to["task_category"].append(category)
-            dict_to_add_to["data_type"].append(data_type)
-            dict_to_add_to["path_to_policy_A_model"].append(policy_A_rollout_path)
-            dict_to_add_to["path_to_policy_B_model"].append(policy_B_rollout_path)
-            dict_to_add_to["investigation_comments"].append("")  # Placeholder for comments
+                dict_to_add_to["task_id"].append(f"{obj}_0")
+                dict_to_add_to["task_category"].append(category)
+                dict_to_add_to["data_type"].append(data_type)
+                dict_to_add_to["path_to_policy_A_model"].append(policy_A_rollout_path)
+                dict_to_add_to["path_to_policy_B_model"].append(policy_B_rollout_path)
+                dict_to_add_to["investigation_comments"].append("")  # Placeholder for comments
 
     # Save the results
     policy_A_1_policy_B_0_df = pd.DataFrame(policy_A_1_policy_B_0_dict)
@@ -273,5 +286,5 @@ if __name__ == "__main__":
     print(f"Results will be saved to {save_folder_path}")
     input("Press Enter to continue...")
 
-    # collect_results(POLICY_A_PATH, POLICY_B_PATH, POLICY_A_NAME, POLICY_B_NAME)
+    collect_results(POLICY_A_PATH, POLICY_B_PATH, POLICY_A_NAME, POLICY_B_NAME)
     present_per_data_type_results(POLICY_A_NAME, POLICY_B_NAME)
