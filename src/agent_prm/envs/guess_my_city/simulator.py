@@ -7,9 +7,9 @@ from typing import Callable, List, Tuple, Any, Optional, Dict, Union
 import requests
 from tqdm import tqdm
 from typing import Tuple, List
-from agent_prm.envs.twenty_questions.data import WordVariants
+from agent_prm.envs.guess_my_city.data import WordVariants
 
-def parse_reason_and_action_20questions_oracle(text: str) -> Tuple[str, str]:
+def parse_reason_and_action_guess_my_city_oracle(text: str) -> Tuple[str, str]:
     """
     Parses the reason and action given prediction from model for ORCALE environment 
 
@@ -25,31 +25,24 @@ def parse_reason_and_action_20questions_oracle(text: str) -> Tuple[str, str]:
     if match:
         reason = match.group(1).strip()  # Remove extra spaces/newlines
         answer = match.group(2).strip()
-
-        # Clean up action to move to lower case and remove any random characters
-        answer = answer.lower()
-        answer = re.sub(r'[^a-z0-9 /]', '', answer)
     else:
         reason = "None"
         answer = "None"
 
-    if answer != "yes" and answer != "no":
-        answer = "no"
-
     return reason, answer
 
-class TwentyQuestionsSimulator(object):
-    """Initialize the TwentyQuestionsOracle agent.
+class GuessMyCitySimulator(object):
+    """Initialize the GuessMyCityOracle agent.
     
     - Initialization doesn't change
-    - Modify the predict reason action to use the twenty questions simulator template
+    - Modify the predict reason action to use the guess my city simulator template
     """
     def __init__(self, 
                  model_id: str, 
                  prompt_template_file: str, 
                  verbose: int = 0, 
                  debug: bool = False, 
-                 parse_reason_action_fn: Callable[[str], Tuple[str, str]] = parse_reason_and_action_20questions_oracle, 
+                 parse_reason_action_fn: Callable[[str], Tuple[str, str]] = parse_reason_and_action_guess_my_city_oracle, 
                  max_length: Optional[int] = None) -> None:
         """
         Initializes the HFAgent with a pre-trained language model, tokenizer, and a prompt template.
@@ -88,12 +81,12 @@ class TwentyQuestionsSimulator(object):
         return self.model_id
     
     def generate_answer(self, 
-                        word: WordVariants, question: str) -> Tuple[str, str]:
+                        city: WordVariants, question: str) -> Tuple[str, str]:
         """
-        Predicts a reason and an answer given the current word and question
+        Predicts a reason and an answer given the current city and question
 
         Args:
-            words: The word to generate an answer for
+            city: The city to generate an answer for
             question: The question to generate an answer for
 
         Returns:
@@ -101,7 +94,7 @@ class TwentyQuestionsSimulator(object):
         """ 
         input_data = {
             'mode': 'input',
-            'thing': word[0].lower(),
+            'city': city[0].lower(),
             'question': question
         }
         input_prompt = self.prompt_template.render(**input_data)
@@ -147,18 +140,18 @@ class TwentyQuestionsSimulator(object):
     
 
     def generate_answer_batch(self, 
-                              words: List[WordVariants], 
+                              cities: List[WordVariants], 
                               questions: List[str]) -> Tuple[List[str], List[str]]:
         """
-        Predicts a reason and an asnwer given the current word and question
+        Predicts a reason and an answer given the current city and question
         """
         input_datas = [
             {
                 'mode': 'input',
-                'thing': word[0].lower(),
+                'city': city[0].lower(),
                 'question': question
             }
-            for word, question in zip(words, questions)
+            for city, question in zip(cities, questions)
         ]
 
         messages = [
@@ -201,9 +194,9 @@ class TwentyQuestionsSimulator(object):
         return answer_reasons, answers
 
 
-class SGLangServerTwentyQuestionsSimulator(object):
+class SGLangServerGuessMyCitySimulator(object):
     """
-    Initialize the TwentyQuestionsOracle agent.
+    Initialize the GuessMyCityOracle agent.
     """
     def __init__(self, 
                  model_id: str, 
@@ -211,7 +204,7 @@ class SGLangServerTwentyQuestionsSimulator(object):
                  prompt_template_file: str, 
                  verbose: int = 0, 
                  debug: bool = False, 
-                 parse_reason_action_fn: Callable[[str], Tuple[str, str]] = parse_reason_and_action_20questions_oracle, 
+                 parse_reason_action_fn: Callable[[str], Tuple[str, str]] = parse_reason_and_action_guess_my_city_oracle, 
                  max_tokens: int = 256,
                  batch_limit: Optional[int] = None) -> None:
         self.model_id = model_id
@@ -229,18 +222,18 @@ class SGLangServerTwentyQuestionsSimulator(object):
     
 
     def generate_answer_batch(self, 
-                              words: List[WordVariants], 
+                              cities: List[WordVariants], 
                               questions: List[str]) -> Tuple[List[str], List[str]]:
         """
-        Predicts a reason and an asnwer given the current word and question
+        Predicts a reason and an answer given the current city and question
         """
         input_datas = [
             {
                 'mode': 'input',
-                'thing': word[0].lower(),
+                'city': city[0].lower(),
                 'question': question
             }
-            for word, question in zip(words, questions)
+            for city, question in zip(cities, questions)
         ]
 
         messages = [
