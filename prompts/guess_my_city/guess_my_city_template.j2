@@ -1,0 +1,68 @@
+{% if mode == 'input' %}
+You are an intelligent player playing a game where you must guess where someone is from. Your objective is to ask the minimal number of open-ended questions that are diverse in order to accurately guess their city of origin. You can ask 20 questions to determine where they are from. You are smart, so you will ask the question that will narrow down the possible cities the person is from as much as possible.
+
+The cities that the oracle can choose from are:
+{{ all_city_list }}
+
+Your goal is to generate an open-ended question that (1) helps you narrow down the possible cities as much as possible or (2) allows you to make a final guess.
+
+Please follow these general instructions:
+* You MUST ask an open-ended question.
+* You CANNOT ask the oracle for the name of the city or country.
+* If you are guessing the city directly, you MUST ask a question in the format "Is the city {your_guess}?". your_guess must be one of the cities that the oracle can choose from.
+* Before you ask the question, you MUST intelligently reason about the history of previous questions and answers to ask the most informative question.
+* Consult the history of previous questions and answers to avoid repeating the same question.
+* Do NOT repeat the same question. It's going to yield the same result.
+* Do NOT get stuck on one idea and try to branch out if you get stuck.
+
+Below is the history of previous questions and answers:
+{{ observation_action_history }}
+
+You MUST generate a response in the following format. Please issue only a single question at a time. 
+
+REASON:  
+Rationale for what question to ask next based on the previous history and the list of cities the oracle can choose from.
+
+QUESTION:
+The question to be asked. The question must be open ended.
+
+{% elif mode == 'input_final' %}
+You are an intelligent player playing a game where you must guess where someone is from. Your objective is to ask the minimal number of open-ended questions that are diverse in order to accurately guess their city of origin. You can ask 20 questions to determine where they are from. You are smart, so you will ask the question that will narrow down the possible cities the person is from as much as possible.
+
+The cities that the oracle can choose from are:
+{{ all_city_list }}
+
+Your goal is to generate an open-ended question that (1) helps you narrow down the possible cities as much as possible or (2) allows you to make a final guess.
+
+Please follow these general instructions:
+* You MUST ask an open-ended question.
+* You CANNOT ask the oracle for the name of the city or country.
+* If you are guessing the city directly, you MUST ask a question in the format "Is it {your_guess}?". your_guess must be one of the cities that the oracle can choose from.
+* Before you ask the question, you MUST intelligently reason about the history of previous questions and answers to ask the most informative question.
+* Consult the history of previous questions and answers to avoid repeating the same question.
+* Do NOT repeat the same question. It's going to yield the same result.
+* Do NOT get stuck on one idea and try to branch out if you get stuck.
+
+Below is the history of previous questions and answers:
+{{ observation_action_history }}
+
+You have already asked 19 questions, so this is your final guess. Your goal is to consult the list of cities that the orcale can choose from and guess the city directly.
+
+You MUST generate a response in the following format. Please issue only a single question at a time.
+
+REASON:
+Rationale for what city to guess based on the previous history. In your reason, consult the list of cities that the oracle can choose from to precisely state VERBATIM what you will guess.
+
+QUESTION:
+The question to be asked. The question must be a yes-no question in the format "Is the city {your_guess}?". your_guess must be one of the cities that the oracle can choose from and be based on what you know about the city so far.
+
+{% elif mode == 'output' %}
+REASON:
+{{ reason }}
+QUESTION:
+{{ action }}
+
+{% elif mode == 'output_no_reason' %}
+QUESTION:
+{{ action }}
+{% endif %}

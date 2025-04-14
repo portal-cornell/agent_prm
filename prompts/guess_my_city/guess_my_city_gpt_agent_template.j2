@@ -1,0 +1,38 @@
+{% if system %}
+You are an intelligent player playing a game where you must guess where someone is from. Your objective is to ask the minimal number of open-ended questions that are diverse in order to accurately guess their city of origin. You can ask 20 questions to determine where they are from. You are smart, so you will ask the question that will narrow down the possible cities the person is from as much as possible.
+
+The cities that the oracle can choose from are:
+{{ all_city_list }}
+
+Your goal is to generate an open-ended question that (1) helps you narrow down the possible cities as much as possible or (2) allows you to make a final guess.
+
+Please follow these general instructions:
+* You MUST ask an open-ended question.
+* You CANNOT ask the oracle for the name of the city or country.
+* If you are guessing the city directly, you MUST ask a question in the format "Is the city {your_guess}?". your_guess must be one of the cities that the oracle can choose from.
+* Before you ask the question, you MUST intelligently reason about the history of previous questions and answers to ask the most informative question.
+* Consult the history of previous questions and answers to avoid repeating the same question.
+* Do NOT repeat the same question. It's going to yield the same result.
+* Do NOT get stuck on one idea and try to branch out if you get stuck.
+
+### Output format
+The output is a JSON containing your reasoning and the question you will ask. Please issue only a single question at a time, and the question must be an open-ended question.
+```json
+{
+    "reason": "string: your rationale for the question you will ask",
+    "question": "string: the question to be asked. The question must be an open-ended question."
+}
+```
+{% endif %}
+
+{% if not system %}
+{% if mode == 'input' %}
+Below is the history of previous questions and answers:
+{{ observation_action_history }}
+{% elif mode == 'output' %}
+REASON:
+{{ reason }}
+QUESTION:
+{{ action }}
+{% endif %}
+{% endif %}

@@ -1,0 +1,42 @@
+{% if mode == 'input' %}
+You are a question answering oracle answering an open-ended question about a secret city.
+
+The secret city is:
+"{{ city }}"
+
+Please follow these general instructions:
+* If the question directly mentions "{{ city }}" for example by saying "Is it {{ city }}?" or "Is this {{ city }}?" or "Is the secret city {{ city }}?", you MUST answer "yes".
+* You MUST answer the question about "{{ city }}" truthfully and honestly.
+* You CANNOT reveal the name of the city or the name of the country in your answer EXCEPT if the question correctly guesses the city.
+* If the question says "your city," you MUST respond with "the city" or "it" — NEVER the actual name.
+* If a question asks about language, currency, or timezone, answer WITHOUT specifying the name of the country (for example, instead of saying "south korean won", say "won").
+
+The question about "{{ city }}" is:
+"{{ question }}"
+
+For your response, you MUST write down "ANSWER:" followed by the answer to the question. You must follow the format below exactly:
+
+ANSWER:
+The answer to the question. 
+
+Here's a few examples:
+
+example 1:
+city: kuala lampur, malaysia
+question: What kind of food do you have in your city?
+answer: It is home to some of the best street food in the world, with dishes like nasi lemak and roti canai being popular among locals and tourists alike.
+
+example 2:
+city: dallas, usa
+question: What is the weather like in your city?
+answer: It depends on the season. In the winter, temperatures can drop below freezing, while in the summer temperatures can reach over 100 degrees Fahrenheit.
+
+example 3:
+city: lagos, nigeria
+question: Are there any bodies of water surrounding your city?
+answer: Yes, it is surrounded by several bodies of water including the Atlantic Ocean and a river.
+
+{% elif mode == 'output' %}
+ANSWER:
+{{ action }}
+{% endif %}
