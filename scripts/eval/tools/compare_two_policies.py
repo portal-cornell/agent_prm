@@ -61,11 +61,30 @@ from agent_prm.utils.cfg_utils import find_matching_iter
 # POLICY_A_NAME = "BoN_pi0_Q0-80pct-lr=5e-6_hindsight-baseline"
 # POLICY_B_NAME = "BoN_pi0_Q0-80pct-lr=5e-6_hindsight"
 
+# ##### QUESTION [Hindsight-redo]: What's the diff with training on hindsight data vs training on original data? (after we fixed the env and improved hindsight data)
+# POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-60pct-lr=5e-6_pi0-new-env_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+# POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-lr=5e-6_hindsight-redo_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+# POLICY_A_NAME = "BoN_pi0_Q0-60pct-lr=5e-6_pi0-new-env"
+# POLICY_B_NAME = "BoN_pi0_Q0-lr=5e-6_hindsight-redo"
+
 ##### QUESTION [Hindsight-redo]: What's the diff with training on hindsight data vs training on original data? (after we fixed the env and improved hindsight data)
-POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-60pct-lr=5e-6_pi0-new-env_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
-POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-lr=5e-6_hindsight-redo_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
-POLICY_A_NAME = "BoN_pi0_Q0-60pct-lr=5e-6_pi0-new-env"
-POLICY_B_NAME = "BoN_pi0_Q0-lr=5e-6_hindsight-redo"
+## 50 pct data
+# POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-20pct-lr=5e-6_pi0-new-env_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+# POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-50_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+# POLICY_A_NAME = "BoN_pi0_Q0-20pct-lr=5e-6_pi0-new-env"
+# POLICY_B_NAME = "BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-50"
+
+# POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-40pct_Q0-20pct-lr=5e-6_pi0-new-env_250405_214137_iter1_pi0-new-env_pi1_Q0-20pct-lr=5e-6_pi0-new-env"
+# POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-60pct_Q0-20pct-lr=5e-6_hindsight-biased-on-50_250410_004916_iter1_hindsight-biased-on-50_pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50"
+# POLICY_A_NAME = "pi1-40pct_Q0-20pct-lr=5e-6_pi0-new-env"
+# POLICY_B_NAME = "pi1-60pct_Q0-20pct-lr=5e-6_hindsight-biased-on-50"
+
+## 60 pct data
+POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-20pct-lr=5e-6_pi0-new-env_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-60_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+POLICY_A_NAME = "BoN_pi0_Q0-20pct-lr=5e-6_pi0-new-env"
+POLICY_B_NAME = "BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-60"
+
 
 save_folder_path = os.path.join("playground/compare_two_policies", f"{POLICY_A_NAME}_vs_{POLICY_B_NAME}")
 
@@ -223,7 +242,7 @@ def present_per_data_type_results(policy_A_name: str, policy_B_name: str):
         if type(row["investigation_comments"]) == str and ("[fail_to_detect_success]" in row["investigation_comments"] or "[sim_wrong_reply]" in row["investigation_comments"]):
             # policy_B actually succeeds, but the env fails to detect it. Move this row to policy_A_1_policy_B_1_df
             policy_A_1_policy_B_1_df = pd.concat([policy_A_1_policy_B_1_df, pd.DataFrame([row])], ignore_index=True)
-            policy_A_0_policy_B_1_df = policy_A_0_policy_B_0_df.drop(idx)
+            policy_A_0_policy_B_1_df = policy_A_0_policy_B_1_df.drop(idx)
 
     # Add a column to each dataframe that indicates whether the policy succeeded or not
     policy_A_1_policy_B_0_df["policy_A_success"] = True
@@ -286,5 +305,5 @@ if __name__ == "__main__":
     print(f"Results will be saved to {save_folder_path}")
     input("Press Enter to continue...")
 
-    collect_results(POLICY_A_PATH, POLICY_B_PATH, POLICY_A_NAME, POLICY_B_NAME)
+    # collect_results(POLICY_A_PATH, POLICY_B_PATH, POLICY_A_NAME, POLICY_B_NAME)
     present_per_data_type_results(POLICY_A_NAME, POLICY_B_NAME)

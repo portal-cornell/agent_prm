@@ -57,7 +57,7 @@ folder_to_baselines = {
     "prm-pi0-q0-hd-with-original": ["gpt-4o", "base-3B", "pi0"],
     "prm-pi0-q0-hd-with-pi0-pi2-mix": ["gpt-4o", "base-3B", "pi0"],
     "prm-pi0-q0-hd-new-env": ["gpt-4o", "base-3B", "pi0-new-env", "pi2-new-env"],
-    "prm-pi0-q0-hd-best": ["gpt-4o", "base-3B", "pi0-new-env", "pi2-new-env"],
+    "prm-pi0-q0-hd-best": ["gpt-4o", "pi0-new-env", "pi2-new-env"],
     # pi1
     "rl-pi1-hd": ["gpt-4o", "pi0", "BoN_pi0_Q0*_hindsight"],
     "prm-pi1-q1-hd-with-original": ["gpt-4o", "pi0", "pi1_hindsight"],
@@ -101,13 +101,17 @@ folder_to_regex = {
          r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased',
          r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-30', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-30',
          r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-50', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-70', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-70',
          ],
     "prm-pi0-q0-hd-best":
         [r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_pi0-new-env', r'BoN_pi0_Q0-lr=5e-6_pi0-new-env',
-        #  r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-redo', r'BoN_pi0_Q0-lr=5e-6_hindsight-redo',
-        #  r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased'],
-        r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-30', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-30',
-        r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-50', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-redo', r'BoN_pi0_Q0-lr=5e-6_hindsight-redo',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-30', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-30',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-40', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-40',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-50', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-60', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-60',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-70', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-70',
         ],
     # pi1
     "rl-pi1-hd":
@@ -133,7 +137,9 @@ folder_to_regex = {
         [
             r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_pi0-new-env$', r'^pi1_Q0-20pct-lr=5e-6_pi0-new-env$',
             r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_hindsight-redo$', r'^pi1_Q0-20pct-lr=5e-6_hindsight-redo$',
-            r'^(pi1-(\d+)pct)_Q0-lr=5e-6_hindsight-biased$', r'^pi1_Q0-lr=5e-6_hindsight-biased$',
+            r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_hindsight-biased$', r'^pi1_Q0-20pct-lr=5e-6_hindsight-biased$',
+            r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_hindsight-biased-on-50$', r'^pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50$',
+            r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_hindsight-biased-on-60$', r'^pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-60$',
         ],
     # Q1
     "prm-pi1-q1-hd-with-original": 
@@ -177,10 +183,15 @@ folder_to_plot_models = {
          'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50'
         ],
     "prm-pi0-q0-hd-best":
-        ['gpt-4o', 'base-3B', 'pi0-new-env', 'pi2-new-env', 
+        ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 
          'BoN_pi0_Q0-lr=5e-6_pi0-new-env',
-         'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-30',
-         'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50'
+        #  'BoN_pi0_Q0-lr=5e-6_hindsight-redo', 
+         'BoN_pi0_Q0-lr=5e-6_hindsight-biased',
+        #  'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-30',
+        #  'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-40',
+         'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50',
+         'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-60',
+        #  'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-70'
         ],
     # pi1
     "rl-pi1-hd": 
@@ -190,7 +201,12 @@ folder_to_plot_models = {
     "rl-pi1-hd-new-env":
         ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 'BoN_pi0_Q0*_pi0-new-env', 'BoN_pi0_Q0*_hindsight-redo', 'BoN_pi0_Q0*_hindsight-biased', 'pi1_Q0-20pct-lr=5e-6_pi0-new-env', 'pi1_Q0-lr=5e-6_hindsight-redo', 'pi1_Q0-20pct-lr=5e-6_hindsight-redo', 'pi1_Q0-80pct-lr=5e-6_hindsight-50-50', 'pi1_Q0-lr=5e-6_hindsight-biased', 'pi1_Q0-20pct-lr=5e-6_hindsight-biased'],
     "rl-pi1-hd-best":
-        ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 'pi1_Q0-20pct-lr=5e-6_pi0-new-env', 'pi1_Q0-20pct-lr=5e-6_hindsight-redo', 'pi1_Q0-lr=5e-6_hindsight-biased'],
+        ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 'pi1_Q0-20pct-lr=5e-6_pi0-new-env',
+        #  'pi1_Q0-20pct-lr=5e-6_hindsight-redo',
+         'pi1_Q0-20pct-lr=5e-6_hindsight-biased',
+         'pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50',
+         'pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-60',
+        ],
     # Q1
     "prm-pi1-q1-hd-with-original": 
         ['gpt-4o', 'pi0', 'pi1_hindsight', 'BoN_pi1_Q1-lr=5e-6', 'BoN_pi1_Q1-lr=5e-6_hindsight'],
@@ -209,8 +225,8 @@ ROLLOUT_PER_TASK_DICT = {
     "test": 3
 }
 
-REWARD_MIN, REWARD_MAX = -20, -8
-SUCCESS_RATE_MIN, SUCCESS_RATE_MAX = 0.0, 1.1
+REWARD_MIN, REWARD_MAX = -18, -4
+SUCCESS_RATE_MIN, SUCCESS_RATE_MAX = 0.4, 1.1
 
 def is_valid_rollout(f: str, data_type: str) -> bool:
     """

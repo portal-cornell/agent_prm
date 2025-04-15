@@ -8,6 +8,7 @@ import sys
 import socket
 import time
 import random
+import shutil
 from sglang.utils import wait_for_server
 
 def load_json(fp: str):
@@ -65,10 +66,13 @@ def start_sglang_server(model_path, port, tp=1, dist_url_port=29500, gpu_id=None
 
             base_cache_dir = os.path.join("~", ".cache", f"outlines{'_' + str(session_id) if session_id is not None else ''}")
 
-            # os.makedirs(base_cache_dir, exist_ok=True)
+            base_cache_dir = os.path.join(base_cache_dir, f"{base_gpu_id}")
 
-            # add a random number to the cache dir (between 0 and 100)
-            base_cache_dir = os.path.join(base_cache_dir, f"{base_gpu_id}_{random.randint(0, 100)}")
+            if os.path.exists(base_cache_dir):
+                print(f"Removing existing cache dir {base_cache_dir}")
+                # Remove the cache dir
+                shutil.rmtree(base_cache_dir)
+
             env['OUTLINES_CACHE_DIR'] = base_cache_dir
 
             print(f"OUTLINES_CACHE_DIR: {env['OUTLINES_CACHE_DIR']}")

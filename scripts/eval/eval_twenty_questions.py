@@ -109,6 +109,8 @@ def setup_sglang_server(agent_config: dict):
                     agent_config.generator.server_url = server_url
                 
                 processes.append(process)
+            else:
+                print(f"Generator hosted sglang at {agent_config.generator.server_url}")
         elif agent_config.type == "sglang_server_with_critic":
             if "TODO" in agent_config.server_url:
                 port = None
