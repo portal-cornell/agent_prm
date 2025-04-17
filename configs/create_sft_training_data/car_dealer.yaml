@@ -1,0 +1,13 @@
+prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+logs_dir: data/car_dealer/eval/baseline/gpt4o
+data_dir: data/car_dealer/sft
+expert_api_call_template: prompts/car_dealer/car_dealer_gpt_agent_api_call_template.j2
+expert_response_template: prompts/car_dealer/car_dealer_gpt_agent_template.j2
+rollout_per_obj: 3
+input_fields:
+  reason: reason
+  action: action
+output_fields:
+  reason: reason
+  action: action
+
