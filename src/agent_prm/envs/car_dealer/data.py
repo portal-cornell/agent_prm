@@ -20,7 +20,7 @@ B3 - require the seller to be concise and not talk too much
         - Pick the most expensive car under budget
 
 Held-out test personalities:
-B3 - brand loyalty. The buyer will only buy from the seller if the car is from the preferred brand. Needs to be under budget. You are okay with missing certain features.
+B4 - brand loyalty. The buyer will only buy from the seller if the car is from the preferred brand. Needs to be under budget. You are okay with missing certain features.
     (code check: whether the car is from the preferred brand AND the price is under budget)
 B5 - type preference. The buyer will only buy from the seller if the car is from the preferred type. Needs to be under budget. You are okay with missing certain features.
     (code check: whether the car is from the preferred type AND the price is under budget)
@@ -42,10 +42,10 @@ def format_chat_history(history: List[Dict]) -> str:
 def format_car_options(car_options: List[Dict]) -> str:
     car_options_str = ""
     for i in range(len(car_options)):
-        car_options_str += f"{i+1}. brand={car_options[i]['brand']}, type={car_options[i]['type']}, features={car_options[i]['features']}, msrp=${car_options[i]['msrp']}, 2% discount price=${int(car_options[i]['msrp'] * 0.98)}, 5% discount price=${int(car_options[i]['msrp'] * 0.95)}, 8% discount price=${int(car_options[i]['msrp'] * 0.92)}, 10% discount price=${int(car_options[i]['msrp'] * 0.9)}\n"
+        car_options_str += f"{i+1}. brand={car_options[i]['brand']}, type={car_options[i]['type']}, features={car_options[i]['features']}, market price (msrp)=${car_options[i]['msrp']}, 2% discount price=${int(car_options[i]['msrp'] * 0.98)}, 5% discount price=${int(car_options[i]['msrp'] * 0.95)}, 8% discount price=${int(car_options[i]['msrp'] * 0.92)}, 10% discount price=${int(car_options[i]['msrp'] * 0.9)}\n"
     return car_options_str
 
-def get_price_comparison(buyer_info: dict, seller_response: str) -> str:
+def get_price_comparison(buyer_info: dict, seller_response: str, seller_proposed_car: dict={}) -> str:
     """
     Get the price comparison between the buyer's budget and the seller's price.
 
@@ -66,12 +66,22 @@ def get_price_comparison(buyer_info: dict, seller_response: str) -> str:
     else:
         price_comparison += f"The seller's offer is ${seller_offer}, which is equal to your budget of ${buyer_info['budget']}.\n"
 
-    if seller_offer < buyer_info["msrp"]:
-        price_comparison += f"The seller's offer is ${seller_offer}, which is lower than the original price of ${buyer_info['msrp']}. The seller has offered you a discount.\n"
-    elif seller_offer > buyer_info["msrp"]:
-        price_comparison += f"The seller's offer is ${seller_offer}, which is higher than the original price of ${buyer_info['msrp']}.\n"
+    if seller_proposed_car == {}:
+        # If the seller did not propose a car, then the price comparison is based on the original price of the car that the buyer is interested in
+        if seller_offer < buyer_info["msrp"]:
+            price_comparison += f"The seller's offer is ${seller_offer}, which is lower than the original price of the car that you are interested in, ${buyer_info['msrp']}. The seller has offered you a discount.\n"
+        elif seller_offer > buyer_info["msrp"]:
+            price_comparison += f"The seller's offer is ${seller_offer}, which is higher than the original price of the car that you are interested in, ${buyer_info['msrp']}.\n"
+        else:
+            price_comparison += f"The seller's offer is ${seller_offer}, which is equal to the original price of the car that you are interested in, ${buyer_info['msrp']}.\n"
     else:
-        price_comparison += f"The seller's offer is ${seller_offer}, which is equal to the original price of ${buyer_info['msrp']}.\n"
+        # If the seller proposed a car, then the price comparison is based on the price of the proposed car
+        if seller_offer < seller_proposed_car["msrp"]:
+            price_comparison += f"The seller's offer is ${seller_offer}, which is lower than the price of the proposed car of ${seller_proposed_car['msrp']}. The seller has offered you a discount.\n"
+        elif seller_offer > seller_proposed_car["msrp"]:
+            price_comparison += f"The seller's offer is ${seller_offer}, which is higher than the price of the proposed car of ${seller_proposed_car['msrp']}.\n"
+        else:
+            price_comparison += f"The seller's offer is ${seller_offer}, which is equal to the price of the proposed car of ${seller_proposed_car['msrp']}.\n"
     
     return price_comparison
 
@@ -93,7 +103,7 @@ def extract_final_decision_from_buyer_reply(line: str) -> Tuple[Optional[Dict], 
     output_match = re.search(OUTPUT_EXTRACTION_PATTERN, line)
     if output_match is None:
         return None
-    print(output_match.groups())
+
     car_bought = output_match.group(1) == "Accept"
     if car_bought and output_match.group(2) is not None:
         buy_price = int(output_match.group(2).replace(",", ""))
@@ -130,14 +140,27 @@ def compute_reward(buyer_info: dict, final_decision: dict, seller_proposed_car: 
     dealed_car_msrp = seller_proposed_car["msrp"]
     buy_price = final_decision["buy_price"] if car_bought else None
 
+    # Valid seller offer
+    if buy_price is not None:
+        # The seller sold a car at a buy_price that doesn't exceed the maximum 10% discount
+        if buy_price < dealed_car_msrp * 0.9:
+            valid_seller_offer = 0.5
+            failure_reason = "The seller sold the car at a price that is higher than the maximum 10% discount."
+        else:
+            valid_seller_offer = 1.0
+            failure_reason = ""
+    else:
+        valid_seller_offer = False
+        failure_reason = "The seller did not offer a price."
+
     if buyer_info["buyer_strategy"] == B1:
         # Check that the dealing price is lower than the original price that the buyer wanted
         if buy_price is None:
-            failure_reason = "The seller did not offer a price."
+            failure_reason += "The seller did not offer a price."
         elif buy_price >= original_car_msrp:
-            failure_reason = "The seller has not offered a discount."
+            failure_reason += "The seller has not offered a discount."
         else:
-            failure_reason = ""
+            failure_reason += ""
         
         buyer_satisfied_multiplier = buy_price is not None and (buy_price < original_car_msrp)
     elif buyer_info["buyer_strategy"] == B2:
@@ -146,9 +169,9 @@ def compute_reward(buyer_info: dict, final_decision: dict, seller_proposed_car: 
         sorted_car_features = sorted(seller_proposed_car["features"])
 
         if sorted_wanted_features != sorted_car_features:
-            failure_reason = "The car offered by the seller does not have all the features that the buyer wanted."
+            failure_reason += "The car offered by the seller does not have all the features that the buyer wanted."
         else:
-            failure_reason = ""
+            failure_reason += ""
         
         buyer_satisfied_multiplier = sorted_wanted_features == sorted_car_features
     elif buyer_info["buyer_strategy"] == B3:
@@ -161,13 +184,13 @@ def compute_reward(buyer_info: dict, final_decision: dict, seller_proposed_car: 
         is_preferred_brand = seller_proposed_car["brand"] == buyer_info["preferred_brand"]
 
         if not is_under_budget and not is_preferred_brand:
-            failure_reason = "The car is over the budget and not from the buyer's preferred brand."
+            failure_reason += "The car is over the budget and not from the buyer's preferred brand."
         elif not is_under_budget:
-            failure_reason = "The car is over the budget."
+            failure_reason += "The car is over the budget."
         elif not is_preferred_brand:
-            failure_reason = "The car is not from the buyer's preferred brand."
+            failure_reason += "The car is not from the buyer's preferred brand."
         else:
-            failure_reason = ""
+            failure_reason += ""
 
         buyer_satisfied_multiplier = is_under_budget and is_preferred_brand
     elif buyer_info["buyer_strategy"] == B5:
@@ -176,13 +199,13 @@ def compute_reward(buyer_info: dict, final_decision: dict, seller_proposed_car: 
         is_preferred_type = seller_proposed_car["type"] == buyer_info["preferred_type"]
 
         if not is_under_budget and not is_preferred_type:
-            failure_reason = "The car is over the budget and not from the buyer's preferred type."
+            failure_reason += "The car is over the budget and not from the buyer's preferred type."
         elif not is_under_budget:
-            failure_reason = "The car is over the budget."
+            failure_reason += "The car is over the budget."
         elif not is_preferred_type:
-            failure_reason = "The car is not from the buyer's preferred type."
+            failure_reason += "The car is not from the buyer's preferred type."
         else:
-            failure_reason = ""
+            failure_reason += ""
 
         buyer_satisfied_multiplier = is_under_budget and is_preferred_type      
     elif buyer_info["buyer_strategy"] == B6:
@@ -190,9 +213,9 @@ def compute_reward(buyer_info: dict, final_decision: dict, seller_proposed_car: 
         is_under_budget = buy_price is not None and buy_price <= budget
 
         if not is_under_budget:
-            failure_reason = "The car is over the budget."
+            failure_reason += "The car is over the budget."
         else:
-            failure_reason = ""
+            failure_reason += ""
 
         buyer_satisfied_multiplier = is_under_budget
 
@@ -200,10 +223,11 @@ def compute_reward(buyer_info: dict, final_decision: dict, seller_proposed_car: 
         if car_bought:
             if buy_price is None:
                 return 0.0, False, "The seller did not offer a price."
-            r = buyer_satisfied_multiplier * (buy_price / ((budget + dealed_car_msrp) * 0.5))
+
+            r = valid_seller_offer * buyer_satisfied_multiplier * (buy_price / ((budget + dealed_car_msrp) * 0.5))
             success = buyer_satisfied_multiplier
         else:
-            r =  -(budget - dealed_car_msrp) / dealed_car_msrp
+            r =  -(budget - original_car_msrp) / original_car_msrp
             success = False
         
         return r, success, failure_reason
@@ -226,14 +250,14 @@ Train: 3 * 7 * 3 * 2 = 126
 BRANDS
     3 low range: Volkswagen, Toyota, Ford
     2 mid range: Lexus, Audi
-    2 high range: BMW, Tesla
+    2 high range: Bmw, Tesla
 TYPES
     van, SUV, sedan
 
 Val: 3 * 3 * 2 * 2 = 36
 BRANDS
     1 low range: Kia
-    1 mid range: Mercedes-Benz
+    1 mid range: Mercedes-benz
     1 high range: Porsche
 TYPES:
     truck, sports car
@@ -246,7 +270,7 @@ TRAIN_BUYER_STRATEGIES = [
     B3,
     B4
 ]
-TRAIN_BRANDS = ['Volkswagen', 'Toyota', 'Ford', 'Lexus', 'Audi', 'BMW', 'Tesla'] # 7
+TRAIN_BRANDS = ['Volkswagen', 'Toyota', 'Ford', 'Lexus', 'Audi', 'Bmw', 'Tesla'] # 7
 TRAIN_TYPES = ['van', 'SUV', 'sedan'] # 6
 TRAIN_FEATURES = ['backup camera', 'navigation system', 'heated seats', 'leather seats', 'third-row seating', 'blind spot monitoring', 'sunroof', 'Apple CarPlay']
 
@@ -257,7 +281,7 @@ Val set
 - Additional brands, types, features
 """
 VAL_BUYER_STRATEGIES = TRAIN_BUYER_STRATEGIES
-VAL_BRANDS = ['Kia', 'Mercedes-Benz', 'Porsche'] # 3
+VAL_BRANDS = ['Kia', 'Mercedes-benz', 'Porsche'] # 3
 VAL_TYPES = ['truck', 'sports car'] # 2
 VAL_FEATURES = ['cruise control', 'remote start', 'wireless phone charging', '360 camera', 'lane keep assist', 'sunroof', 'upgraded sound system'] # 8
 
@@ -277,7 +301,7 @@ TEST_FEATURES = VAL_FEATURES
 
 #######################################################################################################################################################################
 
-DEFAULT_BRANDS = ['Volkswagen', 'Toyota', 'Ford', 'Lexus', 'Audi', 'BMW', 'Tesla', 'Kia', 'Mercedes-Benz', 'Porsche']
+DEFAULT_BRANDS = ['Volkswagen', 'Toyota', 'Ford', 'Lexus', 'Audi', 'Bmw', 'Tesla', 'Kia', 'Mercedes-benz', 'Porsche']
 DEFAULT_TYPES = ['van', 'SUV', 'sedan', 'truck', 'sports car']
 DEFAULT_FEATURES = ['backup camera', 'navigation system', 'heated seats', 'leather seats', 'third-row seating', 'blind spot monitoring', 'sunroof', 'Apple CarPlay', 'cruise control', 'remote start', 'wireless phone charging', '360 camera', 'lane keep assist', 'sunroof', 'upgraded sound system']
 
@@ -419,7 +443,7 @@ CAR_PRICES_BY_BRAND_AND_TYPE =  {
         }
     },
     # Val, Test (truck, sports car)
-    "Mercedes-Benz": {
+    "Mercedes-benz": {
         "truck": {
             "msrp": 55000,
             "budget": [
@@ -437,7 +461,7 @@ CAR_PRICES_BY_BRAND_AND_TYPE =  {
     },
     ######### High range
     # Train (van, SUV, sedan)
-    "BMW": {
+    "Bmw": {
         # No van
         "van": {
             "msrp": 110000,

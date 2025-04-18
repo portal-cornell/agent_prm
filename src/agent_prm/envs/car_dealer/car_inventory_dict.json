@@ -484,7 +484,7 @@
         "truck": [],
         "sports car": []
     },
-    "Mercedes-Benz": {
+    "Mercedes-benz": {
         "truck": [
             {
                 "msrp": 55000,
@@ -544,7 +544,7 @@
         "SUV": [],
         "sedan": []
     },
-    "BMW": {
+    "Bmw": {
         "van": [
             {
                 "msrp": 110000,

@@ -108,7 +108,7 @@ class SGLangServerCarDealerSimulator(object):
                 "observation_action_history": format_chat_history(history),
                 "seller_response": seller_response,
                 "dealer_proposed_car": format_car_suggestion(seller_proposed_car),
-                "price_comparison": get_price_comparison(buyer_info, seller_response),
+                "price_comparison": get_price_comparison(buyer_info, seller_response, seller_proposed_car),
                 **buyer_info
             }
             for history, buyer_info, seller_response, seller_proposed_car in zip(histories, buyer_infos, seller_responses, seller_proposed_cars)
@@ -120,7 +120,6 @@ class SGLangServerCarDealerSimulator(object):
             ]
             for input_data in input_datas
         ]
-        # print(messages[0][0]["content"])
         
         batch_limit = self.batch_limit if self.batch_limit is not None else len(messages)
         generated_texts = []
@@ -145,8 +144,6 @@ class SGLangServerCarDealerSimulator(object):
                                             json=data_batch).json()
             generated_texts_batch = [x["text"] for x in responses_batch]
             generated_texts.extend(generated_texts_batch)
-
-        print(generated_texts[0])
         
         buyer_reasons, buyer_responses, buyer_decisions = [], [], []
         for i in range(len(generated_texts)):
