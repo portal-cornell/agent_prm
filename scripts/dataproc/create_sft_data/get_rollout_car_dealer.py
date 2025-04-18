@@ -16,8 +16,9 @@ from typing import List, Dict
 from jinja2 import Template
 
 from agent_prm.envs.car_dealer.env import setup_car_dealer_env
-from agent_prm.envs.car_dealer.data import TRAIN_BUYER_STRATEGIES, VAL_BUYER_STRATEGIES, TEST_BUYER_STRATEGIES, TRAIN_BRANDS, VAL_BRANDS, TEST_BRANDS, TRAIN_TYPES, VAL_TYPES, TEST_TYPES, TRAIN_FEATURES, VAL_FEATURES, TEST_FEATURES, DEFAULT_BRANDS, DEFAULT_TYPES, CAR_PRICES_BY_BRAND_AND_TYPE, CAR_FEATURES_ADDED_VALUE, format_car_options, format_chat_history, B2
-from agent_prm.envs.car_dealer.interfaces import use_api
+from agent_prm.envs.car_dealer.data import TRAIN_BUYER_STRATEGIES, VAL_BUYER_STRATEGIES, TEST_BUYER_STRATEGIES, TRAIN_BRANDS, VAL_BRANDS, TEST_BRANDS, TRAIN_TYPES, VAL_TYPES, TEST_TYPES, TRAIN_FEATURES, VAL_FEATURES, TEST_FEATURES, DEFAULT_BRANDS, DEFAULT_TYPES, CAR_PRICES_BY_BRAND_AND_TYPE, CAR_FEATURES_ADDED_VALUE, B2
+from agent_prm.envs.car_dealer.data import format_car_options, format_chat_history
+from agent_prm.envs.car_dealer.interface import use_api
 
 from agent_prm.utils.openai import generate_from_openai_completion
 from agent_prm.utils.parser import parse_json
