@@ -257,7 +257,12 @@ def main(cfg: DictConfig):
 
     # Load the model
     print(f"Mode={cfg.mode}, for agents: {[agent_config.log_name for agent_config in cfg.agents]}")
-    for agent_i in tqdm(range(len(cfg.agents))):
+    if cfg.mode == "consolidate_online":
+        agent_iter = tqdm(range(len(cfg.agents)), position=0, desc="Agents")
+    else:
+        agent_iter = range(len(cfg.agents))
+
+    for agent_i in agent_iter:
         agent_config = cfg.agents[agent_i]
         if cfg.host_sglang:
             processes = setup_sglang_server(agent_config, cfg.local_sglang)
