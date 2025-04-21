@@ -5,7 +5,16 @@ Typical usage:
 python scripts/eval/eval_twenty_questions.py mode=online host_sglang=true data_types=[val,test] online.rollout_per_task=1 online.num_alt_responses=5 online.batch_size=32 elogger=true
 
 # Consolidate online eval
-python scripts/eval/eval_twenty_questions.py mode=consolidate_online consolidate_online.table_notes='till-pi1'
+python scripts/eval/eval_twenty_questions.py mode=consolidate_online consolidate_online.use_existing_table=true consolidate_online.overwrite_existing_entry=true consolidate_online.table_notes='pi0_early_ckpts' consolidate_online.main_table_notes=''
+    where
+        - consolidate_online.use_existing_table=true means that the table will build off from what's stored in data/twenty_questions/eval/
+        - consolidate_online.overwrite_existing_entry=true means that
+            If an agent already exists in the table, it will overwrite the existing row based on the latest results
+        - consolidate_online.table_notes='pi0_early_ckpts' determine what will the table be called in the hydra folder
+        - consolidate_online.main_table_notes='' determines the actual name of the table stored in the data/twenty_questions/eval/ folder
+            e.g., '' means that the table is called 'online_eval_table.csv'
+            e.g., 'hindsight' means that the table is called 'online_eval_table_hindsight.csv'
+            This should only be changed if the table is being used for a different purpose (e.g., have a different excel sheet)
 """
 
 import os
