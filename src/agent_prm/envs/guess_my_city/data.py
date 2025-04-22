@@ -6,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import nltk
+from collections import defaultdict
 import re
 
 @dataclass
@@ -44,60 +45,258 @@ INVALID_QUESTION = "Is this a valid question?\n"
 INITIAL_STR = "Questions:\n"
 
 DEFAULT_CITY_DICT = {
-    "South Korea": ["Seoul, South Korea", "Pusan, South Korea", "Taega, South Korea", "Inchon, South Korea"],
-    "Brazil": ["Sao Paulo, Brazil", "Rio de Janeiro, Brazil", "Salvador, Brazil", "Belo Horizonte, Brazil", "Fortaleza, Brazil", "Brasilia, Brazil"],
-    "India": ["Bombay, India", "Delhi, India", "Calcutta, India", "Madras, India", "Bangalore, India", "Hyderabad, India", "Ahmedabad, India", "Kanpur, India"],
-    "Indonesia": ["Jakarta, Indonesia", "Bandung, Indonesia", "Bagor, Indonesia", "Malang, Indonesia", "Surabaya, Indonesia", "Semarang, Indonesia", "Sukabumi, Indonesia", "Cirebon, Indonesia", "Medan, Indonesia"],
-    "Pakistan": ["Karachi, Pakistan", "Lahore, Pakistan", "Faisalabad, Pakistan"],
-    "Russia": ["Moscow, Russia", "St Petersburg, Russia"],
-    "Turkey": ["Istanbul, Turkey", "Ankara, Turkey", "Izmir, Turkey"],
-    "Mexico": ["Mexico City, Mexico"],
-    "China": ["Shanghai, China", "Beijing, China", "Hong Kong, China", "Tianjin, China", "Shenyang, China", "Wuhan, China", "Guangzhou, China", "Chongqing, China", "Haerbin, China", "Chengdu, China", "Xian, China", "Nanjing, China", "Taipei, China", "Zibo, China", "Dalian, China", "Jinan, China", "Changchun, China", "Qingdao, China", "Taiyuan, China"],
-    "Japan": ["Tokyo, Japan", "Yokohama, Japan", "Osaka, Japan", "Nagoya, Japan"],
-    "USA": ["New York, USA", "Los Angeles, USA", "Chicago, USA", "Houston, USA"],
-    "Thailand": ["Bangkok, Thailand"],
-    "UK": ["London, UK"],
-    "Egypt": ["Cairo, Egypt", "Alexandria, Egypt", "Giza, Egypt"],
-    "Iran": ["Tehran, Iran", "Mashhad, Iran"],
-    "Colombia": ["Bogota, Colombia", "Cali, Colombia", "Medellin, Colombia"],
-    "Peru": ["Lima, Peru"],
-    "Chile": ["Santiago, Chile"],
-    "Australia": ["Sydney, Australia"],
-    "Singapore": ["Singapore, Singapore"],
-    "Iraq": ["Baghdad, Iraq"],
-    "Bangladesh": ["Dhaka, Bangladesh"],
-    "Germany": ["Berlin, Germany"],
-    "Vietnam": ["Ho Chi Minh City, Vietnam"],
-    "Argentina": ["Buenos Aires, Argentina"],
-    "Morocco": ["Casablanca, Morocco"],
-    "Spain": ["Madrid, Spain"],
-    "North Korea": ["Pyong Yang, North Korea"],
-    "Congo": ["Kinshaha, Congo"],
-    "Italy": ["Rome, Italy"],
-    "Ukraine": ["Kiev, Ukraine"],
-    "Myanmar": ["Yangon, Myanmar"],
-    "Canada": ["Toronto, Canada"],
-    "Ethiopia": ["Addis Ababa, Ethiopia"],
-    "Cuba": ["Havanna, Cuba"],
-    "France": ["Paris, France"],
-    "Uzbekistan": ["Tashkent, Uzbekistan"],
-    "Ecuador": ["Guayaquil, Ecuador"],
-    "Romania": ["Bucuresti, Romania"],
-    "Philippines": ["Quezon City, Philippines"],
-    "Cote d'Ivorie": ["Abidjan, Cote d'Ivorie"],
-    "Hungary": ["Budapest, Hungary"],
-    "Venezuela": ["Caracas, Venezuela"]
+    "Asia": [
+        "Seoul, South Korea",
+        "Busan, South Korea;Pusan, South Korea",
+        "Daegu, South Korea;Taegu, South Korea;Taega, South Korea",
+        "Incheon, South Korea;Inchon, South Korea",
+        "Bombay, India;Mumbai, India",
+        "Delhi, India",
+        "Calcutta, India;Kolkata, India",
+        "Madras, India;Chennai, India",
+        "Bangalore, India;Bengaluru, India",
+        "Hyderabad, India",
+        "Ahmedabad, India",
+        "Kanpur, India",
+        "Jakarta, Indonesia;Djakarta, Indonesia",
+        "Bandung, Indonesia",
+        "Bagor, Indonesia",
+        "Malang, Indonesia",
+        "Surabaya, Indonesia",
+        "Semarang, Indonesia",
+        "Sukabumi, Indonesia",
+        "Cirebon, Indonesia",
+        "Medan, Indonesia",
+        "Karachi, Pakistan",
+        "Lahore, Pakistan",
+        "Faisalabad, Pakistan",
+        "Istanbul, Turkey",
+        "Ankara, Turkey",
+        "Izmir, Turkey",
+        "Shanghai, China",
+        "Beijing, China",
+        "Hong Kong, China",
+        "Tianjin, China",
+        "Shenyang, China",
+        "Wuhan, China",
+        "Guangzhou, China",
+        "Chongqing, China",
+        "Haerbin, China",
+        "Chengdu, China",
+        "Xian, China",
+        "Nanjing, China",
+        "Taipei, China",
+        "Zibo, China",
+        "Dalian, China",
+        "Jinan, China",
+        "Changchun, China",
+        "Qingdao, China",
+        "Taiyuan, China",
+        "Tokyo, Japan",
+        "Yokohama, Japan",
+        "Osaka, Japan",
+        "Nagoya, Japan",
+        "Bangkok, Thailand",
+        "Tehran, Iran",
+        "Mashhad, Iran",
+        "Singapore, Singapore",
+        "Baghdad, Iraq",
+        "Dhaka, Bangladesh",
+        "Ho Chi Minh City, Vietnam;Saigon, Vietnam",
+        "Pyong Yang, North Korea;Pyongyang, North Korea",
+        "Yangon, Myanmar",
+        "Tashkent, Uzbekistan",
+        "Quezon City, Philippines;QC, Philippines"
+    ],
+    "South America": [
+        "Sao Paulo, Brazil;São Paulo, Brazil",
+        "Rio de Janeiro, Brazil",
+        "Salvador, Brazil",
+        "Belo Horizonte, Brazil",
+        "Fortaleza, Brazil",
+        "Brasilia, Brazil",
+        "Bogota, Colombia;Bogotá, Colombia",
+        "Cali, Colombia",
+        "Medellin, Colombia",
+        "Lima, Peru",
+        "Santiago, Chile",
+        "Buenos Aires, Argentina",
+        "Guayaquil, Ecuador",
+        "Caracas, Venezuela"
+    ],
+    "Europe": [
+        "Moscow, Russia",
+        "St Petersburg, Russia",
+        "Istanbul, Turkey",
+        "London, UK",
+        "Berlin, Germany",
+        "Madrid, Spain",
+        "Rome, Italy",
+        "Kiev, Ukraine;Kyiv, Ukraine",
+        "Paris, France",
+        "Bucuresti, Romania;Bucharest, Romania",
+        "Budapest, Hungary"
+    ],
+    "North America": [
+        "Mexico City, Mexico",
+        "New York, USA",
+        "Los Angeles, USA",
+        "Chicago, USA",
+        "Houston, USA",
+        "Toronto, Canada",
+        "Havanna, Cuba;Havana, Cuba"
+    ],
+    "Africa": [
+        "Cairo, Egypt",
+        "Alexandria, Egypt",
+        "Giza, Egypt",
+        "Casablanca, Morocco",
+        "Kinshaha, Congo;Kinshasa, Congo",
+        "Addis Ababa, Ethiopia",
+        "Abidjan, Cote d'Ivorie;Abidjan, Côte d'Ivoire"
+    ],
+    "Australia": [
+        "Sydney, Australia"
+    ]
+}
+
+TRAIN_CITY_DICT = {
+    "Asia": [
+        "Busan, South Korea;Pusan, South Korea",
+        "Daegu, South Korea;Taegu, South Korea;Taega, South Korea",
+        "Incheon, South Korea;Inchon, South Korea",
+        "Delhi, India",
+        "Calcutta, India;Kolkata, India",
+        "Madras, India;Chennai, India",
+        "Bangalore, India;Bengaluru, India",
+        "Hyderabad, India",
+        "Ahmedabad, India",
+        "Kanpur, India",
+        "Bandung, Indonesia",
+        "Bagor, Indonesia",
+        "Malang, Indonesia",
+        "Surabaya, Indonesia",
+        "Semarang, Indonesia",
+        "Sukabumi, Indonesia",
+        "Cirebon, Indonesia",
+        "Medan, Indonesia",
+        "Lahore, Pakistan",
+        "Faisalabad, Pakistan",
+        "Ankara, Turkey",
+        "Izmir, Turkey",
+        "Beijing, China",
+        "Hong Kong, China",
+        "Tianjin, China",
+        "Shenyang, China",
+        "Wuhan, China",
+        "Guangzhou, China",
+        "Chongqing, China",
+        "Haerbin, China",
+        "Chengdu, China",
+        "Xian, China",
+        "Nanjing, China",
+        "Taipei, China",
+        "Zibo, China",
+        "Dalian, China",
+        "Jinan, China",
+        "Changchun, China",
+        "Qingdao, China",
+        "Taiyuan, China",
+        "Yokohama, Japan",
+        "Osaka, Japan",
+        "Nagoya, Japan",
+        "Bangkok, Thailand",
+        "Mashhad, Iran",
+        "Singapore, Singapore",
+        "Baghdad, Iraq",
+        "Dhaka, Bangladesh",
+        "Ho Chi Minh City, Vietnam;Saigon, Vietnam",
+        "Pyong Yang, North Korea;Pyongyang, North Korea",
+        "Yangon, Myanmar",
+        "Tashkent, Uzbekistan",
+        "Quezon City, Philippines;QC, Philippines"
+    ],
+    "South America": [
+        "Rio de Janeiro, Brazil",
+        "Salvador, Brazil",
+        "Belo Horizonte, Brazil",
+        "Fortaleza, Brazil",
+        "Brasilia, Brazil",
+        "Cali, Colombia",
+        "Medellin, Colombia",
+        "Lima, Peru",
+        "Santiago, Chile",
+        "Buenos Aires, Argentina",
+        "Guayaquil, Ecuador",
+        "Caracas, Venezuela"
+    ],
+    "Europe": [
+        "St Petersburg, Russia",
+        "Istanbul, Turkey",
+        "London, UK",
+        "Berlin, Germany",
+        "Madrid, Spain",
+        "Rome, Italy",
+        "Kiev, Ukraine;Kyiv, Ukraine",
+        "Paris, France",
+        "Bucuresti, Romania;Bucharest, Romania",
+        "Budapest, Hungary"
+    ]
+}
+
+VALIDATION_CITY_DICT = {
+    "Asia": [
+        "Seoul, South Korea",
+        "Bombay, India;Mumbai, India",
+        "Jakarta, Indonesia;Djakarta, Indonesia",
+        "Karachi, Pakistan",
+        "Istanbul, Turkey",
+        "Shanghai, China",
+        "Tokyo, Japan",
+        "Tehran, Iran",
+    ],
+    "South America": [
+        "Sao Paulo, Brazil;São Paulo, Brazil",
+        "Bogota, Colombia;Bogotá, Colombia"
+    ],
+    "Europe": [
+        "Moscow, Russia"
+    ]
+}
+
+TEST_CITY_DICT = {
+    "North America": [
+        "Mexico City, Mexico",
+        "New York, USA",
+        "Los Angeles, USA",
+        "Chicago, USA",
+        "Houston, USA",
+        "Toronto, Canada",
+        "Havanna, Cuba;Havana, Cuba"
+    ],
+    "Africa": [
+        "Cairo, Egypt",
+        "Alexandria, Egypt",
+        "Giza, Egypt",
+        "Casablanca, Morocco",
+        "Kinshaha, Congo;Kinshasa, Congo",
+        "Addis Ababa, Ethiopia",
+        "Abidjan, Cote d'Ivorie;Abidjan, Côte d'Ivoire"
+    ],
+    "Australia": [
+        "Sydney, Australia"
+    ]
 }
 
 def get_default_word_list(data_split: str = "all") -> List[WordVariants]:
     if data_split == "all":
         dict_to_use = DEFAULT_CITY_DICT
     elif data_split == "train":
-        dict_to_use = DEFAULT_CITY_DICT
+        dict_to_use = TRAIN_CITY_DICT
     elif data_split == "val":
-        dict_to_use = DEFAULT_CITY_DICT
+        dict_to_use = VALIDATION_CITY_DICT
     elif data_split == "test":
-        dict_to_use = DEFAULT_CITY_DICT
+        dict_to_use = TEST_CITY_DICT
     else:
         raise ValueError(f"Invalid data split: {data_split}")
     
@@ -107,30 +306,34 @@ def get_default_word_list(data_split: str = "all") -> List[WordVariants]:
     return word_list
 
 def is_done(city: WordVariants, question: str):
-    # Use just the raw city name before the comma
-    city_name = city.words[0].split(",")[0].lower().strip()
-
     question = question.rstrip("?.!").lower().strip()
 
-    guess_patterns = [
-        rf"is it {city_name}",
-        rf"is the city {city_name}",
-        rf"is it the city of {city_name}",
-        rf"is the city called {city_name}",
-        rf"is the place {city_name}",
-        rf"is the place called {city_name}",
-        rf"are you from {city_name}"
+    city_names = [
+        w.split(",")[0].strip().lower()
+        for w in city.words
     ]
 
-    if question == city_name:
+    if question in city_names:
         return True
 
-    for pattern in guess_patterns:
-        if re.fullmatch(pattern, question):
-            return True
+    for city_name in city_names:
+        guess_patterns = [
+            rf"is it {city_name}",
+            rf"is the city {city_name}",
+            rf"is it the city of {city_name}",
+            rf"is the city called {city_name}",
+            rf"is the place {city_name}",
+            rf"is the place called {city_name}",
+            rf"are you from {city_name}",
+            rf"is the city .*{city_name}.*", 
+        ]
+
+        for pattern in guess_patterns:
+            if re.fullmatch(pattern, question):
+                return True
 
     tokens = nltk.word_tokenize(question)
-    if tokens and tokens[-1] == city_name:
+    if tokens and tokens[-1] in city_names:
         return True
 
     return False

@@ -14,16 +14,16 @@ import yaml
 from typing import List, Dict
 from jinja2 import Template
 
-from agent_prm.envs.guess_my_city.env import setup_guess_my_city_env #--
-from agent_prm.envs.guess_my_city.data import DEFAULT_CITY_DICT, WordVariants, get_default_word_list #--
+from agent_prm.envs.guess_my_city.env import setup_guess_my_city_env
+from agent_prm.envs.guess_my_city.data import TRAIN_CITY_DICT, VALIDATION_CITY_DICT, TEST_CITY_DICT, WordVariants, get_default_word_list 
 from agent_prm.utils.openai import generate_from_openai_completion
 from agent_prm.utils.parser import parse_json
 from agent_prm.utils.logger_email import elogger
 from agent_prm.utils.general_utils import load_json, save_json
 
 def preprocess_args():
-    parser = argparse.ArgumentParser(description='Generate raw guess_my_city logs') #--
-    parser.add_argument('--config', type=str, default="configs/create_sft_training_data/guess_my_city.yaml", help='Path to guess my city dataproc config file') #--
+    parser = argparse.ArgumentParser(description='Generate raw guess_my_city logs')
+    parser.add_argument('--config', type=str, default="configs/create_sft_training_data/guess_my_city.yaml", help='Path to guess my city dataproc config file')
     parser.add_argument('-t', '--data-type', type=str, required=True, choices=["train", "val", "test"], help='Whether to use the train, or validation, or test set')
     parser.add_argument('-d', '--debug', default=False, action="store_true", help='Whether to run in debug mode (Human instead of gpt4o as the agent)')
     parser.add_argument('-e', '--activate-email', default=False, action="store_true", help='Whether to activate email logging')
@@ -63,17 +63,17 @@ def query_expert(history: List[Dict[str, str]], expert_agent_prompt_template: Te
 def main():
     args, cfg = preprocess_args()
     elogger.set_activate(args.activate_email)
-    env = setup_guess_my_city_env() #--
+    env = setup_guess_my_city_env()
     all_city_list = [wv[0] for wv in get_default_word_list("all")]
 
     rollout_per_city = cfg["rollout_per_obj"]
 
     if args.data_type == "train":
-        city_dict_to_use = DEFAULT_CITY_DICT #--
+        city_dict_to_use = TRAIN_CITY_DICT 
     elif args.data_type == "val":
-        city_dict_to_use = DEFAULT_CITY_DICT #-- 
+        city_dict_to_use = VALIDATION_CITY_DICT 
     elif args.data_type == "test":
-        city_dict_to_use = DEFAULT_CITY_DICT #--
+        city_dict_to_use = TEST_CITY_DICT 
     else:
         raise ValueError(f"Invalid data type: {args.data_type}")
 

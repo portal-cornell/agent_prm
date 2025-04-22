@@ -80,6 +80,25 @@ class GuessMyCitySimulator(object):
     def name(self) -> str:
         return self.model_id
     
+    def redact_city_country(self, text: str, city: WordVariants) -> str:
+        city_variants = [w.strip().lower() for w in city.words]
+
+        parts = city.words[0].split(",")
+        city_name_only = parts[0].strip().lower()
+        country_name = parts[1].strip().lower() if len(parts) > 1 else ""
+
+        city_variants.append(city_name_only)
+        city_variants = list(set(city_variants)) 
+
+        city_pattern = re.compile(r"\b(" + "|".join(map(re.escape, city_variants)) + r")\b", re.IGNORECASE)
+        country_pattern = re.compile(r"\b" + re.escape(country_name) + r"\b", re.IGNORECASE) if country_name else None
+
+        text = city_pattern.sub("the city", text)
+        if country_pattern:
+            text = country_pattern.sub("the country", text)
+
+        return text
+    
     def generate_answer(self, 
                         city: WordVariants, question: str) -> Tuple[str, str]:
         """
@@ -125,6 +144,7 @@ class GuessMyCitySimulator(object):
         
         response = self.tokenizer.decode(output[tokenized_inputs["input_ids"].shape[-1] :],skip_special_tokens=True)
         reason, action = self.parse_reason_action_fn(response)
+        action = self.redact_city_country(action, city)
         if self.verbose > 0:
             print(f"------ env simulator ------")
             print(f" REASON: {reason}")
