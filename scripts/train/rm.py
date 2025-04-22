@@ -252,6 +252,11 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
     all_configs = {}
     all_configs.update(**asdict(args), **asdict(dataset_config), **asdict(model_config))
     if accelerator.is_main_process:
+        os.makedirs(args.output_dir, exist_ok=True)
+        # Dump all the args to a json file
+        with open(os.path.join(args.output_dir, "configs.json"), "w") as f:
+            json.dump(all_configs, f, indent=4)
+            
         if args.with_tracking:
             import wandb
 

@@ -103,6 +103,7 @@ def main():
                 if obj in summary_dict[rollout_idx_str]:
                     print(f"Skipping {obj} as it is already in the summary dict")
                     continue
+                print(f"Category: {category}, obj: {obj}")
                 obj_to_process = WordVariants.from_str(obj)
                 
                 history = env.reset(word=obj_to_process)
@@ -115,7 +116,8 @@ def main():
                     last_question = len(history) == env.max_conversation_length - 1
 
                     if args.debug:
-                        reason = input("Reason: ")
+                        # reason = input("Reason: ")
+                        reason = "placeholder"
                         action = input("Action: ")
                         cost = 0.0
                     else:
@@ -127,7 +129,7 @@ def main():
                     print(f"Reason:\n{reason}\nAction:\n{action}", )
                     print(f"++++++ agent step: {len(history)}, total cost: {rollout_cost} ++++++")
 
-                    obs, reward, done = env.step(history, action)
+                    obs, reward, done = env.step(history, action, category)
                     history, answerer_reason, answer = obs
                     total_reward += reward
 

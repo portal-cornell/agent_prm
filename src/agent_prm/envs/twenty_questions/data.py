@@ -123,7 +123,7 @@ TRAIN_OBJECT_DICT = {
 }
 
 # Under the same category as the training objects, but not in the training objects
-VALIDATION_OBJECT_DICT = data = {
+VALIDATION_OBJECT_DICT = {
     'Sports': [
         'Baseball bat', 'Soccer ball'
     ],
@@ -185,6 +185,7 @@ TEST_OBJECT_DICT = {
     ]
 }
 
+ALL_OBJECT_TO_CATEGORY = {obj: category for category, objects in DEFAULT_OBJECT_DICT.items() for obj in objects}
 
 INVALID_QUESTION = "Is this a valid question?\n"
 INITIAL_STR = "Questions:\n"

@@ -2,8 +2,20 @@ domain: twenty_questions # alfworld, twenty_questions
 rolloutdirs: 
   # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all  # iter1
   # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-80pct_Q0-80pct-lr=5e-6_250312_091827_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_pen=-10_Q0-80pct-lr=5e-6 # iter2
-  - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-60pct_Q1-60pct-lr=5e-6_250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct # iter3
-output_folder: iter1
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-60pct_Q1-60pct-lr=5e-6_250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct # iter3
+  ############# Investigate Hindsight
+  ########### iter 0
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight_pi0-all-data-3epoches_250307_212417_peft=false_epoch3+all
+  ## iter 0 (trained only on pi0 data rolling out in the new env)
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-new-env_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
+  # Redo hindsight
+  - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
+  ########### iter 1
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-77pct_Q0-80pct-lr=5e-6-hindsight_250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight
+  ## iter 0 (mixing pi0 and pi2 rollouts)
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-60pct_Q1-60pct-lr=5e-6_250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct
+output_folder: null # So that we don't accidentally overwrite the existing data
 
 # Either one is used
 train_split: null
@@ -13,6 +25,31 @@ balance_data: true # Whether to enforce that 50% of data has Q-estimate >= 0.5 a
 
 cpu_count: null
 max_files_per_dir: null 
+max_rollout_per_task_per_dir_list: null
+
+hindsight:
+  onpolicy_idx_range: # The start and end of the on-policy rollouts
+    - 0
+    - 4
+    - 20
+    - 24
+    - 40
+    - 44
+    - 60
+    - 64
+    - 80
+    - 84
+    - 100
+    - 104
+  offpolicy_idx_range: 
+    - 4
+    - 12
+    - 24
+    - 32
+  onpolicy_pct_for_success: null # Within the successful on-policy rollouts, only X pct of files are from on-policy rollouts
+  num_failed_expert_rollouts_to_include: 10 # Only used in hindsight cases. Include X number of failed expert rollouts
+  track_offpolicy: true # Whether to track the off-policy rollouts
+
 outputdir: data/${domain}/prm/${output_folder}
 gamma: 0.95
 seed: 42

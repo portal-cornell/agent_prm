@@ -88,7 +88,9 @@ class TwentyQuestionsSimulator(object):
         return self.model_id
     
     def generate_answer(self, 
-                        word: WordVariants, question: str) -> Tuple[str, str]:
+                        word: WordVariants, 
+                        obj_category: str,
+                        question: str) -> Tuple[str, str]:
         """
         Predicts a reason and an answer given the current word and question
 
@@ -102,7 +104,8 @@ class TwentyQuestionsSimulator(object):
         input_data = {
             'mode': 'input',
             'thing': word[0].lower(),
-            'question': question
+            'question': question,
+            'category': obj_category
         }
         input_prompt = self.prompt_template.render(**input_data)
         
@@ -148,7 +151,9 @@ class TwentyQuestionsSimulator(object):
 
     def generate_answer_batch(self, 
                               words: List[WordVariants], 
-                              questions: List[str]) -> Tuple[List[str], List[str]]:
+                              obj_categories: List[str],
+                              questions: List[str],
+                              ensemble_size: int = 5) -> Tuple[List[str], List[str]]:
         """
         Predicts a reason and an asnwer given the current word and question
         """
@@ -156,9 +161,10 @@ class TwentyQuestionsSimulator(object):
             {
                 'mode': 'input',
                 'thing': word[0].lower(),
-                'question': question
+                'question': question,
+                'category': obj_category
             }
-            for word, question in zip(words, questions)
+            for word, question, obj_category in zip(words, questions, obj_categories) for _ in range(ensemble_size)
         ]
 
         messages = [
@@ -173,7 +179,7 @@ class TwentyQuestionsSimulator(object):
             for msg in messages
         ]
 
-        tokenized_inputs = self.tokenizer(messages, return_tensors="pt", padding=True, truncation=True, max_length=self.max_length).to(self.model.device)  # size for "input_ids" is (bs, seq_len)
+        tokenized_inputs = self.tokenizer(messages, return_tensors="pt", padding=True, truncation=True, max_length=self.max_length).to(self.model.device)  # size for "input_ids" is (bs * ensemble_size, seq_len)
 
         outputs = self.model.generate(
             **tokenized_inputs,
@@ -187,16 +193,27 @@ class TwentyQuestionsSimulator(object):
             temperature=None,
             top_p=None,
             pad_token_id=self.tokenizer.eos_token_id
-        )  # size: (bs, seq_len)
+        )  # size: (bs * ensemble_size, seq_len)
 
         # We want to only decode the last part of the output
         responses = self.tokenizer.batch_decode(outputs[:, tokenized_inputs["input_ids"].shape[-1]:], skip_special_tokens=True)
 
         answer_reasons, answers = [], []
-        for response in responses:
-            reason, answer = self.parse_reason_action_fn(response)
-            answer_reasons.append(reason)
-            answers.append(answer)
+        for i in range(len(responses)//ensemble_size):
+            voter_reasons = []
+            voter_answers = []
+            for j in range(ensemble_size):
+                reason, answer = self.parse_reason_action_fn(responses[i * ensemble_size + j])
+                voter_reasons.append(reason)
+                voter_answers.append(0 if "no" in answer else 1)
+
+            # Get the most common answer
+            most_common_answer = max(set(voter_answers), key=voter_answers.count)
+            answers.append("no" if most_common_answer == 0 else "yes")
+
+            # Get one of the reasoning that's the most common
+            most_common_answer_index = voter_answers.index(most_common_answer)
+            answer_reasons.append(voter_reasons[most_common_answer_index])
 
         return answer_reasons, answers
 
@@ -230,7 +247,9 @@ class SGLangServerTwentyQuestionsSimulator(object):
 
     def generate_answer_batch(self, 
                               words: List[WordVariants], 
-                              questions: List[str]) -> Tuple[List[str], List[str]]:
+                              obj_categories: List[str],
+                              questions: List[str],
+                              ensemble_size: int = 5) -> Tuple[List[str], List[str]]:
         """
         Predicts a reason and an asnwer given the current word and question
         """
@@ -238,9 +257,10 @@ class SGLangServerTwentyQuestionsSimulator(object):
             {
                 'mode': 'input',
                 'thing': word[0].lower(),
-                'question': question
+                'question': question,
+                'category': obj_category
             }
-            for word, question in zip(words, questions)
+            for word, question, obj_category in zip(words, questions, obj_categories) for _ in range(ensemble_size)
         ]
 
         messages = [
@@ -264,7 +284,7 @@ class SGLangServerTwentyQuestionsSimulator(object):
             data_batch = {"model": self.model_id, 
                           "text": prompts_batch,
                           "sampling_params": {
-                              "temperature": 0.0,
+                              "temperature": 0.3,
                               "max_new_tokens": self.max_tokens,
                               },
                           }
@@ -275,9 +295,32 @@ class SGLangServerTwentyQuestionsSimulator(object):
             generated_texts.extend(generated_texts_batch)
 
         answer_reasons, answers = [], []
-        for response in generated_texts:
-            reason, answer = self.parse_reason_action_fn(response)
-            answer_reasons.append(reason)
-            answers.append(answer)
+        for i in range(len(generated_texts)//ensemble_size):
+            voter_reasons = []
+            voter_answers = []
+            for j in range(ensemble_size):
+                reason, answer = self.parse_reason_action_fn(generated_texts[i * ensemble_size + j])
+                voter_reasons.append(reason)
+                voter_answers.append(0 if "no" in answer else 1)
+
+            # if 0 in voter_answers and 1 in voter_answers:
+            #     print(f"voter_reasons: {voter_reasons}")
+            #     print(f"voter_answers: {voter_answers}")
+            #     input("stop")
+
+            # Get the most common answer
+            most_common_answer = max(set(voter_answers), key=voter_answers.count)
+            answers.append("no" if most_common_answer == 0 else "yes")
+
+            # Get one of the reasoning that's the most common
+            most_common_answer_index = voter_answers.index(most_common_answer)
+            answer_reasons.append(voter_reasons[most_common_answer_index])
+
+            # if 0 in voter_answers and 1 in voter_answers:
+            #     print(f"most_common_answer: {most_common_answer}")
+            #     print(f"most_common_answer_index: {most_common_answer_index}")
+            #     print(f"reasons: {voter_reasons[most_common_answer_index]}")
+            #     print(f"answers: {answers}")
+            #     input("stop")
 
         return answer_reasons, answers

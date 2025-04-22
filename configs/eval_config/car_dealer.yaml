@@ -1,0 +1,101 @@
+verbose: 0
+debug: false
+elogger: false # Whether to activate email logging
+host_sglang: false  # Whether to host the sglang server through code for the agents
+local_sglang: false # If true, will save the model in the local directory (get around the bug: https://github.com/vllm-project/vllm/issues/2675)
+sim_host: localhost  # The host for the environment simulator's SGLang server (the env must be on the same machine)
+sim_port: 40042  # The port number for the environment simulator's SGLang server (the env must be on the same machine)
+iter: 0
+mode: offline # offline or online
+logdir: data/car_dealer/eval
+data_types:
+  - val
+online:
+  rollout_per_task_range_min: 0  # Inclusive
+  rollout_per_task_range_max: 10  # Non-inclusive
+  batch_size: 32
+  num_alt_responses: 5
+consolidate_online:
+  main_table_notes: null
+  table_notes: 'placeholder'
+  rollout_per_task_dict:
+    train: 1
+    val: 3
+    test: 3
+  use_existing_table: true
+  overwrite_existing_entry: false
+agents:
+  # - type: gpt4o_expert
+  #   log_name: gpt4o
+  # - type: sglang_server
+  #   log_name: 3B
+  #   model_id: meta-llama/Llama-3.2-3B-Instruct
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: 3B_env-Llama8B
+  #   model_id: meta-llama/Llama-3.2-3B-Instruct
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  ##########################################################################################
+  #
+  # Iteration 0: Train a initial SFT model via full finetuning
+  # 
+  ##########################################################################################
+  - type: sglang_server
+    log_name: pi0-25pct
+    model_id: /share/portal/hw575/agent_prm/save/sft/250418_010845_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=false/checkpoint-30
+    api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+    prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+    server_url: http://localhost:TODO/
+    dist_url_port: null
+    temperature: 0.3
+    batch_limit: 32
+    verbose: 3
+  - type: sglang_server
+    log_name: pi0-50pct
+    model_id: /share/portal/hw575/agent_prm/save/sft/250418_010845_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=false/checkpoint-60
+    api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+    prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+    server_url: http://localhost:TODO/
+    dist_url_port: null
+    temperature: 0.3
+    batch_limit: 32
+    verbose: 3
+  # - type: sglang_server
+  #   log_name: pi0-75pct
+  #   model_id: /share/portal/hw575/agent_prm/save/sft/250418_010845_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=false/checkpoint-90
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+  # - type: sglang_server
+  #   log_name: pi0
+  #   model_id: /share/portal/hw575/agent_prm/save/sft/250418_010845_iter0_meta-llama-Llama-3.2-3B-Instruct_peft=false/checkpoint-102
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  #   verbose: 3
+
+defaults:
+  - _self_
+
+hydra:
+  run:
+    dir: ${logdir}/iter${iter}/_hydra/${mode}/${now:%Y-%m-%d-%H%M%S%f}

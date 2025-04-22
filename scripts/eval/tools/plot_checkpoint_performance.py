@@ -1,3 +1,9 @@
+"""
+Use case:
+
+python scripts/eval/tools/plot_checkpoint_performance.py -n prm-pi1-q1-hd-with-original -b -bb
+"""
+
 import yaml
 import json
 import re
@@ -13,11 +19,6 @@ from agent_prm.utils.general_utils import load_json
 from agent_prm.utils.cfg_utils import find_matching_iter
 
 total_epochs = 1
-# baselines = ["gpt-4o", "base-3B", "pi0"]
-# baselines = ["gpt-4o", "base-3B", "pi0", "BoN_pi0_Q0-80pct-lr=5e-5", "BoN_pi0_Q0-80pct-lr=5e-6"]
-# baselines = ["gpt-4o", "base-3B", "pi0", "BoN_pi0_Q0*", "pi1"]  # prm-pi1-q1
-# baselines = ["gpt-4o", "base-3B", "pi0", "pi1", "BoN_pi1_Q1*"]  # rl-pi2, rl-pi2-with-4gpus
-baselines = ["gpt-4o", "base-3B", "pi0", "pi1", "pi2"]  # prm-pi2-q2
 baseline_to_name_in_csv = {
     "gpt-4o": "gpt4o",
     "base-3B": "3B",
@@ -27,8 +28,46 @@ baseline_to_name_in_csv = {
     "BoN_pi0_Q0*": "BoN_pi0_Q0-80pct-lr=5e-6",
     "pi1": "pi1-80pct_Q0-80pct-lr=5e-5",
     "BoN_pi1_Q1*": "BoN_pi1_Q1-60pct-lr=5e-6",
-    "pi2": "pi2-60pct_Q1-60pct-lr=5e-6"
+    "pi2": "pi2-60pct_Q1-60pct-lr=5e-6",
+    "pi2-new-env": "pi2-60pct_Q1-60pct-lr=5e-6_new-env",
+    "BoN_pi2_Q2*": "BoN_pi2_Q2-80pct-lr=5e-6",
+    # Using hindsight to collect data for training PRMs
+    "pi0-new-env": "pi0-new-env",
+    "BoN_pi0_Q0*_pi0-new-env": "BoN_pi0_Q0-20pct-lr=5e-6_pi0-new-env",
+    "BoN_pi0_Q0*_hindsight-redo": "BoN_pi0_Q0-20pct-lr=5e-6_hindsight-redo",
+    "BoN_pi0_Q0*_hindsight-biased": "BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased",
+    "pi1_hindsight": "pi1-77pct_Q0-80pct-lr=5e-6-hindsight",
+    "BoN_pi1_Q1*_hindsight": "BoN_pi1_Q1-80pct-lr=5e-6_hindsight",
 }  # in online_eval_table.csv
+
+folder_to_baselines = {
+    "prm-pi0-q0": ["gpt-4o", "base-3B", "pi0"],
+    "prm-pi0-q0-best-rl": ["gpt-4o", "base-3B", "pi0"],
+    "rl-pi1": ["gpt-4o", "pi0", "BoN_pi0_Q0*"],
+    "prm-pi1-q1": ["gpt-4o", "pi0", "BoN_pi0_Q0*", "pi1"],
+    "rl-pi2": ["gpt-4o", "pi0", "pi1", "BoN_pi1_Q1*"],
+    "rl-pi2-with-4gpus": ["gpt-4o", "pi0", "pi1", "BoN_pi1_Q1*"],
+    "prm-pi2-q2": ["gpt-4o", "pi0", "pi1", "pi2"],
+    "rl-pi3": ["gpt-4o", "pi0", "pi1", "pi2", "BoN_pi2_Q2*"],
+    ############################################################
+    # Using hindsight to collect data for training PRMs
+    "sft-pi0-new-env": ["gpt-4o", "base-3B", "pi0"],
+    # Q0
+    "prm-pi0-q0-hd": ["gpt-4o", "base-3B", "pi0"],
+    "prm-pi0-q0-hd-with-original": ["gpt-4o", "base-3B", "pi0"],
+    "prm-pi0-q0-hd-with-pi0-pi2-mix": ["gpt-4o", "base-3B", "pi0"],
+    "prm-pi0-q0-hd-new-env": ["gpt-4o", "base-3B", "pi0-new-env", "pi2-new-env"],
+    "prm-pi0-q0-hd-best": ["gpt-4o", "pi0-new-env", "pi2-new-env"],
+    # pi1
+    "rl-pi1-hd": ["gpt-4o", "pi0", "BoN_pi0_Q0*_hindsight"],
+    "prm-pi1-q1-hd-with-original": ["gpt-4o", "pi0", "pi1_hindsight"],
+    "rl-pi1-hd-new-env": ["gpt-4o", "pi0-new-env", "pi2-new-env", "BoN_pi0_Q0*_pi0-new-env", "BoN_pi0_Q0*_hindsight-redo", "BoN_pi0_Q0*_hindsight-biased"],
+    "rl-pi1-hd-best": ["gpt-4o", "base-3B", "pi0-new-env", "pi2-new-env"],
+    # pi2
+    "rl-pi2-hd": ["gpt-4o", "pi0", "pi1", "BoN_pi1_Q1*_hindsight"],
+    "rl-pi1-hd-with-pi0-pi2-mix": ["gpt-4o", "pi0"],
+    "prm-pi2-q0-hd-with-pi0-pi2-mix": ["gpt-4o", "pi0", "pi1", "pi2"]
+}
 
 folder_to_regex = {
     "sft-pi0": [r'(pi0-(\d+)pct)-all-data-3epoches', r'pi0-all-data-3epoches'],
@@ -36,6 +75,7 @@ folder_to_regex = {
     "prm-pi0-q0": [r'BoN_pi0_(Q0-(\d+)pct)', r'BoN_pi0_Q0-lr'],
     "prm-pi0-q0-best": [r'BoN_pi0_(Q0-(\d+)pct)', r'BoN_pi0_Q0-lr'],
     "prm-pi0-q0-for-rl": [r'BoN_pi0_(Q0-(\d+)pct)', r'BoN_pi0_Q0-lr'],
+    "prm-pi0-q0-best-rl": [r'BoN_pi0_(Q0-(\d+)pct)', r'BoN_pi0_Q0-lr'],
     "rl-pi1": [r'^(pi1-(\d+)pct)_Q0-80', r'^pi1_Q0-80'],
     "rl-pi1-with-best-pi0-bon": [r'^(pi1-(\d+)pct)_Q0-80', r'^pi1_Q0-80'],
     # 'rl-pi1-q0': [r'^pi1-(\d+)pct$', r'^pi1$', r'^BoN_pi1-(\d+)pct_Q0\*$', r'^BoN_pi1_Q0\*$']
@@ -43,6 +83,71 @@ folder_to_regex = {
     "rl-pi2": [r'^(pi2-(\d+)pct)_Q1-60', r'^pi2_Q1-60'],
     "rl-pi2-with-4gpus": [r'^(pi2-(\d+)pct)_Q1-60', r'^pi2_Q1-60'],
     "prm-pi2-q2": [r'BoN_pi2_(Q2-(\d+)pct)', r'BoN_pi2_Q2-lr'],
+    "rl-pi3": [r'^(pi3-(\d+)pct)_Q2-80', r'^pi3_Q2-80'],
+    ############################################################
+    # Using hindsight to collect data for training PRMs
+    "sft-pi0-new-env": [r'pi0-new-env'],
+    # Q0
+    "prm-pi0-q0-hd": 
+        [r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight', r'BoN_pi0_Q0-lr=5e-6_hindsight'],
+    "prm-pi0-q0-hd-with-original": 
+        [r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6$', r'BoN_pi0_Q0-lr=5e-6$', r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight', r'BoN_pi0_Q0-lr=5e-6_hindsight'],
+    "prm-pi0-q0-hd-with-pi0-pi2-mix": 
+        [r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6$', r'BoN_pi0_Q0-lr=5e-6$', r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight', r'BoN_pi0_Q0-lr=5e-6_hindsight', r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_pi0-pi2-mix', r'BoN_pi0_Q0-lr=5e-6_pi0-pi2-mix'],
+    "prm-pi0-q0-hd-new-env":
+        [r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_pi0-new-env', r'BoN_pi0_Q0-lr=5e-6_pi0-new-env',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-redo', r'BoN_pi0_Q0-lr=5e-6_hindsight-redo',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-50-50', r'BoN_pi0_Q0-lr=5e-6_hindsight-50-50',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-30', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-30',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-50', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-70', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-70',
+         ],
+    "prm-pi0-q0-hd-best":
+        [r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_pi0-new-env', r'BoN_pi0_Q0-lr=5e-6_pi0-new-env',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-redo', r'BoN_pi0_Q0-lr=5e-6_hindsight-redo',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-30', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-30',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-40', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-40',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-50', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-60', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-60',
+         r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight-biased-on-70', r'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-70',
+        ],
+    # pi1
+    "rl-pi1-hd":
+        [r'^(pi1-(\d+)pct)_Q0-80pct-lr=5e-6-hindsight$', r'^pi1_Q0-80pct-lr=5e-6-hindsight$', r'^(pi1-(\d+)pct)_Q0-80pct-lr=5e-6$', r'^pi1_Q0-80pct-lr=5e-6$'],
+    "rl-pi1-hd-with-pi0-pi2-mix":
+        [
+            r'^(pi1-(\d+)pct)_Q0-80pct-lr=5e-6$', r'^pi1_Q0-80pct-lr=5e-6$', 
+            r'^(pi1-(\d+)pct)_Q0-80pct-lr=5e-6-hindsight$', r'^pi1_Q0-80pct-lr=5e-6-hindsight$', 
+            r'^(pi1-(\d+)pct)_Q0-60pct-lr=5e-6-pi0-pi2-mix$', r'^pi1_Q0-60pct-lr=5e-6-pi0-pi2-mix$',
+            r'^(pi2-(\d+)pct)_Q1-60', r'^pi2_Q1-60' # An upper bound on how much pi1-pi0-pi2-mix can improve
+        ],
+    "rl-pi1-hd-new-env":
+        [
+            r'^(pi1-(\d+)pct)_Q0-60pct-lr=5e-6_pi0-new-env$', r'^pi1_Q0-60pct-lr=5e-6_pi0-new-env$',
+            r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_pi0-new-env$', r'^pi1_Q0-20pct-lr=5e-6_pi0-new-env$',
+            r'^(pi1-(\d+)pct)_Q0-lr=5e-6_hindsight-redo$', r'^pi1_Q0-lr=5e-6_hindsight-redo$',
+            r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_hindsight-redo$', r'^pi1_Q0-20pct-lr=5e-6_hindsight-redo$',
+            r'^(pi1-(\d+)pct)_Q0-80pct-lr=5e-6_hindsight-50-50$', r'^pi1_Q0-80pct-lr=5e-6_hindsight-50-50$',
+            r'^(pi1-(\d+)pct)_Q0-lr=5e-6_hindsight-biased$', r'^pi1_Q0-lr=5e-6_hindsight-biased$',
+            r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_hindsight-biased$', r'^pi1_Q0-20pct-lr=5e-6_hindsight-biased$',
+        ],
+    "rl-pi1-hd-best":
+        [
+            r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_pi0-new-env$', r'^pi1_Q0-20pct-lr=5e-6_pi0-new-env$',
+            r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_hindsight-redo$', r'^pi1_Q0-20pct-lr=5e-6_hindsight-redo$',
+            r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_hindsight-biased$', r'^pi1_Q0-20pct-lr=5e-6_hindsight-biased$',
+            r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_hindsight-biased-on-50$', r'^pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50$',
+            r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_hindsight-biased-on-60$', r'^pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-60$',
+        ],
+    # Q1
+    "prm-pi1-q1-hd-with-original": 
+        [r'BoN_pi1_(Q1-(\d+)pct)-lr=5e-6$', r'BoN_pi1_Q1-lr=5e-6$', r'BoN_pi1_(Q1-(\d+)pct)-lr=5e-6_hindsight', r'BoN_pi1_Q1-lr=5e-6_hindsight'],
+    'rl-pi2-hd': 
+        [r'^(pi2-(\d+)pct)_Q1-80pct-lr=5e-6-hindsight$', r'^pi2_Q1-80pct-lr=5e-6-hindsight$', r'^(pi2-(\d+)pct)_Q1-60pct-lr=5e-6$', r'^pi2_Q1-60pct-lr=5e-6$'],
+    'prm-pi2-q0-hd-with-pi0-pi2-mix': 
+        [r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight', r'BoN_pi0_Q0-lr=5e-6_hindsight', r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_pi0-pi2-mix', r'BoN_pi0_Q0-lr=5e-6_pi0-pi2-mix', r'^BoN_pi2_(Q0-(\d+)pct)-lr=5e-6_hindsight-baseline$', r'^BoN_pi2_(Q0-(\d+)pct)-lr=5e-6_pi0-pi2-mix']
 }
 
 folder_to_plot_models = {
@@ -51,6 +156,7 @@ folder_to_plot_models = {
     "prm-pi0-q0": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-5', 'BoN_pi0_Q0-lr=5e-6', 'BoN_pi0_Q0-lr=5e-7-no-reason', 'BoN_pi0_Q0-lr=5e-7'],
     "prm-pi0-q0-best": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-5'],
     "prm-pi0-q0-for-rl": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-5', 'BoN_pi0_Q0-lr=5e-6'],
+    "prm-pi0-q0-best-rl": ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-6'],
     "rl-pi1": ['gpt-4o', 'pi0', 'pi0', 'pi1_Q0-80pct-lr=5e-5', 'pi1_Q0-80pct-lr=5e-6'],
     "rl-pi1-with-best-pi0-bon": ['gpt-4o', 'base-3B', 'pi0', 'pi1_Q0-80pct-lr=5e-5', 'pi1_Q0-80pct-lr=5e-6', 'BoN_pi0_Q0-80pct-lr=5e-5', 'BoN_pi0_Q0-80pct-lr=5e-6'],
     # "rl-pi1-q0": ['gpt-4o', 'pi0', 'pi0_Q0*', 'pi1', 'BoN_pi1_Q0*'],
@@ -58,18 +164,69 @@ folder_to_plot_models = {
     "rl-pi2": ['gpt-4o', 'pi0', 'pi1', 'BoN_pi1_Q1*', 'pi2_Q1-60pct-lr=5e-6'],
     "rl-pi2-with-4gpus": ['gpt-4o', 'pi0', 'pi1', 'BoN_pi1_Q1*', 'pi2_Q1-60pct-lr=5e-6', 'pi2_Q1-60pct-lr=5e-6_4gpus'],
     "prm-pi2-q2": ['gpt-4o', 'pi0', 'pi1', 'pi2', 'BoN_pi2_Q2-lr=5e-6'],
+    "rl-pi3": ['gpt-4o', 'pi0', 'pi1', 'pi2', 'BoN_pi2_Q2*', 'pi3_Q2-80pct-lr=5e-6'],
+    ############################################################
+    # Using hindsight to collect data for training PRMs
+    "sft-pi0-new-env": ['gpt-4o', 'base-3B', 'pi0', 'pi0-new-env'],
+    # Q0
+    "prm-pi0-q0-hd": 
+        ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-6_hindsight-baseline', 'BoN_pi0_Q0-lr=5e-6_hindsight'],
+    "prm-pi0-q0-hd-with-original": 
+        ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-6', 'BoN_pi0_Q0-lr=5e-6_hindsight-baseline', 'BoN_pi0_Q0-lr=5e-6_hindsight'],
+    "prm-pi0-q0-hd-with-pi0-pi2-mix": 
+        ['gpt-4o', 'base-3B', 'pi0', 'BoN_pi0_Q0-lr=5e-6', 'BoN_pi0_Q0-lr=5e-6_hindsight-baseline', 'BoN_pi0_Q0-lr=5e-6_hindsight', 'BoN_pi0_Q0-lr=5e-6_pi0-pi2-mix'],
+    "prm-pi0-q0-hd-new-env": 
+        ['gpt-4o', 'base-3B', 'pi0-new-env', 'BoN_pi0_Q0-lr=5e-6_pi0-new-env', 'BoN_pi0_Q0-lr=5e-6_hindsight-redo', 
+         'BoN_pi0_Q0-lr=5e-6_hindsight-50-50',
+         'BoN_pi0_Q0-lr=5e-6_hindsight-biased',
+         'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-30',
+         'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50'
+        ],
+    "prm-pi0-q0-hd-best":
+        ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 
+         'BoN_pi0_Q0-lr=5e-6_pi0-new-env',
+        #  'BoN_pi0_Q0-lr=5e-6_hindsight-redo', 
+         'BoN_pi0_Q0-lr=5e-6_hindsight-biased',
+        #  'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-30',
+        #  'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-40',
+         'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50',
+         'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-60',
+        #  'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-70'
+        ],
+    # pi1
+    "rl-pi1-hd": 
+        ['gpt-4o', 'pi0-new-env', 'BoN_pi0_Q0*_hindsight', 'pi1_Q0-80pct-lr=5e-6', 'pi1_Q0-80pct-lr=5e-6-hindsight'],
+    "rl-pi1-hd-with-pi0-pi2-mix":
+        ['gpt-4o', 'pi0-new-env', 'pi1_Q0-80pct-lr=5e-6', 'pi1_Q0-80pct-lr=5e-6-hindsight', 'pi1_Q0-60pct-lr=5e-6-pi0-pi2-mix', 'pi2_Q1-60pct-lr=5e-6'],
+    "rl-pi1-hd-new-env":
+        ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 'BoN_pi0_Q0*_pi0-new-env', 'BoN_pi0_Q0*_hindsight-redo', 'BoN_pi0_Q0*_hindsight-biased', 'pi1_Q0-20pct-lr=5e-6_pi0-new-env', 'pi1_Q0-lr=5e-6_hindsight-redo', 'pi1_Q0-20pct-lr=5e-6_hindsight-redo', 'pi1_Q0-80pct-lr=5e-6_hindsight-50-50', 'pi1_Q0-lr=5e-6_hindsight-biased', 'pi1_Q0-20pct-lr=5e-6_hindsight-biased'],
+    "rl-pi1-hd-best":
+        ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 'pi1_Q0-20pct-lr=5e-6_pi0-new-env',
+        #  'pi1_Q0-20pct-lr=5e-6_hindsight-redo',
+         'pi1_Q0-20pct-lr=5e-6_hindsight-biased',
+         'pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50',
+         'pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-60',
+        ],
+    # Q1
+    "prm-pi1-q1-hd-with-original": 
+        ['gpt-4o', 'pi0', 'pi1_hindsight', 'BoN_pi1_Q1-lr=5e-6', 'BoN_pi1_Q1-lr=5e-6_hindsight'],
+    "rl-pi2-hd": 
+        ['gpt-4o', 'pi0', 'pi1', 'BoN_pi1_Q1*_hindsight', 'pi2_Q1-60pct-lr=5e-6', 'pi2_Q1-80pct-lr=5e-6-hindsight'],
+    'prm-pi2-q0-hd-with-pi0-pi2-mix': 
+        ['gpt-4o', 'pi0', 'pi1', 'pi2', 'BoN_pi0_Q0-lr=5e-6_hindsight-baseline',  'BoN_pi0_Q0-lr=5e-6_pi0-pi2-mix', 'BoN_pi2_Q0-lr=5e-6_hindsight-baseline', 'BoN_pi2_Q0-lr=5e-6_pi0-pi2-mix']
 }
 
 EVAL_DIR = "data/twenty_questions/eval"
 CSV_PATH = "data/twenty_questions/eval/online_eval_table.csv"
+HINDSIHGT_CSV_PATH = "data/twenty_questions/eval/online_eval_table_hindsight.csv"
 ROLLOUT_PER_TASK_DICT = {
     "train": 1,
     "val": 3,
     "test": 3
 }
 
-REWARD_MIN, REWARD_MAX = -17, -10
-SUCCESS_RATE_MIN, SUCCESS_RATE_MAX = 0.3, 1.2
+REWARD_MIN, REWARD_MAX = -18, -4
+SUCCESS_RATE_MIN, SUCCESS_RATE_MAX = 0.4, 1.1
 
 def is_valid_rollout(f: str, data_type: str) -> bool:
     """
@@ -103,22 +260,22 @@ def get_pct_of_training_progress(log_name: str, regex: str) -> int:
         try:
             # 2 allows us to directly get the number
             pct = int(re.search(regex, log_name).group(2))
+
+            part_with_pct = re.search(regex, log_name).group(1)
+            part_with_pct_removed = part_with_pct.replace(f"-{pct}pct", "")
+
+            class_name = log_name.replace(part_with_pct, part_with_pct_removed)
+
+            return pct, class_name
         except Exception as e:
             print(f"Error:\n{e}")
-            raise ValueError(f"Invalid log name: {log_name}, or regex: {regex}")
-        
-        part_with_pct = re.search(regex, log_name).group(1)
-        part_with_pct_removed = part_with_pct.replace(f"-{pct}pct", "")
-
-        class_name = log_name.replace(part_with_pct, part_with_pct_removed)
-
-        return pct, class_name
+            return 100, log_name
     else:
         # Assuming that it's fully trained
         return 100, log_name
     
 
-def update_models_with_eval_results(models_to_plot: dict):
+def update_models_with_eval_results(models_to_plot: dict, baselines: list):
     for data_type in ["train", "val", "test"]:
         for class_name in models_to_plot:
             if class_name in baselines:
@@ -127,33 +284,54 @@ def update_models_with_eval_results(models_to_plot: dict):
             for pct in models_to_plot[class_name]:
                 agent_eval_dir = models_to_plot[class_name][pct]["agent_eval_dir"]
 
-                # Get all the rollouts that are used to consolidate the results
-                json_files = [f for f in os.listdir(os.path.join(agent_eval_dir, data_type)) if is_valid_rollout(f, data_type)]
+                if os.path.exists(os.path.join(agent_eval_dir, data_type)):
+                    # Get all the rollouts that are used to consolidate the results
+                    json_files = [f for f in os.listdir(os.path.join(agent_eval_dir, data_type)) if is_valid_rollout(f, data_type)]
 
-                # Compute rewards efficiently
-                all_rewards = [sum(t["reward"] for t in load_json(os.path.join(agent_eval_dir, data_type, f))) for f in json_files]
-                mean_reward = np.mean(all_rewards)
-                se_reward = np.std(all_rewards)/math.sqrt(len(all_rewards))
+                    if not any([f.endswith(f"{ROLLOUT_PER_TASK_DICT[data_type]-1}.json") for f in json_files]):
+                        print(f"WARNING: {agent_name} does not have all the rollouts for {data_type}, which needs {ROLLOUT_PER_TASK_DICT[data_type]} rollouts per task")
+                        # input("Press Enter to continue...")
 
-                # Compute success rate
-                all_success_rates = [load_json(os.path.join(agent_eval_dir, data_type, f))[-1]["reward"] == 0 for f in json_files]
-                mean_success_rate = np.mean(all_success_rates)
-                se_success_rate = np.std(all_success_rates)/math.sqrt(len(all_success_rates))
+                    if len(json_files) > 0:
+                        # Compute rewards efficiently
+                        all_rewards = [sum(t["reward"] for t in load_json(os.path.join(agent_eval_dir, data_type, f))) for f in json_files]
+                        mean_reward = np.mean(all_rewards)
+                        se_reward = np.std(all_rewards)/math.sqrt(len(all_rewards))
 
-                models_to_plot[class_name][pct][data_type] = {
-                    "mean_reward": mean_reward,
-                    "se_reward": se_reward,
-                    "mean_success_rate": mean_success_rate,
-                    "se_success_rate": se_success_rate
-                }
+                        # Compute success rate
+                        all_success_rates = [load_json(os.path.join(agent_eval_dir, data_type, f))[-1]["reward"] == 0 for f in json_files]
+                        mean_success_rate = np.mean(all_success_rates)
+                        se_success_rate = np.std(all_success_rates)/math.sqrt(len(all_success_rates))
+
+                        models_to_plot[class_name][pct][data_type] = {
+                            "mean_reward": mean_reward,
+                            "se_reward": se_reward,
+                            "mean_success_rate": mean_success_rate,
+                            "se_success_rate": se_success_rate
+                        }
+                    else:
+                        models_to_plot[class_name][pct][data_type] = {
+                            "mean_reward": REWARD_MIN,
+                            "se_reward": 0,
+                            "mean_success_rate": SUCCESS_RATE_MIN,
+                            "se_success_rate": 0
+                        }
+                else:
+                    print(f"WARNING: {agent_name} does not have any rollouts for {data_type}")
+                    models_to_plot[class_name][pct][data_type] = {
+                        "mean_reward": None,
+                        "se_reward": None,
+                        "mean_success_rate": None,
+                        "se_success_rate": None
+                    }
 
 
-def plot_models(models_to_plot: dict, plot_path: str, models_to_plot_names: list, error_bar: bool = False, error_bar_baseline: bool = False):
+def plot_models(models_to_plot: dict, plot_path: str, models_to_plot_names: list, baselines: list, error_bar: bool = False, error_bar_baseline: bool = False):
     """
     Plot the models and save the models at 
     """
     data_types = ['train', 'val', 'test']
-    colors = color_sequences['Dark2']
+    colors = color_sequences['Dark2'] + color_sequences['Set2']
     # Create subplots
     fig, axes = plt.subplots(2, 3, figsize=(20, 8))
 
@@ -166,16 +344,17 @@ def plot_models(models_to_plot: dict, plot_path: str, models_to_plot_names: list
         ax = axes[0, i]
         for j, model in enumerate(models_to_plot_names):
             if model in baselines:
-                # Draw a horizontal line with standard error
-                ax.axhline(y=models_to_plot[model][data_type]["mean_reward"], color=colors[j], linestyle='--', label=model, linewidth=linewidth)
+                if models_to_plot[model][data_type]["mean_reward"] is not None:
+                    # Draw a horizontal line with standard error
+                    ax.axhline(y=models_to_plot[model][data_type]["mean_reward"], color=colors[j], linestyle='--', label=model, linewidth=linewidth)
 
-                # Draw standard error
-                if error_bar_baseline:
-                    ax.fill_between(
-                        [0, total_epochs],
-                        models_to_plot[model][data_type]["mean_reward"] - models_to_plot[model][data_type]["se_reward"],
-                        models_to_plot[model][data_type]["mean_reward"] + models_to_plot[model][data_type]["se_reward"],
-                        color=colors[j], alpha=0.2)
+                    # Draw standard error
+                    if error_bar_baseline:
+                        ax.fill_between(
+                            [0, total_epochs],
+                            models_to_plot[model][data_type]["mean_reward"] - models_to_plot[model][data_type]["se_reward"],
+                            models_to_plot[model][data_type]["mean_reward"] + models_to_plot[model][data_type]["se_reward"],
+                            color=colors[j], alpha=0.2)
             else:
                 epochs = np.array([int(pct)/100.0*total_epochs for pct in models_to_plot[model].keys()])
                 rewards = np.array([models_to_plot[model][pct][data_type]["mean_reward"] for pct in models_to_plot[model].keys()])
@@ -198,16 +377,17 @@ def plot_models(models_to_plot: dict, plot_path: str, models_to_plot_names: list
         ax = axes[1, i]
         for j, model in enumerate(models_to_plot_names):
             if model in baselines:
-                # Draw a horizontal line with standard error
-                ax.axhline(y=models_to_plot[model][data_type]["mean_success_rate"], color=colors[j], linestyle='--', label=model, linewidth=linewidth)
+                if models_to_plot[model][data_type]["mean_success_rate"] is not None:
+                    # Draw a horizontal line with standard error
+                    ax.axhline(y=models_to_plot[model][data_type]["mean_success_rate"], color=colors[j], linestyle='--', label=model, linewidth=linewidth)
 
-                # Draw standard error
-                if error_bar_baseline:
-                    ax.fill_between(
-                        [0, total_epochs],
-                        models_to_plot[model][data_type]["mean_success_rate"] - models_to_plot[model][data_type]["se_success_rate"],
-                        models_to_plot[model][data_type]["mean_success_rate"] + models_to_plot[model][data_type]["se_success_rate"],
-                        color=colors[j], alpha=0.2)
+                    # Draw standard error
+                    if error_bar_baseline:
+                        ax.fill_between(
+                            [0, total_epochs],
+                            models_to_plot[model][data_type]["mean_success_rate"] - models_to_plot[model][data_type]["se_success_rate"],
+                            models_to_plot[model][data_type]["mean_success_rate"] + models_to_plot[model][data_type]["se_success_rate"],
+                            color=colors[j], alpha=0.2)
             else:
                 # Calculate the epoch (x-axis)
                 epochs = np.array([int(pct)/100.0*total_epochs for pct in models_to_plot[model].keys()])
@@ -253,6 +433,7 @@ if __name__ == "__main__":
     try:
         regex_to_use = folder_to_regex[args.name]
         models_to_plot_names = folder_to_plot_models[args.name]
+        baselines = folder_to_baselines[args.name]
     except KeyError:
         raise ValueError(f"Invalid name: {args.name}, available names are: {folder_to_regex.keys()}")
 
@@ -276,10 +457,14 @@ if __name__ == "__main__":
         models_to_plot = {}
 
         # Load the current CSV for baselines
-        df = pd.read_csv(CSV_PATH)
+        if "hd" in args.name:
+            df = pd.read_csv(HINDSIHGT_CSV_PATH)
+        else:
+            df = pd.read_csv(CSV_PATH)
 
         for baseline_plot_name in baselines:
             models_to_plot[baseline_plot_name] = {}
+            # Get it from the CSV
             for data_type in ["train", "val", "test"]:
                 baseline_csv_name = baseline_to_name_in_csv[baseline_plot_name]
                 models_to_plot[baseline_plot_name][data_type] = {
@@ -319,7 +504,7 @@ if __name__ == "__main__":
         input("Press Enter to continue...")
 
         print("Updating models with eval results")
-        update_models_with_eval_results(models_to_plot)
+        update_models_with_eval_results(models_to_plot, baselines)
 
         with open(os.path.join(save_path, "models_to_plot_with_eval_results.json"), "w") as f:
             json.dump(models_to_plot, f, indent=4)
@@ -328,4 +513,4 @@ if __name__ == "__main__":
             models_to_plot = json.load(f)
 
     print("Plotting models")
-    plot_models(models_to_plot, os.path.join(save_path, f"{args.name}_plot.png"), models_to_plot_names, args.error_bar, args.error_bar_baseline)
+    plot_models(models_to_plot, os.path.join(save_path, f"{args.name}_plot.png"), models_to_plot_names, baselines, args.error_bar, args.error_bar_baseline)

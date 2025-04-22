@@ -1,0 +1,349 @@
+import copy
+import time
+import json
+from jinja2 import Template
+from typing import List
+
+from agent_prm.agents.agent import Agent
+from agent_prm.envs.car_dealer.env import BatchedCarDealerEnvironment
+from agent_prm.envs.car_dealer.data import DEFAULT_BRANDS, DEFAULT_TYPES
+from agent_prm.envs.car_dealer.data import format_chat_history, format_car_options
+from agent_prm.envs.car_dealer.parser import parse_reason_and_action_car_dealer_api_call, parse_reason_and_action_car_dealer
+from agent_prm.utils.general_utils import load_json
+
+car_inventory_dict = load_json("src/agent_prm/envs/car_dealer/car_inventory_dict.json")
+
+def use_api(arguments: dict):
+    """
+    Return a list of cars that match the given arguments.
+    """
+    api_brand = arguments["api_brand"].strip().lower().capitalize()
+    api_type = arguments["api_type"].strip().lower()
+
+    try:
+        if arguments["api_name"] == "search_car_by_brand_type":
+            return search_car_by_brand_type(api_brand, api_type)
+        elif arguments["api_name"] == "search_car_by_brand":
+            return search_car_by_brand(api_brand)
+        elif arguments["api_name"] == "search_car_by_type":
+            return search_car_by_type(api_type)
+        elif arguments["api_name"] == "no_op":
+            return []
+        else:
+            # print(f"Invalid API name: {arguments['api_name']}")
+            return []
+    except Exception as e:
+        # print(f"Error in use_api: {e}")
+        return []
+
+def search_car_by_brand_type(brand: str, car_type: str):
+    if car_type not in car_inventory_dict[brand]:
+        return []
+
+    car_list = copy.deepcopy(car_inventory_dict[brand][car_type])
+
+    # Add the car's brand and car type to the car list
+    for car in car_list:
+        car["brand"] = brand
+        car["type"] = car_type
+
+    return car_list
+
+def search_car_by_brand_type_features(brand: str, car_type: str, features: List[str]):
+    """
+    Legacy API.
+
+    Return a list of cars that match the given brand, car type, and features.
+    """
+    car_by_brand_type = search_car_by_brand_type(brand, car_type)
+
+    sorted_features = sorted(features)
+    matching_cars = []
+    for car in car_by_brand_type:
+        car_features = sorted(car["features"])
+        if car_features == sorted_features:
+            matching_cars.append(car)
+    return matching_cars
+
+def search_car_by_brand(brand: str):
+    car_list = []
+    for car_type in car_inventory_dict[brand]:
+        for car in car_inventory_dict[brand][car_type]:
+            car_info = copy.deepcopy(car)
+            # Add the car's brand and car type to the car info
+            car_info["brand"] = brand
+            car_info["type"] = car_type
+            car_list.append(car_info)
+    return car_list
+
+def search_car_by_type(car_type: str):
+    car_list = []
+    for brand in car_inventory_dict:
+        if car_type in car_inventory_dict[brand]:
+            for car in car_inventory_dict[brand][car_type]:
+                car_info = copy.deepcopy(car)
+                car_info["brand"] = brand
+                car_info["type"] = car_type
+                car_list.append(car_info)
+    return car_list
+    
+
+def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: Template, agent: Agent, histories: List[List[dict]], prev_api_calls: List[dict], prev_api_responses: List[dict], num_alt_responses: int):
+    """
+    Query the agent in batch
+
+    Returns:
+        api_reasons_actions_dict: List[List[dict]]
+            # Game x (1 + num_alt_responses) responses
+            Each response is a dict with fields:
+                "reason": str
+                "action": dict
+                "score": float (optional)
+        generated_api_texts: List[str]
+        api_responses_raw: List[List[dict]]
+        api_calls_used_raw: List[dict]
+        api_responses_used_raw: List[dict]
+        reasons_actions_dict: List[List[dict]]
+        proposed_cars_raw: List[dict]
+    """
+    formated_histories = [
+        format_chat_history(history) for history in histories
+    ]
+    formatted_prev_api_responses = [
+        format_car_options(prev_api_response) for prev_api_response in prev_api_responses
+    ]
+
+    ### Step 1: Query the API
+    agent.set_prompt_template(prompt_template=agent_api_call_template)
+    agent.set_parse_reason_action_fn(parse_reason_action_fn=parse_reason_and_action_car_dealer_api_call)
+
+    input_datas = [
+        {
+            "mode": "input",
+            "all_car_brands": DEFAULT_BRANDS,
+            "all_car_types": DEFAULT_TYPES,
+            "observation_action_history": formated_history,
+            "previous_api_call": prev_api_call,
+            "previous_api_response": formatted_prev_api_response
+        } for formated_history, prev_api_call, formatted_prev_api_response in zip(formated_histories, prev_api_calls, formatted_prev_api_responses)
+    ]
+
+    reason_actions_api, generated_api_texts = agent.predict_reason_action_batch(
+        input_datas=input_datas,
+        num_responses=1 + num_alt_responses,
+        alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
+    ) # List[List[dict]], List[List[str]]
+    # for i in range(len(reason_actions_api)):
+    #     for j in range(1 + num_alt_responses):
+    #         print(generated_api_texts[i * (1 + num_alt_responses) + j])
+    #         print(reason_actions_api[i][j])
+    #         print(f"========= reason_actions_api {i} {j} =========")
+            # input(f"========= reason_actions_api {i} {j} =========")
+    
+    # Parse the API responses and call the API
+    api_calls = [[response["action"] for response in game_responses] for game_responses in reason_actions_api] # List[List[dict]]
+    api_responses = [[use_api(api_call) for api_call in game_responses] for game_responses in api_calls] # List[List[List[dict]]] (for each game, for each response, List[dict])
+
+    # Determine the API responses to use
+    api_calls_used = [] # List[dict] (one per game, unlike above where there are multiple per game)
+    api_responses_used = [] # List[dict] (one per game, unlike above where there are multiple per game)
+    # Iterate over the games
+    for i in range(len(api_calls)):
+        # print(api_calls[i][0])
+        # print(api_responses[i][0])
+        # print(f"========= actual api call and response {i} =========")
+        # input(f"========= actual api call and response {i} =========")
+        # Assume that the first API call is the one that is used
+        if api_calls[i][0]["api_name"] == "no_op":
+            api_calls_used.append(prev_api_calls[i])
+            api_responses_used.append(prev_api_responses[i])
+        else:
+            api_calls_used.append(api_calls[i][0])
+            api_responses_used.append(api_responses[i][0])
+
+        # print(api_calls_used[i])
+        # print(api_responses_used[i])
+        # print(f"========= api_calls_used and api_responses_used {i} =========")
+        # input(f"========= api_calls_used and api_responses_used {i} =========")
+
+    ### Step 2: Talk to the user based on the API responses
+    agent.set_prompt_template(prompt_template=agent_prompt_template)
+    agent.set_parse_reason_action_fn(parse_reason_action_fn=parse_reason_and_action_car_dealer)
+    
+    input_datas = [
+        {
+            "mode": "input",
+            "all_car_brands": DEFAULT_BRANDS,
+            "all_car_types": DEFAULT_TYPES,
+            "observation_action_history": formated_history,
+            "api_call": api_call_used,
+            "api_response": format_car_options(api_response_used)
+        } for formated_history, api_call_used, api_response_used in zip(formated_histories, api_calls_used, api_responses_used)
+    ]
+
+    reason_actions, generated_texts = agent.predict_reason_action_batch(
+        input_datas=input_datas,
+        num_responses=1 + num_alt_responses,
+        alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
+    ) # List[List[dict]], List[List[str]]
+
+    # for i in range(len(reason_actions)):
+    #     for j in range(1 + num_alt_responses):
+    #         print(generated_texts[i * (1 + num_alt_responses) + j])
+    #         print(reason_actions[i][j])
+            # print(f"========= reason_actions {i} {j} =========")
+            # input(f"========= reason_actions {i} {j} =========")
+
+    proposed_cars = [] # List[dict] (one per game, unlike above where there are multiple per game)
+    for i in range(len(api_responses_used)):
+        car_idx = reason_actions[i][0]["action"]["car_idx"]
+        if api_responses_used[i] != [] and car_idx != 0 and car_idx <= len(api_responses_used[i]):
+            proposed_cars.append(api_responses_used[i][car_idx-1])
+        else:
+            proposed_cars.append({})
+
+    # for i in range(len(proposed_cars)):
+    #     print(format_car_options(api_responses_used[i]))
+    #     print(proposed_cars[i])
+    #     print(f"========= proposed_cars {i} =========")
+        # input(f"========= proposed_cars {i} =========")
+
+    return reason_actions_api, generated_api_texts, api_responses, api_calls_used, api_responses_used, reason_actions, proposed_cars, generated_texts
+
+
+def rollout_batch(agent_api_call_template: Template, agent_prompt_template: Template, agent: Agent, batched_env: BatchedCarDealerEnvironment, batch_buyer_infos: List[dict], histories: List[List[dict]], traj_list: List[List[dict]], prev_dones: List[bool], num_alt_responses: int):
+    """
+    Rollout a batch of games.
+    """
+    prev_api_calls = [{} for _ in range(len(histories))] # List[dict]
+    prev_api_responses = [[] for _ in range(len(histories))] # List[List[dict]]
+    while not all(prev_dones):
+        # Batched way
+        start_time = time.time()
+        # Initialize main data structures
+        data = {
+            'api_reasons': [], 'api_calls': [], 'api_responses': [], 'api_scores': [],
+            'api_raw_texts': [], 'api_calls_used': [], 'api_responses_used': [],
+            'reasons': [], 'actions': [], 'proposed_cars': [], 'scores': [], 'raw_texts': []
+        }
+
+        if num_alt_responses > 0:
+            # Initialize alternative data structures
+            alt_data = {
+                f'alt_{field}': [[] for _ in range(len(histories))]
+                for field in ['api_reasons', 'api_calls', 'api_responses', 'api_scores', 
+                             'api_raw_texts', 'reasons', 'actions', 'proposed_cars', 
+                             'scores', 'raw_texts']
+            }
+            data.update(alt_data)
+
+        # Query the agent
+        api_reasons_actions_dict, generated_api_texts, api_responses_raw, api_calls_used_raw, api_responses_used_raw, reasons_actions_dict, proposed_cars_raw, generated_raw_texts = query_agent_batch(agent_api_call_template, agent_prompt_template, agent, histories, prev_api_calls, prev_api_responses, num_alt_responses)
+
+        # Update the trajectories (Only if the game is not done)
+        for i in range(len(histories)):
+            if prev_dones[i]:
+                # Not getting added to the trajectories
+                data['api_reasons'].append("")
+                data['api_calls'].append("")
+                data['api_responses'].append("")
+                data['api_scores'].append(None)
+                data['api_raw_texts'].append("")
+                data['api_calls_used'].append("")
+                data['api_responses_used'].append("")
+                data['reasons'].append("")
+                data['actions'].append("")
+                data['proposed_cars'].append({})
+                data['scores'].append(None)
+                data['raw_texts'].append("")
+            else:
+                # Adding the first instance to be the taken action
+                data['api_reasons'].append(api_reasons_actions_dict[i][0]["reason"])
+                data['api_calls'].append(api_reasons_actions_dict[i][0]["action"])
+                data['api_responses'].append(api_responses_raw[i][0])
+                data['api_scores'].append(api_reasons_actions_dict[i][0]["score"] if "score" in api_reasons_actions_dict[i][0] else None)
+                data['api_raw_texts'].append(generated_api_texts[i])
+
+                data['api_calls_used'].append(api_calls_used_raw[i]) # Because api_call_used is List[dict]
+                data['api_responses_used'].append(api_responses_used_raw[i]) # Because api_responses_used is List[dict]
+                
+                data['reasons'].append(reasons_actions_dict[i][0]["reason"])
+                data['actions'].append(reasons_actions_dict[i][0]["action"]["response"])
+                data['proposed_cars'].append(proposed_cars_raw[i])
+                data['scores'].append(reasons_actions_dict[i][0]["score"] if "score" in reasons_actions_dict[i][0] else None)
+                data['raw_texts'].append(generated_raw_texts[i*(1+num_alt_responses)])
+
+                if num_alt_responses > 0:
+                    for j in range(num_alt_responses):
+                        data[f'alt_api_reasons'][i].append(api_reasons_actions_dict[i][j+1]["reason"])
+                        data[f'alt_api_calls'][i].append(api_reasons_actions_dict[i][j+1]["action"])
+                        data[f'alt_api_responses'][i].append(api_responses_raw[i][j+1])
+                        data[f'alt_api_scores'][i].append(api_reasons_actions_dict[i][j+1]["score"] if "score" in api_reasons_actions_dict[i][j+1] else None)
+                        data[f'alt_api_raw_texts'][i].append(generated_api_texts[i*(1+num_alt_responses) + j + 1])
+
+                        data[f'alt_reasons'][i].append(reasons_actions_dict[i][j+1]["reason"])
+                        data[f'alt_actions'][i].append(reasons_actions_dict[i][j+1]["action"]["response"])
+                        data[f'alt_proposed_cars'][i].append(reasons_actions_dict[i][j+1]["action"]["car_idx"])  # We use the car index instead (for simplicity)
+                        data[f'alt_scores'][i].append(reasons_actions_dict[i][j+1]["score"] if "score" in reasons_actions_dict[i][j+1] else None)
+                        data[f'alt_raw_texts'][i].append(generated_raw_texts[i*(1+num_alt_responses) + j + 1])
+                        
+        print(f"[AGENT] time taken for batch_size={len(histories)}: {time.time() - start_time}")
+
+        # print(json.dumps(data, indent=4))
+        # print(f"========= data {i} =========")
+        # input("Check data")
+
+        # Step the environment
+        histories, buyer_reasons, buyer_responses, buyer_decisions, rewards, successes, failure_reasons, dones = batched_env.step(batch_buyer_infos, histories, data['actions'], data['proposed_cars'], prev_dones)
+
+        # Log the trajectories
+        for i in range(len(histories)):
+            if not prev_dones[i]:
+                traj_list[i].append({
+                    "step": len(traj_list[i]),
+                    "api_reason": data['api_reasons'][i],
+                    "api_call": data['api_calls'][i],
+                    "api_response": data['api_responses'][i],
+                    "api_score": data['api_scores'][i],
+                    "api_raw_text": data['api_raw_texts'][i],
+                    "api_call_used": data['api_calls_used'][i],
+                    "api_response_used": data['api_responses_used'][i],
+                    "reason": data['reasons'][i],
+                    "action": data['actions'][i],
+                    "proposed_car": data['proposed_cars'][i],
+                    "raw_text": data['raw_texts'][i],
+                    "buyer_reason": buyer_reasons[i],
+                    "buyer_response": buyer_responses[i],
+                    "buyer_decision": buyer_decisions[i],
+                    "reward": rewards[i],
+                    "success": successes[i],
+                    "failure_reason": failure_reasons[i],
+                    "score": data['scores'][i],
+                    "api_alternatives": [
+                        {
+                            "api_reason": data[f'alt_api_reasons'][i][j],
+                            "api_call": data[f'alt_api_calls'][i][j],
+                            "api_response": data[f'alt_api_responses'][i][j],
+                            "api_score": data[f'alt_api_scores'][i][j],
+                            "api_raw_text": data[f'alt_api_raw_texts'][i][j],
+                        }
+                        for j in range(num_alt_responses)
+                    ] if num_alt_responses > 0 else None,
+                    "alternatives": [
+                        {
+                            "reason": data[f'alt_reasons'][i][j],
+                            "action": data[f'alt_actions'][i][j],
+                            "score": data[f'alt_scores'][i][j],
+                            "raw_text": data[f'alt_raw_texts'][i][j]
+                        }
+                        for j in range(num_alt_responses)
+                    ] if num_alt_responses > 0 else None
+                })
+
+            if len(traj_list[i]) == 1:
+                # Also log the buyer info (for the first step)
+                traj_list[i][0]["buyer_info"] = batch_buyer_infos[i]
+
+        prev_dones = dones
+
+    return traj_list

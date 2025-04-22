@@ -5,16 +5,7 @@ Typical usage:
 python scripts/eval/eval_twenty_questions.py mode=online host_sglang=true data_types=[val,test] online.rollout_per_task=1 online.num_alt_responses=5 online.batch_size=32 elogger=true
 
 # Consolidate online eval
-python scripts/eval/eval_twenty_questions.py mode=consolidate_online consolidate_online.use_existing_table=true consolidate_online.overwrite_existing_entry=true consolidate_online.table_notes='pi0_early_ckpts' consolidate_online.main_table_notes=''
-    where
-        - consolidate_online.use_existing_table=true means that the table will build off from what's stored in data/twenty_questions/eval/
-        - consolidate_online.overwrite_existing_entry=true means that
-            If an agent already exists in the table, it will overwrite the existing row based on the latest results
-        - consolidate_online.table_notes='pi0_early_ckpts' determine what will the table be called in the hydra folder
-        - consolidate_online.main_table_notes='' determines the actual name of the table stored in the data/twenty_questions/eval/ folder
-            e.g., '' means that the table is called 'online_eval_table.csv'
-            e.g., 'hindsight' means that the table is called 'online_eval_table_hindsight.csv'
-            This should only be changed if the table is being used for a different purpose (e.g., have a different excel sheet)
+python scripts/eval/eval_car_dealer.py mode=consolidate_online consolidate_online.use_existing_table=true consolidate_online.overwrite_existing_entry=true consolidate_online.table_notes='TODO' consolidate_online.main_table_notes=''
 """
 
 import os
@@ -31,33 +22,74 @@ import pandas as pd
 from tqdm import tqdm
 import os
 import signal
+from jinja2 import Template
+
 from agent_prm.agents.agent_registry import initialize_agent
 from agent_prm.agents.agent import Agent
 from agent_prm.utils.parser import parse_reason_and_action_twenty_questions
 from agent_prm.utils.cfg_utils import get_output_folder_name
 from agent_prm.utils.general_utils import load_json, save_json
-from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, VALIDATION_OBJECT_DICT, TEST_OBJECT_DICT, WordVariants, get_default_word_list
-from agent_prm.envs.twenty_questions.env import setup_twenty_questions_env, setup_batched_twenty_questions_env
-from agent_prm.envs.twenty_questions.interface import rollout_batch
 from agent_prm.utils.logger_email import elogger
-from agent_prm.utils.general_utils import setup_sglang_server
+from agent_prm.utils.general_utils import setup_sglang_server 
 from agent_prm.utils.cfg_utils import get_output_path, find_matching_iter
 
-def online_eval(cfg: dict, logdir: str, agent: Agent):
+from agent_prm.envs.car_dealer.env import setup_batched_car_dealer_env
+from agent_prm.envs.car_dealer.data import TRAIN_BUYER_STRATEGIES, VAL_BUYER_STRATEGIES, TEST_BUYER_STRATEGIES, TRAIN_BRANDS, VAL_BRANDS, TEST_BRANDS, TRAIN_TYPES, VAL_TYPES, TEST_TYPES, TRAIN_FEATURES, VAL_FEATURES, TEST_FEATURES, DEFAULT_BRANDS, DEFAULT_TYPES, CAR_PRICES_BY_BRAND_AND_TYPE, CAR_FEATURES_ADDED_VALUE, B2
+from agent_prm.envs.car_dealer.interface import rollout_batch
+
+
+def online_eval(cfg: dict, logdir: str, agent: Agent, agent_api_call_template: Template, agent_prompt_template: Template):
     """
     Evaluate the model by interacting with the environment
     """
-    batched_env = setup_batched_twenty_questions_env(host=cfg.sim_host, port=cfg.sim_port)
-    all_obj_list = [wv[0] for wv in get_default_word_list("all")]
+    batched_env = setup_batched_car_dealer_env(host=cfg.sim_host, port=cfg.sim_port)
     bs = cfg.online.batch_size
 
-    # Collect the entire list of all the objects that we are evaluating on. This helps more efficiently use the batch size
-    #   Each element is a tuple of (object, data_type, rollout_idx)
-    all_objects_to_eval_on = []
-    for data_type in cfg.data_types:
-        os.makedirs(os.path.join(logdir, data_type), exist_ok=True)
+    car_inventory_dict = load_json("src/agent_prm/envs/car_dealer/car_inventory_dict.json")
 
+    # Collect the entire list of all the objects that we are evaluating on. This helps more efficiently use the batch size
+    #   Each element is a tuple of (rollout_idx, game_id, data_type, buyer_strategy, brand, car_type, budget, features_to_include, car_price)
+    all_games_to_play_list = []
+    for data_type in cfg.data_types:
+        if data_type == "train":
+            buyer_strategy_list = TRAIN_BUYER_STRATEGIES
+            brand_list = TRAIN_BRANDS
+            type_list = TRAIN_TYPES
+            feature_list = TRAIN_FEATURES
+        elif data_type == "val":
+            buyer_strategy_list = VAL_BUYER_STRATEGIES
+            brand_list = VAL_BRANDS
+            type_list = VAL_TYPES
+            feature_list = VAL_FEATURES
+        elif data_type == "test":
+            buyer_strategy_list = TEST_BUYER_STRATEGIES
+            brand_list = TEST_BRANDS
+            type_list = TEST_TYPES
+            feature_list = TEST_FEATURES
+
+        data_type_all_games_to_play_list = []
+        for buyer_strategy_idx in range(len(buyer_strategy_list)):
+            for brand in brand_list:
+                for car_type in type_list:
+                    budget_list = CAR_PRICES_BY_BRAND_AND_TYPE[brand][car_type]["budget"]
+                    for budget in budget_list:
+                        for rollout_idx in range(cfg.online.rollout_per_task_range_min, cfg.online.rollout_per_task_range_max):
+                            if buyer_strategy_list[buyer_strategy_idx] == B2:
+                                # They will only buy if the car has all the features
+                                #   car_inventory_dict[brand][car_type] gives us a list of in-stock cars
+                                matching_car_idx = np.random.randint(1, len(car_inventory_dict[brand][car_type])) # Skip the first car because it's the base model
+                                car_price = car_inventory_dict[brand][car_type][matching_car_idx]["msrp"]
+                                features_to_include = car_inventory_dict[brand][car_type][matching_car_idx]["features"]
+                            else:
+                                features_to_include = list(np.random.choice(feature_list, size=np.random.randint(1, 4), replace=False))
+                                car_price = CAR_PRICES_BY_BRAND_AND_TYPE[brand][car_type]["msrp"] + sum([CAR_FEATURES_ADDED_VALUE[feature] for feature in features_to_include])
+                            
+                            game_id = f"{buyer_strategy_idx}_{brand}_{car_type}_{budget}"
+                            data_type_all_games_to_play_list.append((rollout_idx, game_id, data_type, buyer_strategy_list[buyer_strategy_idx], brand, car_type, budget, features_to_include, car_price))
+
+        os.makedirs(os.path.join(logdir, data_type), exist_ok=True)
         summary_dict_fp = os.path.join(logdir, data_type, "_summary_dict.json")
+        
         if not os.path.exists(summary_dict_fp):
             print(f"Summary dict not found at {summary_dict_fp}. Creating a new one.")
             summary_dict = {}
@@ -66,60 +98,56 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
             print(f"Loading summary dict from {summary_dict_fp}")
             summary_dict = load_json(summary_dict_fp)
 
-        if data_type == "train":
-            object_dict_to_use = TRAIN_OBJECT_DICT
-        elif data_type == "val":
-            object_dict_to_use = VALIDATION_OBJECT_DICT
-        elif data_type == "test":
-            object_dict_to_use = TEST_OBJECT_DICT
-        else:
-            raise ValueError(f"Invalid data type: {data_type}")
+        # Filter out games that have already been played
+        data_type_all_games_to_play_list = [game for game in data_type_all_games_to_play_list if str(game[0]) not in summary_dict or game[1] not in summary_dict[str(game[0])]]
+        all_games_to_play_list.extend(data_type_all_games_to_play_list)
+
+    for batch in tqdm(range(math.ceil(len(all_games_to_play_list) / bs)), desc="Batches"):
+        # Determine the games to play for this batch
+        # Tuple: (rollout_idx, game_id, data_type, buyer_strategy, brand, car_type, budget, features_to_include, car_price)
+        batch_games_to_play_list = all_games_to_play_list[batch * bs:(batch + 1) * bs]
+        batch_buyer_infos = [{
+                "buyer_strategy": buyer_strategy,
+                "preferred_brand": brand,
+                "preferred_type": car_type,
+                "preferred_features": features_to_include,
+                "budget": budget,
+                "msrp": car_price
+            } for _, _, _, buyer_strategy, brand, car_type, budget, features_to_include, car_price in batch_games_to_play_list
+        ]  # Used to initialize the environment
         
-        for rollout_idx in range(cfg.online.rollout_per_task_range_min, cfg.online.rollout_per_task_range_max):
-            rollout_idx_str = str(rollout_idx)
-            if rollout_idx_str not in summary_dict:
-                summary_dict[rollout_idx_str] = []
-
-            # Consolidate the objects to evaluate on
-            objects_to_eval_on = [(obj, data_type, rollout_idx, category) for category in object_dict_to_use.keys() for obj in object_dict_to_use[category] if obj not in summary_dict[rollout_idx_str]]
-            all_objects_to_eval_on.extend(objects_to_eval_on)
-
-    for batch in tqdm(range(math.ceil(len(all_objects_to_eval_on) / bs))):
-        # Determine the objects to evaluate on for this batch
-        batch_objects_tuples = all_objects_to_eval_on[batch * bs:(batch + 1) * bs]
-        batch_objects = [obj for obj, _, _, _ in batch_objects_tuples]  # Used to initialize the environment
-        batch_obj_categories = [category for _, _, _, category in batch_objects_tuples]
-
-        print(f"=========== Batch {batch} has {len(batch_objects_tuples)} objects: {batch_objects_tuples} ===========")
+        print(f"=========== Batch {batch} has {len(batch_games_to_play_list)} objects: {[(rollout_idx, game_id, data_type) for rollout_idx, game_id, data_type, _, _, _, _, _, _ in batch_games_to_play_list]} ===========")
         
-        histories, words_to_guess = batched_env.reset(num_envs=len(batch_objects), words_to_guess=[WordVariants.from_str(obj) for obj in batch_objects])
+        histories = batched_env.reset(buyer_infos=batch_buyer_infos)
 
         # Initialize prev_dones as a list of False with the same length as batch_objects
-        prev_dones = [False for _ in range(len(batch_objects))]
-        traj_list = [[] for _ in range(len(batch_objects))]
+        prev_dones = [False for _ in range(len(batch_buyer_infos))]
+        traj_list = [[] for _ in range(len(batch_buyer_infos))]
 
-        traj_list = rollout_batch(agent, batched_env, all_obj_list, 
-                                  words_to_guess, batch_obj_categories, histories, 
-                                  traj_list, prev_dones, cfg.online.num_alt_responses)
+        traj_list = rollout_batch(agent_api_call_template, agent_prompt_template, 
+                                  agent, batched_env, batch_buyer_infos, 
+                                  histories, traj_list, prev_dones, cfg.online.num_alt_responses)
 
         # Save the trajectories
-        for i in range(len(batch_objects)):
-            obj, obj_data_type, obj_rollout_idx, _ = batch_objects_tuples[i]
-            obj_rollout_idx_str = str(obj_rollout_idx)
+        for i in range(len(batch_games_to_play_list)):
+            rollout_idx, game_id, data_type, _, _, _, _, _, _ = batch_games_to_play_list[i]
+            rollout_idx_str = str(rollout_idx)
 
             # Open up the correct summary dict
-            summary_dict_fp = os.path.join(logdir, obj_data_type, "_summary_dict.json")
+            summary_dict_fp = os.path.join(logdir, data_type, "_summary_dict.json")
             summary_dict = load_json(summary_dict_fp)
 
             # Update the summary dict
-            if obj_rollout_idx_str not in summary_dict:
-                summary_dict[obj_rollout_idx_str] = []
+            if rollout_idx_str not in summary_dict:
+                summary_dict[rollout_idx_str] = []
 
-            summary_dict[obj_rollout_idx_str].append(obj)
+            summary_dict[rollout_idx_str].append(game_id)
             save_json(summary_dict_fp, summary_dict)
             
             # Save the trajectory
-            save_json(os.path.join(logdir, obj_data_type, f"{obj}_{obj_rollout_idx_str}.json"), traj_list[i])
+            save_json(os.path.join(logdir, data_type, f"{game_id}_{rollout_idx_str}.json"), traj_list[i])
+
+        # input("Done with batch")
 
 
 def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, agent_name: str, rollout_per_task_dict: Dict[str, int], use_existing_table: bool = False, overwrite_existing_entry: bool = False):
@@ -200,7 +228,7 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
                 se_reward = np.std(all_rewards)/math.sqrt(len(all_rewards))
 
                 # Compute success rate
-                all_success_rates = [load_json(os.path.join(agent_rollout_dir, data_type, f))[-1]["reward"] == 0 for f in json_files]
+                all_success_rates = [load_json(os.path.join(agent_rollout_dir, data_type, f))[-1]["success"] for f in json_files]
                 mean_success_rate = np.mean(all_success_rates)
                 se_success_rate = np.std(all_success_rates)/math.sqrt(len(all_success_rates))
             else:
@@ -248,7 +276,7 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
         table.to_csv(table_fp, index=False)
 
 
-@hydra.main(version_base=None, config_path="../../configs/eval_config", config_name="twenty_questions.yaml")
+@hydra.main(version_base=None, config_path="../../configs/eval_config", config_name="car_dealer.yaml")
 def main(cfg: DictConfig):
     elogger.set_activate(cfg.elogger)
 
@@ -279,7 +307,7 @@ def main(cfg: DictConfig):
         if agent_config.type == "gpt4o_expert":
             # Use the data collected for SFT
             assert cfg.mode == "consolidate_online", "Gpt4o expert can only be used in consolidate_online mode, where we are comparing the performance of different models"
-            logdir = os.path.join(cfg.rollout_data_dir, f"iter{cfg.iter}")
+            logdir = os.path.join(cfg.logdir, "baseline", agent_config.log_name)
             agent_name = "gpt4o_expert"
         else:
             agent_name = agent_config.model_id if agent_config.type != "best_of_n" else agent_config.generator.model_id
@@ -308,14 +336,20 @@ def main(cfg: DictConfig):
         else:
             try:
                 agent = initialize_agent(agent_config,
-                                            parse_reason_action_fn=parse_reason_and_action_twenty_questions,
+                                            parse_reason_action_fn=lambda x: x, # Placeholder. This is getting set in rollout_batch (because we both need to call the API and also generate responses to the user)
                                             verbose=cfg["verbose"],
                                             debug=cfg["debug"])
                 
                 print(f"Evaluating {agent_name} in {logdir}")
 
                 if cfg.mode == "online":
-                    online_eval(cfg, logdir, agent)
+                    with open(agent_config.api_prompt_template_file, "r") as f:
+                        agent_api_call_template = Template(f.read())
+
+                    with open(agent_config.prompt_template_file, "r") as f:
+                        agent_prompt_template = Template(f.read())
+
+                    online_eval(cfg, logdir, agent, agent_api_call_template, agent_prompt_template)
                 else:
                     raise ValueError(f"Invalid mode: {cfg.mode}")
             except Exception as e:

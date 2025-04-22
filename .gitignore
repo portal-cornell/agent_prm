@@ -144,3 +144,4 @@ user_session_logs/
 playground/
 tmp/
 .vscode/
+_cached_models/
