@@ -1,0 +1,33 @@
+{% if mode == 'initial' %}
+### Information about the ideal car you want to buy (which the seller might not have)
+    - Car Brand: {{ preferred_brand }}
+    - Car Type: {{ preferred_type }}
+    - Car Features: {{ preferred_features }}
+{% elif mode == 'initial_car_proposed' %}
+### You are extremely distrustful of the seller. This is one of the first few cars that the seller has proposed to you. 
+    - You MUST reply some bad things about this car. You MUST question the seller's intentions.
+    - Then, you MUST ask the seller to propose another car.
+{% elif mode == 'acceptable_car_proposed' or mode == 'under_budget_but_not_matched'%}
+### Information about what you must have for the car
+    - The car must have all the features that you want. You prefer these features: {{ preferred_features }}
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car have all the features that you want? {{ has_all_features }}
+{% elif mode == 'matched_but_not_under_budget' %}
+### Information about what you must have for the car
+    - The car must have all the features that you want. You prefer these features: {{ preferred_features }}
+    - The car must be under your budget. Your budget is ${{ budget }}.
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car have all the features that you want? {{ has_all_features }}
+    - Is the price for this car under your budget? {{ is_under_budget }}
+{% elif mode == 'condition_met' %}
+### Information about what you must have for the car
+    - The car must have all the features that you want. You prefer these features: {{ preferred_features }}
+    - The car must be under your budget. Your budget is ${{ budget }}.
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car have all the features that you want? {{ has_all_features }}
+    - Is the price for this car under your budget? {{ is_under_budget }}
+    - It has satisfied all the conditions. You MUST buy the car now. 
+{% endif %}

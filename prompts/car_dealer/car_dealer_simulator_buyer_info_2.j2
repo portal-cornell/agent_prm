@@ -1,0 +1,36 @@
+{% if mode == 'initial' %}
+### Information about the ideal car you want to buy (which the seller might not have)
+    - Car Brand: {{ preferred_brand }}
+    - Car Type: {{ preferred_type }}
+    - Car Features: {{ preferred_features }}
+{% elif mode == 'car_proposed' or mode == 'under_budget_but_not_matched'%}
+### Information about what you must have for the car
+    - The proposed car must have at least one of the features that you want. You prefer these features: {{ preferred_features }}
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car have at least one of the features that you want? {{ has_at_least_one_feature }}
+    - Are you still willing to negotiate the price with the seller? {{ under_negotiation_limit }}
+{% elif mode == 'matched_but_not_under_budget' %}
+### Information about what you must have for the car
+    - The proposed car must have at least one of the features that you want. You prefer these features: {{ preferred_features }}
+    - Your budget is ${{ budget }}
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car have at least one of the features that you want? {{ has_at_least_one_feature }}
+    - Is the price for this car under your budget? {{ is_under_budget }}
+    - Are you still willing to negotiate the price with the seller? {{ under_negotiation_limit }}
+{% elif mode == 'condition_met' %}
+### Information about what you must have for the car
+    - The proposed car must have at least one of the features that you want. You prefer these features: {{ preferred_features }}
+    - Your budget is ${{ budget }}
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car have at least one of the features that you want? {{ has_at_least_one_feature }}
+    - Is the price for this car under your budget? {{ is_under_budget }}
+    - This car has satisfied all your needs. You MUST buy the car now. 
+{% elif mode == 'exceed_negotation_limit' %}
+### Number of negotiations
+    - You are extremely impatient. You can only tolerate {{ max_negotiations }} times of negotiation.
+    - You MUST explain that you have reached the limit of your patience because the seller is taking too long to negotiate a car that you like.
+    - {{ under_negotiation_limit }}
+{% endif %}

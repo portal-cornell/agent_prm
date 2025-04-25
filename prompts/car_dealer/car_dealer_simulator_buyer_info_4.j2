@@ -1,0 +1,35 @@
+{% if mode == 'initial' %}
+### Information about the ideal car you want to buy (which the seller might not have)
+    - Car Brand: {{ preferred_brand }}
+    - Car Type: {{ preferred_type }}
+    - Car Features: {{ preferred_features }}
+{% elif mode == 'car_proposed' or mode == 'under_budget_but_not_matched'%}
+### Information about what you must have for the car
+    - You must have car brand = {{ preferred_brand }}
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car have the same brand as what you want? {{ has_same_brand }}
+    - Are you still willing to negotiate the price with the seller? {{ under_negotiation_limit }}
+{% elif mode == 'matched_but_not_under_budget' %}
+### Information about what you must have for the car
+    - You must have car brand = {{ preferred_brand }}
+    - Your budget is ${{ budget }}. But you are willing to pay up to some amount.
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car have the same brand as what you want? {{ has_same_brand }}
+    - Is the price of car within an acceptable range for you? {{ is_within_acceptable_range }}
+    - Are you still willing to negotiate the price with the seller? {{ under_negotiation_limit }}
+{% elif mode == 'condition_met' %}
+### Information about what you must have for the car
+    - You must have car brand = {{ preferred_brand }}
+    - Your budget is ${{ budget }}. But you are willing to pay up to some amount.
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car have the same brand as what you want? {{ has_same_brand }}
+    - Is the price of car within an acceptable range for you? {{ is_within_acceptable_range }}
+    - This car has satisfied all your needs. You MUST buy the car now. 
+{% elif mode == 'exceed_negotation_limit' %}
+### Number of negotiations
+    - You are extremely impatient. You can only tolerate {{ max_negotiations }} times of negotiation.
+    - {{ under_negotiation_limit }}
+{% endif %}

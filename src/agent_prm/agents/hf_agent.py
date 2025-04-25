@@ -36,7 +36,8 @@ class HFAgent(Agent):
         self.model_id = model_id
         self.verbose = verbose
         self.debug = debug
-        self.parse_reason_action_fn = parse_reason_action_fn
+        self.set_parse_reason_action_fn(parse_reason_action_fn)
+        self.set_prompt_template(prompt_file_path=prompt_template_file)
         self.max_length = max_length  
         tokenizer = AutoTokenizer.from_pretrained(model_id, truncation=True, padding=True)
         tokenizer.truncation_side = "left"
@@ -50,6 +51,18 @@ class HFAgent(Agent):
 
     def name(self) -> str:
         return self.model_id
+    
+    def set_prompt_template(self, prompt_file_path: str = "", prompt_template: Template = None):
+        if prompt_file_path != "" and prompt_template is None:
+            with open(prompt_file_path, "r") as file:
+                self.prompt_template = Template(file.read())
+        elif prompt_file_path != "" and prompt_template is not None:
+            raise ValueError("Cannot provide both prompt_file_path and prompt_template")
+        else:
+            self.prompt_template = prompt_template
+
+    def set_parse_reason_action_fn(self, parse_reason_action_fn: Callable[[str], Tuple[str, str]]):
+        self.parse_reason_action_fn = parse_reason_action_fn
     
     def predict_reason_action(self, 
                               input_data: Dict) -> Tuple[str, str]:
@@ -115,9 +128,11 @@ class HFAgent(Agent):
 
     #     return reason_actions_all_queries
     
-    def predict_reason_action_batch(self, input_datas: List[Dict], num_responses: int) -> List[Tuple[str, str]]:
+    def predict_reason_action_batch(self, input_datas: List[Dict], num_responses: int, alt_temperature_for_extra_responses: float = None) -> List[Tuple[str, str]]:
         """
         Return a list of reason_actions of len(queries), each being len(num_responses)
+
+        Currently, not supporting different temperatures for different responses.
         """
         messages = [
             [
@@ -161,5 +176,5 @@ class HFAgent(Agent):
                 reason_actions_all_queries.append(reason_actions_per_query)
                 counter = 0
 
-        return reason_actions_all_queries
+        return reason_actions_all_queries, responses
             

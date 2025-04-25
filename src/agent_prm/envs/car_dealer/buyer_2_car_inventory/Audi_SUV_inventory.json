@@ -1,0 +1,606 @@
+{
+    "Volkswagen": {
+        "van": [
+            {
+                "msrp": 55000,
+                "features": []
+            },
+            {
+                "msrp": 68000,
+                "features": [
+                    "third-row seating",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 68000,
+                "features": [
+                    "third-row seating",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 79000,
+                "features": [
+                    "heated seats",
+                    "sunroof",
+                    "navigation system",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 37000,
+                "features": []
+            },
+            {
+                "msrp": 41000,
+                "features": [
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 61000,
+                "features": [
+                    "third-row seating",
+                    "sunroof",
+                    "heated seats",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 53000,
+                "features": [
+                    "sunroof",
+                    "navigation system",
+                    "heated seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 23000,
+                "features": []
+            },
+            {
+                "msrp": 40000,
+                "features": [
+                    "navigation system",
+                    "third-row seating",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 47000,
+                "features": [
+                    "third-row seating",
+                    "sunroof",
+                    "heated seats",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 28000,
+                "features": [
+                    "navigation system"
+                ]
+            }
+        ]
+    },
+    "Toyota": {
+        "van": [
+            {
+                "msrp": 39000,
+                "features": []
+            },
+            {
+                "msrp": 45000,
+                "features": [
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 56000,
+                "features": [
+                    "heated seats",
+                    "navigation system",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 59000,
+                "features": [
+                    "navigation system",
+                    "sunroof",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 47000,
+                "features": []
+            },
+            {
+                "msrp": 66000,
+                "features": [
+                    "third-row seating",
+                    "sunroof",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 54000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 71000,
+                "features": [
+                    "heated seats",
+                    "sunroof",
+                    "navigation system",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 22000,
+                "features": []
+            },
+            {
+                "msrp": 28000,
+                "features": [
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 28000,
+                "features": [
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 27000,
+                "features": [
+                    "navigation system"
+                ]
+            }
+        ]
+    },
+    "Ford": {
+        "van": [
+            {
+                "msrp": 54000,
+                "features": []
+            },
+            {
+                "msrp": 65000,
+                "features": [
+                    "sunroof",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 63000,
+                "features": [
+                    "heated seats",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 70000,
+                "features": [
+                    "heated seats",
+                    "navigation system",
+                    "sunroof"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 38000,
+                "features": []
+            },
+            {
+                "msrp": 50000,
+                "features": [
+                    "third-row seating",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 58000,
+                "features": [
+                    "sunroof",
+                    "third-row seating",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 55000,
+                "features": [
+                    "third-row seating",
+                    "navigation system",
+                    "heated seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 32000,
+                "features": []
+            },
+            {
+                "msrp": 56000,
+                "features": [
+                    "heated seats",
+                    "third-row seating",
+                    "navigation system",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 56000,
+                "features": [
+                    "navigation system",
+                    "heated seats",
+                    "third-row seating",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 47000,
+                "features": [
+                    "sunroof",
+                    "third-row seating"
+                ]
+            }
+        ]
+    },
+    "Lexus": {
+        "van": [
+            {
+                "msrp": 100000,
+                "features": []
+            },
+            {
+                "msrp": 108000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 107000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 124000,
+                "features": [
+                    "sunroof",
+                    "heated seats",
+                    "navigation system",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 65000,
+                "features": []
+            },
+            {
+                "msrp": 73000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 77000,
+                "features": [
+                    "third-row seating",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 80000,
+                "features": [
+                    "third-row seating",
+                    "sunroof"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 43000,
+                "features": []
+            },
+            {
+                "msrp": 61000,
+                "features": [
+                    "blind spot monitoring",
+                    "third-row seating",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 67000,
+                "features": [
+                    "heated seats",
+                    "navigation system",
+                    "third-row seating",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 62000,
+                "features": [
+                    "sunroof",
+                    "third-row seating",
+                    "heated seats"
+                ]
+            }
+        ]
+    },
+    "Audi": {
+        "van": [
+            {
+                "msrp": 109000,
+                "features": []
+            },
+            {
+                "msrp": 113000,
+                "features": [
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 116000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 114000,
+                "features": [
+                    "navigation system"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 60000,
+                "features": []
+            },
+            {
+                "msrp": 79000,
+                "features": [
+                    "sunroof",
+                    "heated seats",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 80000,
+                "features": [
+                    "sunroof",
+                    "navigation system",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 84000,
+                "features": [
+                    "sunroof",
+                    "navigation system",
+                    "third-row seating",
+                    "heated seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 44000,
+                "features": []
+            },
+            {
+                "msrp": 60000,
+                "features": [
+                    "sunroof",
+                    "heated seats",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 68000,
+                "features": [
+                    "heated seats",
+                    "third-row seating",
+                    "navigation system",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 53000,
+                "features": [
+                    "heated seats",
+                    "navigation system"
+                ]
+            }
+        ]
+    },
+    "Bmw": {
+        "van": [
+            {
+                "msrp": 110000,
+                "features": []
+            },
+            {
+                "msrp": 115000,
+                "features": [
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 121000,
+                "features": [
+                    "heated seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 117000,
+                "features": [
+                    "sunroof"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 84000,
+                "features": []
+            },
+            {
+                "msrp": 92000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 96000,
+                "features": [
+                    "heated seats",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 99000,
+                "features": [
+                    "sunroof",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 57000,
+                "features": []
+            },
+            {
+                "msrp": 70000,
+                "features": [
+                    "third-row seating",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 76000,
+                "features": [
+                    "sunroof",
+                    "third-row seating",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 64000,
+                "features": [
+                    "sunroof"
+                ]
+            }
+        ]
+    },
+    "Tesla": {
+        "van": [
+            {
+                "msrp": 98000,
+                "features": []
+            },
+            {
+                "msrp": 112000,
+                "features": [
+                    "blind spot monitoring",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 118000,
+                "features": [
+                    "sunroof",
+                    "navigation system",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 111000,
+                "features": [
+                    "navigation system",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 86000,
+                "features": []
+            },
+            {
+                "msrp": 101000,
+                "features": [
+                    "sunroof",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 98000,
+                "features": [
+                    "navigation system",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 94000,
+                "features": [
+                    "third-row seating"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 49000,
+                "features": []
+            },
+            {
+                "msrp": 73000,
+                "features": [
+                    "sunroof",
+                    "navigation system",
+                    "heated seats",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 73000,
+                "features": [
+                    "third-row seating",
+                    "heated seats",
+                    "navigation system",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 73000,
+                "features": [
+                    "third-row seating",
+                    "sunroof",
+                    "navigation system",
+                    "heated seats"
+                ]
+            }
+        ]
+    }
+}

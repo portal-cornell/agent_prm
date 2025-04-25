@@ -16,16 +16,14 @@ from typing import List, Dict
 from jinja2 import Template
 
 from agent_prm.envs.car_dealer.env import setup_car_dealer_env
-from agent_prm.envs.car_dealer.data import TRAIN_BUYER_STRATEGIES, VAL_BUYER_STRATEGIES, TEST_BUYER_STRATEGIES, TRAIN_BRANDS, VAL_BRANDS, TEST_BRANDS, TRAIN_TYPES, VAL_TYPES, TEST_TYPES, TRAIN_FEATURES, VAL_FEATURES, TEST_FEATURES, DEFAULT_BRANDS, DEFAULT_TYPES, CAR_PRICES_BY_BRAND_AND_TYPE, CAR_FEATURES_ADDED_VALUE, B2
-from agent_prm.envs.car_dealer.data import format_car_options, format_chat_history
+from agent_prm.envs.car_dealer.data import DEFAULT_BRANDS, DEFAULT_TYPES, DEFAULT_FEATURES
+from agent_prm.envs.car_dealer.data import format_car_options, format_chat_history, load_car_inventories, determine_car_inventory, get_all_games_to_play, format_api_call_history
 from agent_prm.envs.car_dealer.interface import use_api
 
 from agent_prm.utils.openai import generate_from_openai_completion
 from agent_prm.utils.parser import parse_json
 from agent_prm.utils.logger_email import elogger
 from agent_prm.utils.general_utils import load_json, save_json
-
-HOST = "localhost"
 
 def preprocess_args():
     parser = argparse.ArgumentParser(description='Generate raw car dealer logs')
@@ -34,7 +32,8 @@ def preprocess_args():
     parser.add_argument('-d', '--debug', default=False, action="store_true", help='Whether to run in debug mode (Human instead of gpt4o as the agent)')
     parser.add_argument('-e', '--activate-email', default=False, action="store_true", help='Whether to activate email logging')
     parser.add_argument('-s', '--seed', type=int, default=42, help='Random seed')
-    parser.add_argument('-p', '--port', type=int, default=40042, help='Port number for the server')
+    parser.add_argument('-sh', '--sim_host', type=str, default="localhost", help='Host name for the simulator')
+    parser.add_argument('-sp', '--sim_port', type=int, default=40042, help='Port number for the simulator')
     args = parser.parse_args()
 
     with open(args.config, "r") as f:
@@ -85,20 +84,31 @@ def query_human(prev_api_call, prev_api_response):
 
     return api_reason, api_call, api_response, reason, action, proposed_car, cost
 
-def query_expert(expert_agent_api_call_template: Template, expert_agent_template: Template, history: List[Dict[str, str]], prev_api_call: Dict[str, str], prev_api_response: Dict[str, str]):
+MAX_QUERY_ATTEMPTS = 3
+def query_expert(expert_agent_api_call_template: Template, 
+                 expert_agent_template: Template, 
+                 history: List[Dict[str, str]], 
+                 prev_api_call: Dict[str, str], 
+                 prev_api_response: Dict[str, str], 
+                 all_prev_api_calls: List[Dict[str, str]], 
+                 all_prev_api_calls_have_responses: List[bool], 
+                 buyer_info: dict, 
+                 car_inventories: dict,
+                 past_N: int = 3):
     querying_cost = 0.0
 
     formated_history = format_chat_history(history)
-    print(f"formated_history:\n{formated_history}\n")
     formatted_prev_api_response = format_car_options(prev_api_response)
 
     # Step 1: Get the system prompt
-    system_prompt = expert_agent_api_call_template.render(system=True, all_car_brands=DEFAULT_BRANDS, all_car_types=DEFAULT_TYPES)
+    system_prompt = expert_agent_api_call_template.render(system=True, all_car_brands=DEFAULT_BRANDS, all_car_types=DEFAULT_TYPES, all_car_features=DEFAULT_FEATURES).strip()
     input_prompt = expert_agent_api_call_template.render(system=False, mode="input", 
                                                          observation_action_history=formated_history,
+                                                         past_N=past_N,
+                                                         prev_api_call_history=format_api_call_history(all_prev_api_calls, all_prev_api_calls_have_responses, past_N),
                                                          previous_api_call=json.dumps(prev_api_call),
                                                          previous_api_response=formatted_prev_api_response
-                                                         )
+                                                         ).strip()
     
     # print(system_prompt)
     # print("--------------------------------")
@@ -110,26 +120,38 @@ def query_expert(expert_agent_api_call_template: Template, expert_agent_template
         {"role": "user", "content": input_prompt}
     ]
 
-    response, cost = generate_from_openai_completion(
-        messages=messages, model="gpt-4o"
-    )
-    print(f"gpt 4o cost (API call): {cost}")
-    # print(response)
-    # input("api call response")
+    terminate = False
+    query_attempts = 0
 
-    response_json = parse_json(response)
-    try:
-        assert response_json is not None, f"Failed to parse response: {response}"
-        assert "reason" in response_json and "api_call" in response_json, f"Invalid response: {response_json}. Must contain 'reason' and 'api_call'"
-    except Exception as e:
-        elogger.log(f"Error parsing response: {response}")
-        raise e
-    
-    querying_cost += cost
+    while not terminate and query_attempts < MAX_QUERY_ATTEMPTS:
+        response, cost = generate_from_openai_completion(
+            messages=messages, model="gpt-4o"
+        )
+        # print(f"gpt 4o cost (API call): {cost}")
+        # print(response)
+        # input("api call response")
+
+        response_json = parse_json(response)
+        try:
+            assert response_json is not None, f"Failed to parse response: {response}"
+            assert "reason" in response_json and "api_call" in response_json, f"Invalid response: {response_json}. Must contain 'reason' and 'api_call'"
+            terminate = True
+        except Exception as e:
+            print(f"Error parsing API call response: {response}")
+            elogger.log(f"Error parsing response: {response}")
+
+        query_attempts += 1
+        querying_cost += cost
+
+    if not terminate:
+        raise Exception(f"Failed to get a valid response after {MAX_QUERY_ATTEMPTS} attempts")
+
+    # Determine the car inventory to use
+    car_inventory_dict = determine_car_inventory(buyer_info, car_inventories)
 
     api_reason = response_json["reason"]
     api_call = response_json["api_call"]
-    api_response = use_api(api_call)
+    api_response = use_api(api_call, car_inventory_dict)
 
     if api_call["api_name"] == "no_op":
         api_call_used = prev_api_call
@@ -139,12 +161,12 @@ def query_expert(expert_agent_api_call_template: Template, expert_agent_template
         api_response_used = api_response
 
     # Step 2: Talk to the user based on the API response
-    system_prompt = expert_agent_template.render(system=True, all_car_brands=DEFAULT_BRANDS, all_car_types=DEFAULT_TYPES)
+    system_prompt = expert_agent_template.render(system=True, all_car_brands=DEFAULT_BRANDS, all_car_types=DEFAULT_TYPES).strip()
     input_prompt = expert_agent_template.render(system=False, mode="input", 
                                                 observation_action_history=formated_history,
                                                 api_call=json.dumps(api_call_used),
                                                 api_response=format_car_options(api_response_used)
-                                                )
+                                                ).strip()
     # print(system_prompt)
     # print("--------------------------------")
     # print(input_prompt)
@@ -155,24 +177,33 @@ def query_expert(expert_agent_api_call_template: Template, expert_agent_template
         {"role": "user", "content": input_prompt}
     ]
 
-    response, cost = generate_from_openai_completion(
-        messages=messages, model="gpt-4o"
-    )
-    print(f"gpt 4o cost (response): {cost}")
-    # print(f"api_call_used: {api_call_used}")
-    # print(format_car_options(api_response_used))
-    # print(response)
-    # input("response")
-    
-    response_json = parse_json(response)
-    try:
-        assert response_json is not None, f"Failed to parse response: {response}"
-        assert "reason" in response_json and "response" in response_json and "car_idx" in response_json, f"Invalid response: {response_json}. Must contain 'reason', 'response', and 'car_idx'"
-    except Exception as e:
-        elogger.log(f"Error parsing response: {response}")
-        raise e
+    terminate = False
+    query_attempts = 0
 
-    querying_cost += cost
+    while not terminate and query_attempts < MAX_QUERY_ATTEMPTS:
+        response, cost = generate_from_openai_completion(
+            messages=messages, model="gpt-4o"
+        )
+        # print(f"gpt 4o cost (response): {cost}")
+        # print(f"api_call_used: {api_call_used}")
+        # print(format_car_options(api_response_used))
+        # print(response)
+        # input("response")
+    
+        response_json = parse_json(response)
+        try:
+            assert response_json is not None, f"Failed to parse response: {response}"
+            assert "reason" in response_json and "response" in response_json and "car_idx" in response_json and "proposed_car" in response_json, f"Invalid response: {response_json}. Must contain 'reason', 'response', 'car_idx', and 'proposed_car'"
+            assert "brand" in response_json["proposed_car"] and "type" in response_json["proposed_car"] and "features" in response_json["proposed_car"] and "msrp" in response_json["proposed_car"], f"Invalid proposed car: {response_json['proposed_car']}"
+            terminate = True
+        except Exception as e:
+            elogger.log(f"Error parsing response: {response}")
+
+        query_attempts += 1
+        querying_cost += cost
+
+    if not terminate:
+        raise Exception(f"Failed to get a valid response after {MAX_QUERY_ATTEMPTS} attempts")
 
     # Determine the car index
     # print(f"api_response_used: {api_response_used}")
@@ -184,13 +215,15 @@ def query_expert(expert_agent_api_call_template: Template, expert_agent_template
     # print(f"proposed_car: {proposed_car}")
     # input("proposed car")
 
-    return api_reason, api_call, api_response, api_call_used, api_response_used, response_json["reason"], response_json["response"], proposed_car, querying_cost
+    proposed_car_copied_in_response = response_json["proposed_car"]
+
+    return api_reason, api_call, api_response, api_call_used, api_response_used, response_json["reason"].strip(), response_json["response"].strip(), proposed_car, proposed_car_copied_in_response, querying_cost
 
 def main():
     args, cfg = preprocess_args()
     np.random.seed(args.seed)
     elogger.set_activate(args.activate_email)
-    env = setup_car_dealer_env(host=HOST, port=args.port)
+    env = setup_car_dealer_env(host=args.sim_host, port=args.sim_port)
 
     rollout_per_obj = cfg["rollout_per_obj"]
 
@@ -199,76 +232,20 @@ def main():
     with open(cfg["expert_response_template"], "r") as file:
         expert_agent_prompt_template = Template(file.read())
         
-    with open("src/agent_prm/envs/car_dealer/car_inventory_dict.json", "r") as file:
-        car_inventory_dict = json.load(file)
+    car_inventories = load_car_inventories()
 
-    all_games_to_play_list = []
-    for data_type in args.data_types:
-        if data_type == "train":
-            buyer_strategy_list = TRAIN_BUYER_STRATEGIES
-            brand_list = TRAIN_BRANDS
-            type_list = TRAIN_TYPES
-            feature_list = TRAIN_FEATURES
-        elif data_type == "val":
-            buyer_strategy_list = VAL_BUYER_STRATEGIES
-            brand_list = VAL_BRANDS
-            type_list = VAL_TYPES
-            feature_list = VAL_FEATURES
-        elif data_type == "test":
-            buyer_strategy_list = TEST_BUYER_STRATEGIES
-            brand_list = TEST_BRANDS
-            type_list = TEST_TYPES
-            feature_list = TEST_FEATURES
+    # A list of tuples
+    #  (rollout_idx, game_id, data_type, buyer_info)
+    all_games_to_play_list = get_all_games_to_play(args.data_types, cfg["logs_dir"], rollout_per_obj)
 
-        data_type_all_games_to_play_list = []
-        for buyer_strategy_idx in range(len(buyer_strategy_list)):
-            for brand in brand_list:
-                for car_type in type_list:
-                    budget_list = CAR_PRICES_BY_BRAND_AND_TYPE[brand][car_type]["budget"]
-                    for budget in budget_list:
-                        for rollout_idx in range(rollout_per_obj):
-                            if buyer_strategy_list[buyer_strategy_idx] == B2:
-                                # They will only buy if the car has all the features
-                                #   car_inventory_dict[brand][car_type] gives us a list of in-stock cars
-                                matching_car_idx = np.random.randint(1, len(car_inventory_dict[brand][car_type])) # Skip the first car because it's the base model
-                                car_price = car_inventory_dict[brand][car_type][matching_car_idx]["msrp"]
-                                features_to_include = car_inventory_dict[brand][car_type][matching_car_idx]["features"]
-                            else:
-                                features_to_include = list(np.random.choice(feature_list, size=np.random.randint(1, 4), replace=False))
-                                car_price = CAR_PRICES_BY_BRAND_AND_TYPE[brand][car_type]["msrp"] + sum([CAR_FEATURES_ADDED_VALUE[feature] for feature in features_to_include])
-                            
-                            game_id = f"{buyer_strategy_idx}_{brand}_{car_type}_{budget}"
-                            data_type_all_games_to_play_list.append((rollout_idx, game_id, data_type, buyer_strategy_list[buyer_strategy_idx], brand, car_type, budget, features_to_include, car_price))
-
-        os.makedirs(os.path.join(cfg["logs_dir"], data_type), exist_ok=True)
-        summary_dict_fp = os.path.join(cfg["logs_dir"], data_type, "_summary_dict.json")
-        
-        if not os.path.exists(summary_dict_fp):
-            print(f"Summary dict not found at {summary_dict_fp}. Creating a new one.")
-            summary_dict = {}
-            save_json(summary_dict_fp, summary_dict)
-        else:
-            print(f"Loading summary dict from {summary_dict_fp}")
-            summary_dict = load_json(summary_dict_fp)
-
-        # Filter out games that have already been played
-        data_type_all_games_to_play_list = [game for game in data_type_all_games_to_play_list if str(game[0]) not in summary_dict or game[1] not in summary_dict[str(game[0])]]
-        all_games_to_play_list.extend(data_type_all_games_to_play_list)
+    print(all_games_to_play_list)
 
     total_cost = 0.0
 
     for game in all_games_to_play_list:
-        rollout_idx, game_id, data_type, buyer_strategy, brand, car_type, budget, features_to_include, car_price = game
+        rollout_idx, game_id, data_type, buyer_info = game
         rollout_idx_str = str(rollout_idx)
-        
-        buyer_info = {
-            "buyer_strategy": buyer_strategy,
-            "preferred_brand": brand,
-            "preferred_type": car_type,
-            "preferred_features": features_to_include,
-            "budget": budget,
-            "msrp": car_price
-        }
+
         print(f"Playing game {game_id}_{rollout_idx_str}")
         print(json.dumps(buyer_info, indent=4))
         
@@ -278,29 +255,50 @@ def main():
         rollout_cost = 0.0
         traj_list = []
         
+        all_prev_api_calls = [] # List[Dict]
+        all_prev_api_calls_have_responses = [] # List[bool] whether able to find any car
         prev_api_call = {}
         prev_api_response = {}
+        num_negotiation = 0
+        num_car_proposed = 0
+        prev_proposed_car = {}
 
         while not done:
             if args.debug:
+                assert False, "Deprecated. Have not updated since 4/24 change"
                 api_reason, api_call, api_response, reason, action, proposed_car, cost = query_human(prev_api_call, prev_api_response)
                 api_call_used = api_call
                 api_response_used = api_response
                 prev_api_call = api_call
                 prev_api_response = api_response
             else:
-                api_reason, api_call, api_response, api_call_used, api_response_used, reason, action, proposed_car, cost = query_expert(expert_agent_api_call_template, expert_agent_prompt_template, history, prev_api_call, prev_api_response)
+                api_reason, api_call, api_response, api_call_used, api_response_used, reason, action, proposed_car, proposed_car_copied_in_response, cost = query_expert(expert_agent_api_call_template, expert_agent_prompt_template, history, prev_api_call, prev_api_response, all_prev_api_calls, all_prev_api_calls_have_responses, buyer_info, car_inventories)
                 prev_api_call = api_call_used
                 prev_api_response = api_response_used
 
+            # api_call = {'api_name': 'no_op', 'api_brand': '', 'api_type': '', 'api_features': []}
+            # api_response = []
+            # api_call_used = api_call
+            # api_response_used = api_response
+            # api_reason = "There is no previous API call made yet, and the user has not made any specific request."
+            # reason = "The conversation has just started, and I haven't gathered any information about the buyer's preferences yet."
+            # action = "No Hello! Welcome to our dealership. What type of car are you interested in today? We have a wide range of options including vans, SUVs, sedans, trucks, and sports cars."
+            # proposed_car = {}
+            # proposed_car_copied_in_response = {}
+            # cost = 0.0
+
             rollout_cost += cost
 
-            print(f"++++++ agent step: {len(history)} ++++++")
-            print(f"API Reason:\n{api_reason}\nAPI Call:\n{api_call}\nAPI Response:\n{format_car_options(api_response)}")
-            print(f"Reason:\n{reason}\nAction:\n{action}")
-            print(f"++++++ agent step: {len(history)}, total cost: {rollout_cost} ++++++")
+            all_prev_api_calls.append(api_call)
+            all_prev_api_calls_have_responses.append(api_response != [])
 
-            history, buyer_reason, buyer_response, buyer_decision, reward, success, failure_reason, done = env.step(buyer_info, history, action, proposed_car)
+            print(f"++++++ agent step: {len(history)//2} ++++++")
+            print(f"API Reason:\n{api_reason}\nAPI Call:\n{api_call}\nAPI Response:\n{format_car_options(api_response)}")
+            print(f"Reason:\n{reason}\nAction:\n{action}\nProposed Car:\n{proposed_car}\nProposed Car Copied in Response:\n{proposed_car_copied_in_response}")
+            print(f"++++++ agent step: {len(history)//2}, total cost: {rollout_cost} ++++++")
+
+            history, buyer_reason, buyer_response, buyer_decision, reward, success, failure_reason, done, num_negotiation, proposed_car, num_car_proposed = env.step(buyer_info, history, action, proposed_car, proposed_car_copied_in_response, num_negotiation, prev_proposed_car, num_car_proposed, car_inventories)
+            prev_proposed_car = proposed_car
             total_reward += reward
 
             traj_list.append({
@@ -319,8 +317,13 @@ def main():
                 "reward": reward,
                 "success": success,
                 "failure_reason": failure_reason,
+                "num_negotiation": num_negotiation,
+                "num_car_proposed": num_car_proposed,
                 "cumulative_cost": rollout_cost,
             })
+
+            if len(traj_list) == 1:
+                traj_list[0]["buyer_info"] = buyer_info  # Also add the buyer info to the first step
 
         total_cost += rollout_cost
 

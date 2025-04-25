@@ -1,0 +1,2368 @@
+{
+    "1": {
+        "Volkswagen": {
+            "van": {
+                "65000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "van",
+                    "features": [
+                        "third-row seating",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 67000,
+                    "budget": 65000
+                },
+                "53000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "van",
+                    "features": [
+                        "heated seats"
+                    ],
+                    "msrp": 59000,
+                    "budget": 53000
+                }
+            },
+            "SUV": {
+                "34000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "Apple CarPlay",
+                        "third-row seating"
+                    ],
+                    "msrp": 49000,
+                    "budget": 34000
+                },
+                "42000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 41000,
+                    "budget": 42000
+                }
+            },
+            "sedan": {
+                "22000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "Apple CarPlay",
+                        "sunroof"
+                    ],
+                    "msrp": 34000,
+                    "budget": 22000
+                },
+                "23000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "blind spot monitoring",
+                        "heated seats",
+                        "navigation system"
+                    ],
+                    "msrp": 38000,
+                    "budget": 23000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Toyota": {
+            "van": {
+                "38000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "van",
+                    "features": [
+                        "blind spot monitoring",
+                        "heated seats"
+                    ],
+                    "msrp": 49000,
+                    "budget": 38000
+                },
+                "41000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "van",
+                    "features": [
+                        "third-row seating",
+                        "leather seats"
+                    ],
+                    "msrp": 57000,
+                    "budget": 41000
+                }
+            },
+            "SUV": {
+                "58000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "sunroof"
+                    ],
+                    "msrp": 54000,
+                    "budget": 58000
+                },
+                "65000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "sunroof",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 58000,
+                    "budget": 65000
+                }
+            },
+            "sedan": {
+                "25000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "third-row seating",
+                        "blind spot monitoring",
+                        "backup camera"
+                    ],
+                    "msrp": 39000,
+                    "budget": 25000
+                },
+                "39000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "blind spot monitoring",
+                        "navigation system",
+                        "leather seats"
+                    ],
+                    "msrp": 43000,
+                    "budget": 39000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Ford": {
+            "van": {
+                "66000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "van",
+                    "features": [
+                        "navigation system",
+                        "sunroof"
+                    ],
+                    "msrp": 66000,
+                    "budget": 66000
+                },
+                "50000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "van",
+                    "features": [
+                        "navigation system",
+                        "Apple CarPlay",
+                        "leather seats"
+                    ],
+                    "msrp": 73000,
+                    "budget": 50000
+                }
+            },
+            "SUV": {
+                "53000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "heated seats",
+                        "backup camera"
+                    ],
+                    "msrp": 45000,
+                    "budget": 53000
+                },
+                "48000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "Apple CarPlay",
+                        "navigation system"
+                    ],
+                    "msrp": 47000,
+                    "budget": 48000
+                }
+            },
+            "sedan": {
+                "31000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "leather seats",
+                        "third-row seating"
+                    ],
+                    "msrp": 50000,
+                    "budget": 31000
+                },
+                "37000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "third-row seating",
+                        "navigation system"
+                    ],
+                    "msrp": 45000,
+                    "budget": 37000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Lexus": {
+            "van": {
+                "103000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "van",
+                    "features": [
+                        "blind spot monitoring",
+                        "navigation system",
+                        "third-row seating"
+                    ],
+                    "msrp": 119000,
+                    "budget": 103000
+                },
+                "122000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "van",
+                    "features": [
+                        "heated seats",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 110000,
+                    "budget": 122000
+                }
+            },
+            "SUV": {
+                "67000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "sunroof",
+                        "heated seats",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 82000,
+                    "budget": 67000
+                }
+            },
+            "sedan": {
+                "41000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "blind spot monitoring",
+                        "heated seats",
+                        "navigation system"
+                    ],
+                    "msrp": 58000,
+                    "budget": 41000
+                },
+                "42000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "sunroof",
+                        "leather seats",
+                        "backup camera"
+                    ],
+                    "msrp": 63000,
+                    "budget": 42000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Audi": {
+            "van": {
+                "107000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "van",
+                    "features": [
+                        "navigation system"
+                    ],
+                    "msrp": 114000,
+                    "budget": 107000
+                },
+                "110000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "van",
+                    "features": [
+                        "blind spot monitoring",
+                        "sunroof",
+                        "leather seats"
+                    ],
+                    "msrp": 132000,
+                    "budget": 110000
+                }
+            },
+            "SUV": {
+                "61000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "third-row seating",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 72000,
+                    "budget": 61000
+                },
+                "76000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "sunroof"
+                    ],
+                    "msrp": 67000,
+                    "budget": 76000
+                }
+            },
+            "sedan": {
+                "41000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "third-row seating",
+                        "navigation system",
+                        "heated seats"
+                    ],
+                    "msrp": 61000,
+                    "budget": 41000
+                },
+                "45000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "third-row seating",
+                        "navigation system"
+                    ],
+                    "msrp": 57000,
+                    "budget": 45000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Bmw": {
+            "van": {
+                "125000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "van",
+                    "features": [
+                        "blind spot monitoring",
+                        "heated seats"
+                    ],
+                    "msrp": 120000,
+                    "budget": 125000
+                },
+                "101000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "van",
+                    "features": [
+                        "sunroof",
+                        "heated seats",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 125000,
+                    "budget": 101000
+                }
+            },
+            "SUV": {
+                "92000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "Apple CarPlay",
+                        "navigation system"
+                    ],
+                    "msrp": 93000,
+                    "budget": 92000
+                },
+                "82000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "sunroof",
+                        "navigation system"
+                    ],
+                    "msrp": 96000,
+                    "budget": 82000
+                }
+            },
+            "sedan": {
+                "60000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "sunroof"
+                    ],
+                    "msrp": 64000,
+                    "budget": 60000
+                },
+                "58000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "navigation system"
+                    ],
+                    "msrp": 62000,
+                    "budget": 58000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Tesla": {
+            "van": {
+                "101000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "van",
+                    "features": [
+                        "navigation system",
+                        "sunroof",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 114000,
+                    "budget": 101000
+                }
+            },
+            "SUV": {
+                "85000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "leather seats"
+                    ],
+                    "msrp": 96000,
+                    "budget": 85000
+                },
+                "92000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "navigation system"
+                    ],
+                    "msrp": 91000,
+                    "budget": 92000
+                }
+            },
+            "sedan": {
+                "63000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "blind spot monitoring",
+                        "third-row seating"
+                    ],
+                    "msrp": 63000,
+                    "budget": 63000
+                },
+                "59000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "heated seats",
+                        "third-row seating",
+                        "navigation system"
+                    ],
+                    "msrp": 66000,
+                    "budget": 59000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Kia": {
+            "van": {},
+            "SUV": {},
+            "sedan": {},
+            "truck": {
+                "44000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "truck",
+                    "features": [
+                        "leather seats"
+                    ],
+                    "msrp": 52000,
+                    "budget": 44000
+                },
+                "40000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "truck",
+                    "features": [
+                        "upgraded sound system",
+                        "cruise control",
+                        "sunroof"
+                    ],
+                    "msrp": 57500,
+                    "budget": 40000
+                }
+            },
+            "sports car": {
+                "40000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "heated seats",
+                        "leather seats",
+                        "360 camera"
+                    ],
+                    "msrp": 54000,
+                    "budget": 40000
+                },
+                "41000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "remote start",
+                        "backup camera"
+                    ],
+                    "msrp": 39000,
+                    "budget": 41000
+                }
+            }
+        },
+        "Mercedes-benz": {
+            "van": {},
+            "SUV": {},
+            "sedan": {},
+            "truck": {
+                "53000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "truck",
+                    "features": [
+                        "third-row seating",
+                        "heated seats",
+                        "360 camera"
+                    ],
+                    "msrp": 74000,
+                    "budget": 53000
+                },
+                "66000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "truck",
+                    "features": [
+                        "upgraded sound system"
+                    ],
+                    "msrp": 61000,
+                    "budget": 66000
+                }
+            },
+            "sports car": {
+                "84000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "heated seats",
+                        "wireless phone charging"
+                    ],
+                    "msrp": 97000,
+                    "budget": 84000
+                },
+                "91000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "sunroof",
+                        "Apple CarPlay",
+                        "backup camera"
+                    ],
+                    "msrp": 105000,
+                    "budget": 91000
+                }
+            }
+        },
+        "Porsche": {
+            "van": {},
+            "SUV": {},
+            "sedan": {},
+            "truck": {
+                "156000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "truck",
+                    "features": [
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 164000,
+                    "budget": 156000
+                },
+                "166000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "truck",
+                    "features": [
+                        "heated seats",
+                        "remote start",
+                        "wireless phone charging"
+                    ],
+                    "msrp": 169000,
+                    "budget": 166000
+                }
+            },
+            "sports car": {
+                "111000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "lane keep assist",
+                        "wireless phone charging",
+                        "360 camera"
+                    ],
+                    "msrp": 134000,
+                    "budget": 111000
+                },
+                "131000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "blind spot monitoring",
+                        "sunroof",
+                        "lane keep assist"
+                    ],
+                    "msrp": 138000,
+                    "budget": 131000
+                }
+            }
+        }
+    },
+    "2": {
+        "Volkswagen": {
+            "van": {
+                "44000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "van",
+                    "features": [
+                        "Apple CarPlay",
+                        "third-row seating"
+                    ],
+                    "msrp": 67000,
+                    "budget": 44000
+                },
+                "55000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "van",
+                    "features": [
+                        "Apple CarPlay",
+                        "third-row seating"
+                    ],
+                    "msrp": 67000,
+                    "budget": 55000
+                }
+            },
+            "SUV": {
+                "48000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "heated seats",
+                        "sunroof"
+                    ],
+                    "msrp": 48000,
+                    "budget": 48000
+                },
+                "49000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "heated seats",
+                        "sunroof"
+                    ],
+                    "msrp": 48000,
+                    "budget": 49000
+                }
+            },
+            "sedan": {
+                "73000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "sunroof",
+                        "backup camera",
+                        "navigation system"
+                    ],
+                    "msrp": 38000,
+                    "budget": 73000
+                },
+                "51000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "sunroof",
+                        "backup camera",
+                        "navigation system"
+                    ],
+                    "msrp": 38000,
+                    "budget": 51000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Toyota": {
+            "van": {
+                "42000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "van",
+                    "features": [
+                        "leather seats",
+                        "third-row seating",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 61000,
+                    "budget": 42000
+                },
+                "52000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "van",
+                    "features": [
+                        "leather seats",
+                        "third-row seating",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 61000,
+                    "budget": 52000
+                }
+            },
+            "SUV": {
+                "55000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "third-row seating",
+                        "heated seats",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 65000,
+                    "budget": 55000
+                },
+                "43000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "third-row seating",
+                        "heated seats",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 65000,
+                    "budget": 43000
+                }
+            },
+            "sedan": {
+                "106000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "navigation system",
+                        "leather seats",
+                        "Apple CarPlay",
+                        "third-row seating"
+                    ],
+                    "msrp": 49000,
+                    "budget": 106000
+                },
+                "110000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "navigation system",
+                        "leather seats",
+                        "Apple CarPlay",
+                        "third-row seating"
+                    ],
+                    "msrp": 49000,
+                    "budget": 110000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Ford": {
+            "van": {
+                "65000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "van",
+                    "features": [
+                        "navigation system",
+                        "leather seats"
+                    ],
+                    "msrp": 69000,
+                    "budget": 65000
+                },
+                "47000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "van",
+                    "features": [
+                        "navigation system",
+                        "leather seats"
+                    ],
+                    "msrp": 69000,
+                    "budget": 47000
+                }
+            },
+            "SUV": {
+                "29000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "third-row seating",
+                        "heated seats",
+                        "sunroof"
+                    ],
+                    "msrp": 57000,
+                    "budget": 29000
+                },
+                "36000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "third-row seating",
+                        "heated seats",
+                        "sunroof"
+                    ],
+                    "msrp": 57000,
+                    "budget": 36000
+                }
+            },
+            "sedan": {
+                "57000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "Apple CarPlay",
+                        "third-row seating",
+                        "backup camera",
+                        "heated seats"
+                    ],
+                    "msrp": 51000,
+                    "budget": 57000
+                },
+                "70000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "Apple CarPlay",
+                        "third-row seating",
+                        "backup camera",
+                        "heated seats"
+                    ],
+                    "msrp": 51000,
+                    "budget": 70000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Lexus": {
+            "van": {
+                "67000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "van",
+                    "features": [
+                        "third-row seating",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 114000,
+                    "budget": 67000
+                },
+                "89000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "van",
+                    "features": [
+                        "third-row seating",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 114000,
+                    "budget": 89000
+                }
+            },
+            "SUV": {
+                "40000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "third-row seating",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 79000,
+                    "budget": 40000
+                },
+                "48000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "third-row seating",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 79000,
+                    "budget": 48000
+                }
+            },
+            "sedan": {
+                "63000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "Apple CarPlay",
+                        "third-row seating",
+                        "backup camera",
+                        "heated seats"
+                    ],
+                    "msrp": 62000,
+                    "budget": 63000
+                },
+                "82000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "Apple CarPlay",
+                        "third-row seating",
+                        "backup camera",
+                        "heated seats"
+                    ],
+                    "msrp": 62000,
+                    "budget": 82000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Audi": {
+            "van": {
+                "41000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "van",
+                    "features": [
+                        "leather seats",
+                        "backup camera",
+                        "sunroof",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 135000,
+                    "budget": 41000
+                },
+                "57000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "van",
+                    "features": [
+                        "leather seats",
+                        "backup camera",
+                        "sunroof",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 135000,
+                    "budget": 57000
+                }
+            },
+            "SUV": {
+                "30000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "blind spot monitoring",
+                        "leather seats",
+                        "backup camera",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 83000,
+                    "budget": 30000
+                },
+                "38000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "blind spot monitoring",
+                        "leather seats",
+                        "backup camera",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 83000,
+                    "budget": 38000
+                }
+            },
+            "sedan": {
+                "41000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "sunroof",
+                        "third-row seating"
+                    ],
+                    "msrp": 59000,
+                    "budget": 41000
+                },
+                "43000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "sunroof",
+                        "third-row seating"
+                    ],
+                    "msrp": 59000,
+                    "budget": 43000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Bmw": {
+            "van": {
+                "46000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "van",
+                    "features": [
+                        "sunroof",
+                        "blind spot monitoring",
+                        "backup camera"
+                    ],
+                    "msrp": 126000,
+                    "budget": 46000
+                },
+                "62000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "van",
+                    "features": [
+                        "sunroof",
+                        "blind spot monitoring",
+                        "backup camera"
+                    ],
+                    "msrp": 126000,
+                    "budget": 62000
+                }
+            },
+            "SUV": {
+                "39000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "leather seats",
+                        "backup camera"
+                    ],
+                    "msrp": 97000,
+                    "budget": 39000
+                },
+                "33000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "leather seats",
+                        "backup camera"
+                    ],
+                    "msrp": 97000,
+                    "budget": 33000
+                }
+            },
+            "sedan": {
+                "68000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "navigation system",
+                        "backup camera"
+                    ],
+                    "msrp": 65000,
+                    "budget": 68000
+                },
+                "53000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "navigation system",
+                        "backup camera"
+                    ],
+                    "msrp": 65000,
+                    "budget": 53000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Tesla": {
+            "van": {
+                "46000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "van",
+                    "features": [
+                        "blind spot monitoring",
+                        "Apple CarPlay",
+                        "third-row seating"
+                    ],
+                    "msrp": 116000,
+                    "budget": 46000
+                },
+                "30000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "van",
+                    "features": [
+                        "blind spot monitoring",
+                        "Apple CarPlay",
+                        "third-row seating"
+                    ],
+                    "msrp": 116000,
+                    "budget": 30000
+                }
+            },
+            "SUV": {
+                "51000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "navigation system",
+                        "heated seats",
+                        "blind spot monitoring",
+                        "sunroof"
+                    ],
+                    "msrp": 108000,
+                    "budget": 51000
+                },
+                "34000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "navigation system",
+                        "heated seats",
+                        "blind spot monitoring",
+                        "sunroof"
+                    ],
+                    "msrp": 108000,
+                    "budget": 34000
+                }
+            },
+            "sedan": {
+                "50000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "third-row seating",
+                        "Apple CarPlay",
+                        "heated seats",
+                        "navigation system"
+                    ],
+                    "msrp": 70000,
+                    "budget": 50000
+                },
+                "45000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "third-row seating",
+                        "Apple CarPlay",
+                        "heated seats",
+                        "navigation system"
+                    ],
+                    "msrp": 70000,
+                    "budget": 45000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Kia": {
+            "van": {},
+            "SUV": {},
+            "sedan": {},
+            "truck": {
+                "41000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "truck",
+                    "features": [
+                        "Apple CarPlay",
+                        "navigation system",
+                        "360 camera",
+                        "upgraded sound system"
+                    ],
+                    "msrp": 64000,
+                    "budget": 41000
+                },
+                "91000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "truck",
+                    "features": [
+                        "Apple CarPlay",
+                        "navigation system",
+                        "360 camera",
+                        "upgraded sound system"
+                    ],
+                    "msrp": 64000,
+                    "budget": 91000
+                }
+            },
+            "sports car": {
+                "64000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "heated seats",
+                        "sunroof",
+                        "cruise control"
+                    ],
+                    "msrp": 46500,
+                    "budget": 64000
+                },
+                "90000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "heated seats",
+                        "sunroof",
+                        "cruise control"
+                    ],
+                    "msrp": 46500,
+                    "budget": 90000
+                }
+            }
+        },
+        "Mercedes-benz": {
+            "van": {},
+            "SUV": {},
+            "sedan": {},
+            "truck": {
+                "59000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "truck",
+                    "features": [
+                        "cruise control",
+                        "backup camera",
+                        "lane keep assist",
+                        "upgraded sound system"
+                    ],
+                    "msrp": 71500,
+                    "budget": 59000
+                },
+                "50000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "truck",
+                    "features": [
+                        "cruise control",
+                        "backup camera",
+                        "lane keep assist",
+                        "upgraded sound system"
+                    ],
+                    "msrp": 71500,
+                    "budget": 50000
+                }
+            },
+            "sports car": {
+                "66000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "sunroof",
+                        "upgraded sound system",
+                        "navigation system",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 113000,
+                    "budget": 66000
+                },
+                "74000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "sunroof",
+                        "upgraded sound system",
+                        "navigation system",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 113000,
+                    "budget": 74000
+                }
+            }
+        },
+        "Porsche": {
+            "van": {},
+            "SUV": {},
+            "sedan": {},
+            "truck": {
+                "58000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "truck",
+                    "features": [
+                        "third-row seating",
+                        "blind spot monitoring",
+                        "remote start"
+                    ],
+                    "msrp": 177000,
+                    "budget": 58000
+                },
+                "94000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "truck",
+                    "features": [
+                        "third-row seating",
+                        "blind spot monitoring",
+                        "remote start"
+                    ],
+                    "msrp": 177000,
+                    "budget": 94000
+                }
+            },
+            "sports car": {
+                "50000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "sunroof",
+                        "sunroof",
+                        "navigation system",
+                        "lane keep assist"
+                    ],
+                    "msrp": 144000,
+                    "budget": 50000
+                },
+                "70000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "sunroof",
+                        "sunroof",
+                        "navigation system",
+                        "lane keep assist"
+                    ],
+                    "msrp": 144000,
+                    "budget": 70000
+                }
+            }
+        }
+    },
+    "3": {
+        "Volkswagen": {
+            "van": {
+                "50000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "van",
+                    "features": [
+                        "navigation system",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 64000,
+                    "budget": 50000
+                },
+                "59000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "van",
+                    "features": [
+                        "backup camera",
+                        "leather seats"
+                    ],
+                    "msrp": 68000,
+                    "budget": 59000
+                }
+            },
+            "SUV": {
+                "50000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "navigation system",
+                        "Apple CarPlay",
+                        "backup camera"
+                    ],
+                    "msrp": 49000,
+                    "budget": 50000
+                },
+                "46000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "third-row seating"
+                    ],
+                    "msrp": 45000,
+                    "budget": 46000
+                }
+            },
+            "sedan": {
+                "31000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "third-row seating",
+                        "backup camera"
+                    ],
+                    "msrp": 34000,
+                    "budget": 31000
+                },
+                "20000": {
+                    "preferred_brand": "Volkswagen",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "leather seats",
+                        "third-row seating",
+                        "navigation system"
+                    ],
+                    "msrp": 46000,
+                    "budget": 20000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Toyota": {
+            "van": {
+                "47000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "van",
+                    "features": [
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 43000,
+                    "budget": 47000
+                },
+                "49000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "van",
+                    "features": [
+                        "navigation system",
+                        "sunroof",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 55000,
+                    "budget": 49000
+                }
+            },
+            "SUV": {
+                "54000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "navigation system"
+                    ],
+                    "msrp": 52000,
+                    "budget": 54000
+                },
+                "61000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "leather seats",
+                        "backup camera"
+                    ],
+                    "msrp": 60000,
+                    "budget": 61000
+                }
+            },
+            "sedan": {
+                "19000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "heated seats",
+                        "sunroof"
+                    ],
+                    "msrp": 33000,
+                    "budget": 19000
+                },
+                "24000": {
+                    "preferred_brand": "Toyota",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "third-row seating",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 34000,
+                    "budget": 24000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Ford": {
+            "van": {
+                "46000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "van",
+                    "features": [
+                        "navigation system",
+                        "heated seats",
+                        "backup camera"
+                    ],
+                    "msrp": 66000,
+                    "budget": 46000
+                }
+            },
+            "SUV": {
+                "35000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "blind spot monitoring",
+                        "heated seats",
+                        "leather seats"
+                    ],
+                    "msrp": 58000,
+                    "budget": 35000
+                },
+                "44000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "backup camera",
+                        "navigation system"
+                    ],
+                    "msrp": 46000,
+                    "budget": 44000
+                }
+            },
+            "sedan": {
+                "41000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "backup camera"
+                    ],
+                    "msrp": 35000,
+                    "budget": 41000
+                },
+                "27000": {
+                    "preferred_brand": "Ford",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "sunroof",
+                        "heated seats"
+                    ],
+                    "msrp": 43000,
+                    "budget": 27000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Lexus": {
+            "van": {
+                "109000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "van",
+                    "features": [
+                        "backup camera",
+                        "sunroof"
+                    ],
+                    "msrp": 110000,
+                    "budget": 109000
+                },
+                "87000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "van",
+                    "features": [
+                        "navigation system",
+                        "leather seats"
+                    ],
+                    "msrp": 115000,
+                    "budget": 87000
+                }
+            },
+            "SUV": {
+                "72000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "navigation system"
+                    ],
+                    "msrp": 70000,
+                    "budget": 72000
+                },
+                "69000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "backup camera",
+                        "heated seats",
+                        "third-row seating"
+                    ],
+                    "msrp": 80000,
+                    "budget": 69000
+                }
+            },
+            "sedan": {
+                "39000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "backup camera",
+                        "navigation system"
+                    ],
+                    "msrp": 51000,
+                    "budget": 39000
+                },
+                "37000": {
+                    "preferred_brand": "Lexus",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "backup camera"
+                    ],
+                    "msrp": 46000,
+                    "budget": 37000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Audi": {
+            "van": {
+                "120000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "van",
+                    "features": [
+                        "sunroof",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 122000,
+                    "budget": 120000
+                },
+                "112000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "van",
+                    "features": [
+                        "Apple CarPlay",
+                        "heated seats",
+                        "leather seats"
+                    ],
+                    "msrp": 127000,
+                    "budget": 112000
+                }
+            },
+            "SUV": {
+                "79000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "heated seats",
+                        "sunroof",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 77000,
+                    "budget": 79000
+                },
+                "54000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "leather seats",
+                        "navigation system",
+                        "third-row seating"
+                    ],
+                    "msrp": 83000,
+                    "budget": 54000
+                }
+            },
+            "sedan": {
+                "44000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "leather seats",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 60000,
+                    "budget": 44000
+                },
+                "47000": {
+                    "preferred_brand": "Audi",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "heated seats",
+                        "Apple CarPlay",
+                        "leather seats"
+                    ],
+                    "msrp": 62000,
+                    "budget": 47000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Bmw": {
+            "van": {
+                "128000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "van",
+                    "features": [
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 116000,
+                    "budget": 128000
+                },
+                "107000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "van",
+                    "features": [
+                        "navigation system",
+                        "sunroof",
+                        "heated seats"
+                    ],
+                    "msrp": 126000,
+                    "budget": 107000
+                }
+            },
+            "SUV": {
+                "87000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 88000,
+                    "budget": 87000
+                },
+                "85000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "navigation system",
+                        "third-row seating"
+                    ],
+                    "msrp": 97000,
+                    "budget": 85000
+                }
+            },
+            "sedan": {
+                "54000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "sunroof",
+                        "heated seats"
+                    ],
+                    "msrp": 68000,
+                    "budget": 54000
+                },
+                "61000": {
+                    "preferred_brand": "Bmw",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "navigation system",
+                        "third-row seating",
+                        "heated seats"
+                    ],
+                    "msrp": 74000,
+                    "budget": 61000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Tesla": {
+            "van": {
+                "106000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "van",
+                    "features": [
+                        "Apple CarPlay",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 108000,
+                    "budget": 106000
+                },
+                "98000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "van",
+                    "features": [
+                        "navigation system",
+                        "sunroof"
+                    ],
+                    "msrp": 110000,
+                    "budget": 98000
+                }
+            },
+            "SUV": {
+                "84000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "third-row seating"
+                    ],
+                    "msrp": 94000,
+                    "budget": 84000
+                },
+                "88000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "SUV",
+                    "features": [
+                        "heated seats",
+                        "leather seats"
+                    ],
+                    "msrp": 100000,
+                    "budget": 88000
+                }
+            },
+            "sedan": {
+                "65000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "third-row seating",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 63000,
+                    "budget": 65000
+                },
+                "42000": {
+                    "preferred_brand": "Tesla",
+                    "preferred_type": "sedan",
+                    "features": [
+                        "sunroof"
+                    ],
+                    "msrp": 56000,
+                    "budget": 42000
+                }
+            },
+            "truck": {},
+            "sports car": {}
+        },
+        "Kia": {
+            "van": {},
+            "SUV": {},
+            "sedan": {},
+            "truck": {
+                "41000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "truck",
+                    "features": [
+                        "sunroof",
+                        "leather seats",
+                        "cruise control"
+                    ],
+                    "msrp": 61500,
+                    "budget": 41000
+                },
+                "38000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "truck",
+                    "features": [
+                        "navigation system"
+                    ],
+                    "msrp": 47000,
+                    "budget": 38000
+                }
+            },
+            "sports car": {
+                "35000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "navigation system",
+                        "lane keep assist",
+                        "remote start"
+                    ],
+                    "msrp": 46000,
+                    "budget": 35000
+                },
+                "48000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 39000,
+                    "budget": 48000
+                }
+            }
+        },
+        "Mercedes-benz": {
+            "van": {},
+            "SUV": {},
+            "sedan": {},
+            "truck": {
+                "59000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "truck",
+                    "features": [
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 61000,
+                    "budget": 59000
+                },
+                "55000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "truck",
+                    "features": [
+                        "navigation system"
+                    ],
+                    "msrp": 60000,
+                    "budget": 55000
+                }
+            },
+            "sports car": {
+                "80000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "sunroof",
+                        "wireless phone charging"
+                    ],
+                    "msrp": 100000,
+                    "budget": 80000
+                },
+                "81000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "leather seats",
+                        "heated seats",
+                        "backup camera"
+                    ],
+                    "msrp": 108000,
+                    "budget": 81000
+                }
+            }
+        },
+        "Porsche": {
+            "van": {},
+            "SUV": {},
+            "sedan": {},
+            "truck": {
+                "184000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "truck",
+                    "features": [
+                        "cruise control",
+                        "upgraded sound system"
+                    ],
+                    "msrp": 168500,
+                    "budget": 184000
+                },
+                "178000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "truck",
+                    "features": [
+                        "wireless phone charging",
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 168000,
+                    "budget": 178000
+                }
+            },
+            "sports car": {
+                "117000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "cruise control",
+                        "360 camera"
+                    ],
+                    "msrp": 129500,
+                    "budget": 117000
+                },
+                "114000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "remote start",
+                        "upgraded sound system"
+                    ],
+                    "msrp": 129000,
+                    "budget": 114000
+                }
+            }
+        }
+    },
+    "4": {
+        "Kia": {
+            "truck": {
+                "51000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "truck",
+                    "features": [
+                        "cruise control"
+                    ],
+                    "msrp": 44500,
+                    "budget": 51000
+                },
+                "55000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "truck",
+                    "features": [
+                        "360 camera"
+                    ],
+                    "msrp": 49000,
+                    "budget": 55000
+                }
+            },
+            "sports car": {
+                "51000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 37000,
+                    "budget": 51000
+                },
+                "43000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "blind spot monitoring"
+                    ],
+                    "msrp": 39000,
+                    "budget": 43000
+                }
+            }
+        },
+        "Mercedes-benz": {
+            "truck": {
+                "62000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "truck",
+                    "features": [
+                        "remote start",
+                        "sunroof"
+                    ],
+                    "msrp": 65000,
+                    "budget": 62000
+                },
+                "63000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "truck",
+                    "features": [
+                        "backup camera"
+                    ],
+                    "msrp": 58000,
+                    "budget": 63000
+                }
+            },
+            "sports car": {
+                "96000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "sunroof"
+                    ],
+                    "msrp": 98000,
+                    "budget": 96000
+                },
+                "101000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "cruise control",
+                        "sunroof",
+                        "third-row seating"
+                    ],
+                    "msrp": 108500,
+                    "budget": 101000
+                }
+            }
+        },
+        "Porsche": {
+            "truck": {
+                "166000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "truck",
+                    "features": [
+                        "sunroof"
+                    ],
+                    "msrp": 167000,
+                    "budget": 166000
+                },
+                "186000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "truck",
+                    "features": [
+                        "navigation system"
+                    ],
+                    "msrp": 165000,
+                    "budget": 186000
+                }
+            },
+            "sports car": {
+                "139000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "lane keep assist",
+                        "backup camera"
+                    ],
+                    "msrp": 128000,
+                    "budget": 139000
+                },
+                "134000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "third-row seating"
+                    ],
+                    "msrp": 128000,
+                    "budget": 134000
+                }
+            }
+        }
+    },
+    "5": {
+        "Kia": {
+            "truck": {
+                "42000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "truck",
+                    "features": [
+                        "sunroof",
+                        "Apple CarPlay",
+                        "cruise control",
+                        "navigation system"
+                    ],
+                    "msrp": 60500,
+                    "budget": 42000
+                },
+                "78000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "truck",
+                    "features": [
+                        "sunroof",
+                        "Apple CarPlay",
+                        "cruise control",
+                        "navigation system"
+                    ],
+                    "msrp": 60500,
+                    "budget": 78000
+                }
+            },
+            "sports car": {
+                "43000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "Apple CarPlay",
+                        "upgraded sound system",
+                        "third-row seating"
+                    ],
+                    "msrp": 51000,
+                    "budget": 43000
+                },
+                "41000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "Apple CarPlay",
+                        "upgraded sound system",
+                        "third-row seating"
+                    ],
+                    "msrp": 51000,
+                    "budget": 41000
+                }
+            }
+        },
+        "Mercedes-benz": {
+            "truck": {
+                "42000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "truck",
+                    "features": [
+                        "navigation system",
+                        "remote start",
+                        "lane keep assist",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 72000,
+                    "budget": 42000
+                }
+            },
+            "sports car": {
+                "53000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "upgraded sound system",
+                        "360 camera",
+                        "remote start",
+                        "sunroof"
+                    ],
+                    "msrp": 114000,
+                    "budget": 53000
+                },
+                "71000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "upgraded sound system",
+                        "360 camera",
+                        "remote start",
+                        "sunroof"
+                    ],
+                    "msrp": 114000,
+                    "budget": 71000
+                }
+            }
+        },
+        "Porsche": {
+            "truck": {
+                "51000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "truck",
+                    "features": [
+                        "leather seats",
+                        "third-row seating",
+                        "backup camera",
+                        "heated seats"
+                    ],
+                    "msrp": 185000,
+                    "budget": 51000
+                },
+                "57000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "truck",
+                    "features": [
+                        "leather seats",
+                        "third-row seating",
+                        "backup camera",
+                        "heated seats"
+                    ],
+                    "msrp": 185000,
+                    "budget": 57000
+                }
+            },
+            "sports car": {
+                "92000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "leather seats",
+                        "upgraded sound system",
+                        "heated seats"
+                    ],
+                    "msrp": 140000,
+                    "budget": 92000
+                },
+                "98000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "leather seats",
+                        "upgraded sound system",
+                        "heated seats"
+                    ],
+                    "msrp": 140000,
+                    "budget": 98000
+                }
+            }
+        }
+    },
+    "6": {
+        "Kia": {
+            "truck": {
+                "60000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "truck",
+                    "features": [
+                        "navigation system",
+                        "sunroof",
+                        "360 camera"
+                    ],
+                    "msrp": 61000,
+                    "budget": 60000
+                },
+                "59000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "truck",
+                    "features": [
+                        "leather seats",
+                        "upgraded sound system"
+                    ],
+                    "msrp": 58000,
+                    "budget": 59000
+                }
+            },
+            "sports car": {
+                "48000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "navigation system"
+                    ],
+                    "msrp": 38000,
+                    "budget": 48000
+                },
+                "52000": {
+                    "preferred_brand": "Kia",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "sunroof"
+                    ],
+                    "msrp": 40000,
+                    "budget": 52000
+                }
+            }
+        },
+        "Mercedes-benz": {
+            "truck": {
+                "76000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "truck",
+                    "features": [
+                        "backup camera"
+                    ],
+                    "msrp": 58000,
+                    "budget": 76000
+                }
+            },
+            "sports car": {
+                "106000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "leather seats",
+                        "sunroof",
+                        "backup camera"
+                    ],
+                    "msrp": 111000,
+                    "budget": 106000
+                },
+                "104000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "remote start",
+                        "sunroof"
+                    ],
+                    "msrp": 101000,
+                    "budget": 104000
+                }
+            }
+        },
+        "Porsche": {
+            "truck": {
+                "185000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "truck",
+                    "features": [
+                        "lane keep assist",
+                        "upgraded sound system"
+                    ],
+                    "msrp": 171000,
+                    "budget": 185000
+                },
+                "183000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "truck",
+                    "features": [
+                        "third-row seating",
+                        "sunroof"
+                    ],
+                    "msrp": 175000,
+                    "budget": 183000
+                }
+            },
+            "sports car": {
+                "138000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "sunroof",
+                        "lane keep assist"
+                    ],
+                    "msrp": 132000,
+                    "budget": 138000
+                },
+                "137000": {
+                    "preferred_brand": "Porsche",
+                    "preferred_type": "sports car",
+                    "features": [
+                        "third-row seating",
+                        "backup camera",
+                        "Apple CarPlay"
+                    ],
+                    "msrp": 135000,
+                    "budget": 137000
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,600 @@
+{
+    "Volkswagen": {
+        "van": [
+            {
+                "msrp": 55000,
+                "features": []
+            },
+            {
+                "msrp": 70000,
+                "features": [
+                    "sunroof",
+                    "Apple CarPlay",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 63000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 79000,
+                "features": [
+                    "Apple CarPlay",
+                    "blind spot monitoring",
+                    "leather seats",
+                    "heated seats"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 37000,
+                "features": []
+            },
+            {
+                "msrp": 47000,
+                "features": [
+                    "blind spot monitoring",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 60000,
+                "features": [
+                    "leather seats",
+                    "blind spot monitoring",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 45000,
+                "features": [
+                    "Apple CarPlay",
+                    "heated seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 23000,
+                "features": []
+            },
+            {
+                "msrp": 31000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 33000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 34000,
+                "features": [
+                    "sunroof",
+                    "heated seats"
+                ]
+            }
+        ]
+    },
+    "Toyota": {
+        "van": [
+            {
+                "msrp": 39000,
+                "features": []
+            },
+            {
+                "msrp": 44000,
+                "features": [
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 47000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 60000,
+                "features": [
+                    "blind spot monitoring",
+                    "sunroof",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 47000,
+                "features": []
+            },
+            {
+                "msrp": 55000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 55000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 59000,
+                "features": [
+                    "heated seats",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 22000,
+                "features": []
+            },
+            {
+                "msrp": 28000,
+                "features": [
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 41000,
+                "features": [
+                    "Apple CarPlay",
+                    "third-row seating",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 39000,
+                "features": [
+                    "leather seats",
+                    "sunroof"
+                ]
+            }
+        ]
+    },
+    "Ford": {
+        "van": [
+            {
+                "msrp": 54000,
+                "features": []
+            },
+            {
+                "msrp": 77000,
+                "features": [
+                    "navigation system",
+                    "leather seats",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 71000,
+                "features": [
+                    "Apple CarPlay",
+                    "blind spot monitoring",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 64000,
+                "features": [
+                    "Apple CarPlay",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 38000,
+                "features": []
+            },
+            {
+                "msrp": 43000,
+                "features": [
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 44000,
+                "features": [
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 54000,
+                "features": [
+                    "blind spot monitoring",
+                    "leather seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 32000,
+                "features": []
+            },
+            {
+                "msrp": 54000,
+                "features": [
+                    "leather seats",
+                    "third-row seating",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 38000,
+                "features": [
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 59000,
+                "features": [
+                    "blind spot monitoring",
+                    "Apple CarPlay",
+                    "leather seats",
+                    "sunroof"
+                ]
+            }
+        ]
+    },
+    "Lexus": {
+        "van": [
+            {
+                "msrp": 100000,
+                "features": []
+            },
+            {
+                "msrp": 111000,
+                "features": [
+                    "sunroof",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 117000,
+                "features": [
+                    "sunroof",
+                    "Apple CarPlay",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 114000,
+                "features": [
+                    "third-row seating",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 65000,
+                "features": []
+            },
+            {
+                "msrp": 69000,
+                "features": [
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 93000,
+                "features": [
+                    "third-row seating",
+                    "heated seats",
+                    "blind spot monitoring",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 77000,
+                "features": [
+                    "Apple CarPlay",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 43000,
+                "features": []
+            },
+            {
+                "msrp": 51000,
+                "features": [
+                    "Apple CarPlay",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 61000,
+                "features": [
+                    "leather seats",
+                    "heated seats",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 51000,
+                "features": [
+                    "third-row seating"
+                ]
+            }
+        ]
+    },
+    "Audi": {
+        "van": [
+            {
+                "msrp": 109000,
+                "features": []
+            },
+            {
+                "msrp": 127000,
+                "features": [
+                    "Apple CarPlay",
+                    "third-row seating",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 129000,
+                "features": [
+                    "blind spot monitoring",
+                    "heated seats",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 133000,
+                "features": [
+                    "heated seats",
+                    "Apple CarPlay",
+                    "leather seats",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 60000,
+                "features": []
+            },
+            {
+                "msrp": 69000,
+                "features": [
+                    "navigation system",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 78000,
+                "features": [
+                    "blind spot monitoring",
+                    "Apple CarPlay",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 75000,
+                "features": [
+                    "sunroof",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 44000,
+                "features": []
+            },
+            {
+                "msrp": 65000,
+                "features": [
+                    "heated seats",
+                    "blind spot monitoring",
+                    "sunroof",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 54000,
+                "features": [
+                    "blind spot monitoring",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 71000,
+                "features": [
+                    "sunroof",
+                    "blind spot monitoring",
+                    "Apple CarPlay",
+                    "leather seats"
+                ]
+            }
+        ]
+    },
+    "Bmw": {
+        "van": [
+            {
+                "msrp": 110000,
+                "features": []
+            },
+            {
+                "msrp": 114000,
+                "features": [
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 125000,
+                "features": [
+                    "sunroof",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 120000,
+                "features": [
+                    "leather seats"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 84000,
+                "features": []
+            },
+            {
+                "msrp": 106000,
+                "features": [
+                    "heated seats",
+                    "third-row seating",
+                    "blind spot monitoring",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 94000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 92000,
+                "features": [
+                    "third-row seating"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 57000,
+                "features": []
+            },
+            {
+                "msrp": 71000,
+                "features": [
+                    "heated seats",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 67000,
+                "features": [
+                    "heated seats",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 70000,
+                "features": [
+                    "blind spot monitoring",
+                    "sunroof"
+                ]
+            }
+        ]
+    },
+    "Tesla": {
+        "van": [
+            {
+                "msrp": 98000,
+                "features": []
+            },
+            {
+                "msrp": 106000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 123000,
+                "features": [
+                    "Apple CarPlay",
+                    "sunroof",
+                    "leather seats",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 116000,
+                "features": [
+                    "leather seats",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 86000,
+                "features": []
+            },
+            {
+                "msrp": 112000,
+                "features": [
+                    "leather seats",
+                    "third-row seating",
+                    "heated seats",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 111000,
+                "features": [
+                    "third-row seating",
+                    "heated seats",
+                    "sunroof",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 107000,
+                "features": [
+                    "sunroof",
+                    "Apple CarPlay",
+                    "leather seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 49000,
+                "features": []
+            },
+            {
+                "msrp": 69000,
+                "features": [
+                    "leather seats",
+                    "blind spot monitoring",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 73000,
+                "features": [
+                    "third-row seating",
+                    "leather seats",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 67000,
+                "features": [
+                    "third-row seating",
+                    "leather seats"
+                ]
+            }
+        ]
+    }
+}

@@ -1,0 +1,1469 @@
+{
+    "Volkswagen": {
+        "van": [
+            {
+                "msrp": 55000,
+                "features": []
+            },
+            {
+                "msrp": 74500,
+                "features": [
+                    "cruise control",
+                    "360 camera",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 72000,
+                "features": [
+                    "sunroof",
+                    "backup camera",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 73000,
+                "features": [
+                    "360 camera",
+                    "heated seats",
+                    "wireless phone charging",
+                    "lane keep assist"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 37000,
+                "features": []
+            },
+            {
+                "msrp": 45000,
+                "features": [
+                    "Apple CarPlay",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 42000,
+                "features": [
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 43000,
+                "features": [
+                    "Apple CarPlay",
+                    "wireless phone charging"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 23000,
+                "features": []
+            },
+            {
+                "msrp": 39000,
+                "features": [
+                    "lane keep assist",
+                    "navigation system",
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 36500,
+                "features": [
+                    "cruise control",
+                    "sunroof",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 29000,
+                "features": [
+                    "Apple CarPlay",
+                    "wireless phone charging"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 33000,
+                "features": []
+            },
+            {
+                "msrp": 61000,
+                "features": [
+                    "sunroof",
+                    "360 camera",
+                    "leather seats",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 50000,
+                "features": [
+                    "leather seats",
+                    "backup camera",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 52000,
+                "features": [
+                    "upgraded sound system",
+                    "navigation system",
+                    "heated seats",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 36000,
+                "features": []
+            },
+            {
+                "msrp": 53000,
+                "features": [
+                    "leather seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 39000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 62000,
+                "features": [
+                    "sunroof",
+                    "backup camera",
+                    "upgraded sound system",
+                    "leather seats"
+                ]
+            }
+        ]
+    },
+    "Toyota": {
+        "van": [
+            {
+                "msrp": 39000,
+                "features": []
+            },
+            {
+                "msrp": 61000,
+                "features": [
+                    "upgraded sound system",
+                    "lane keep assist",
+                    "heated seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 64000,
+                "features": [
+                    "sunroof",
+                    "Apple CarPlay",
+                    "sunroof",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 60500,
+                "features": [
+                    "sunroof",
+                    "wireless phone charging",
+                    "leather seats",
+                    "cruise control"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 47000,
+                "features": []
+            },
+            {
+                "msrp": 56000,
+                "features": [
+                    "upgraded sound system",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 67000,
+                "features": [
+                    "360 camera",
+                    "sunroof",
+                    "wireless phone charging",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 66000,
+                "features": [
+                    "navigation system",
+                    "sunroof",
+                    "sunroof"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 22000,
+                "features": []
+            },
+            {
+                "msrp": 36000,
+                "features": [
+                    "leather seats",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 36500,
+                "features": [
+                    "cruise control",
+                    "lane keep assist",
+                    "backup camera",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 28000,
+                "features": [
+                    "heated seats",
+                    "wireless phone charging"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 34000,
+                "features": []
+            },
+            {
+                "msrp": 48000,
+                "features": [
+                    "navigation system",
+                    "backup camera",
+                    "wireless phone charging",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 51000,
+                "features": [
+                    "leather seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 45500,
+                "features": [
+                    "sunroof",
+                    "cruise control",
+                    "wireless phone charging"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 35000,
+                "features": []
+            },
+            {
+                "msrp": 41000,
+                "features": [
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 37000,
+                "features": [
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 41000,
+                "features": [
+                    "heated seats",
+                    "wireless phone charging"
+                ]
+            }
+        ]
+    },
+    "Ford": {
+        "van": [
+            {
+                "msrp": 54000,
+                "features": []
+            },
+            {
+                "msrp": 66500,
+                "features": [
+                    "sunroof",
+                    "backup camera",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 56500,
+                "features": [
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 59000,
+                "features": [
+                    "lane keep assist"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 38000,
+                "features": []
+            },
+            {
+                "msrp": 55000,
+                "features": [
+                    "third-row seating",
+                    "sunroof",
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 52000,
+                "features": [
+                    "sunroof",
+                    "lane keep assist",
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 58000,
+                "features": [
+                    "wireless phone charging",
+                    "sunroof",
+                    "Apple CarPlay",
+                    "sunroof"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 32000,
+                "features": []
+            },
+            {
+                "msrp": 58000,
+                "features": [
+                    "upgraded sound system",
+                    "360 camera",
+                    "backup camera",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 41000,
+                "features": [
+                    "heated seats",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 53000,
+                "features": [
+                    "wireless phone charging",
+                    "navigation system",
+                    "sunroof",
+                    "sunroof"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 40000,
+                "features": []
+            },
+            {
+                "msrp": 56500,
+                "features": [
+                    "heated seats",
+                    "cruise control",
+                    "upgraded sound system",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 43000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 56000,
+                "features": [
+                    "sunroof",
+                    "lane keep assist",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 37000,
+                "features": []
+            },
+            {
+                "msrp": 54000,
+                "features": [
+                    "backup camera",
+                    "lane keep assist",
+                    "navigation system",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 54000,
+                "features": [
+                    "backup camera",
+                    "heated seats",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 57000,
+                "features": [
+                    "leather seats",
+                    "heated seats",
+                    "upgraded sound system"
+                ]
+            }
+        ]
+    },
+    "Lexus": {
+        "van": [
+            {
+                "msrp": 100000,
+                "features": []
+            },
+            {
+                "msrp": 107000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 118500,
+                "features": [
+                    "backup camera",
+                    "sunroof",
+                    "cruise control",
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 102500,
+                "features": [
+                    "cruise control"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 65000,
+                "features": []
+            },
+            {
+                "msrp": 74000,
+                "features": [
+                    "wireless phone charging",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 78000,
+                "features": [
+                    "sunroof",
+                    "wireless phone charging",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 80000,
+                "features": [
+                    "sunroof",
+                    "Apple CarPlay",
+                    "heated seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 43000,
+                "features": []
+            },
+            {
+                "msrp": 60000,
+                "features": [
+                    "wireless phone charging",
+                    "navigation system",
+                    "Apple CarPlay",
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 52500,
+                "features": [
+                    "cruise control",
+                    "backup camera",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 59000,
+                "features": [
+                    "navigation system",
+                    "heated seats",
+                    "360 camera"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 60000,
+                "features": []
+            },
+            {
+                "msrp": 78000,
+                "features": [
+                    "heated seats",
+                    "Apple CarPlay",
+                    "backup camera",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 73000,
+                "features": [
+                    "upgraded sound system",
+                    "wireless phone charging",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 78000,
+                "features": [
+                    "backup camera",
+                    "heated seats",
+                    "360 camera",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 75000,
+                "features": []
+            },
+            {
+                "msrp": 91000,
+                "features": [
+                    "wireless phone charging",
+                    "lane keep assist",
+                    "navigation system",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 89500,
+                "features": [
+                    "sunroof",
+                    "wireless phone charging",
+                    "backup camera",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 94000,
+                "features": [
+                    "360 camera",
+                    "upgraded sound system",
+                    "Apple CarPlay",
+                    "wireless phone charging"
+                ]
+            }
+        ]
+    },
+    "Audi": {
+        "van": [
+            {
+                "msrp": 109000,
+                "features": []
+            },
+            {
+                "msrp": 134000,
+                "features": [
+                    "leather seats",
+                    "Apple CarPlay",
+                    "heated seats",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 116000,
+                "features": [
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 128000,
+                "features": [
+                    "360 camera",
+                    "backup camera",
+                    "navigation system",
+                    "heated seats"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 60000,
+                "features": []
+            },
+            {
+                "msrp": 65000,
+                "features": [
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 76000,
+                "features": [
+                    "sunroof",
+                    "heated seats",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 81000,
+                "features": [
+                    "leather seats",
+                    "360 camera",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 44000,
+                "features": []
+            },
+            {
+                "msrp": 68000,
+                "features": [
+                    "360 camera",
+                    "leather seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 47000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 60000,
+                "features": [
+                    "wireless phone charging",
+                    "sunroof",
+                    "360 camera"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 65000,
+                "features": []
+            },
+            {
+                "msrp": 84000,
+                "features": [
+                    "upgraded sound system",
+                    "backup camera",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 77000,
+                "features": [
+                    "sunroof",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 87000,
+                "features": [
+                    "sunroof",
+                    "upgraded sound system",
+                    "wireless phone charging",
+                    "360 camera"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 85000,
+                "features": []
+            },
+            {
+                "msrp": 102000,
+                "features": [
+                    "360 camera",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 95000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 100000,
+                "features": [
+                    "sunroof",
+                    "lane keep assist",
+                    "backup camera"
+                ]
+            }
+        ]
+    },
+    "Bmw": {
+        "van": [
+            {
+                "msrp": 110000,
+                "features": []
+            },
+            {
+                "msrp": 133000,
+                "features": [
+                    "heated seats",
+                    "wireless phone charging",
+                    "sunroof",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 120000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 126000,
+                "features": [
+                    "leather seats",
+                    "wireless phone charging",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 84000,
+                "features": []
+            },
+            {
+                "msrp": 88000,
+                "features": [
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 93500,
+                "features": [
+                    "360 camera",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 94000,
+                "features": [
+                    "sunroof",
+                    "backup camera"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 57000,
+                "features": []
+            },
+            {
+                "msrp": 70000,
+                "features": [
+                    "upgraded sound system",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 68500,
+                "features": [
+                    "cruise control",
+                    "heated seats",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 63500,
+                "features": [
+                    "Apple CarPlay",
+                    "cruise control"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 75000,
+                "features": []
+            },
+            {
+                "msrp": 79500,
+                "features": [
+                    "wireless phone charging",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 81000,
+                "features": [
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 96000,
+                "features": [
+                    "sunroof",
+                    "leather seats",
+                    "heated seats"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 98000,
+                "features": []
+            },
+            {
+                "msrp": 102500,
+                "features": [
+                    "cruise control",
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 118000,
+                "features": [
+                    "sunroof",
+                    "sunroof",
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 117000,
+                "features": [
+                    "navigation system",
+                    "leather seats",
+                    "Apple CarPlay"
+                ]
+            }
+        ]
+    },
+    "Tesla": {
+        "van": [
+            {
+                "msrp": 98000,
+                "features": []
+            },
+            {
+                "msrp": 123000,
+                "features": [
+                    "leather seats",
+                    "heated seats",
+                    "lane keep assist",
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 113500,
+                "features": [
+                    "Apple CarPlay",
+                    "cruise control",
+                    "backup camera",
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 102000,
+                "features": [
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 86000,
+                "features": []
+            },
+            {
+                "msrp": 96500,
+                "features": [
+                    "third-row seating",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 104000,
+                "features": [
+                    "upgraded sound system",
+                    "lane keep assist",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 100000,
+                "features": [
+                    "leather seats",
+                    "heated seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 49000,
+                "features": []
+            },
+            {
+                "msrp": 65000,
+                "features": [
+                    "navigation system",
+                    "heated seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 56500,
+                "features": [
+                    "backup camera",
+                    "cruise control",
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 54000,
+                "features": [
+                    "lane keep assist"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 70000,
+                "features": []
+            },
+            {
+                "msrp": 98000,
+                "features": [
+                    "navigation system",
+                    "sunroof",
+                    "leather seats",
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 75000,
+                "features": [
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 86000,
+                "features": [
+                    "Apple CarPlay",
+                    "sunroof",
+                    "navigation system"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 95000,
+                "features": []
+            },
+            {
+                "msrp": 114000,
+                "features": [
+                    "leather seats",
+                    "lane keep assist",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 117000,
+                "features": [
+                    "leather seats",
+                    "lane keep assist",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 118000,
+                "features": [
+                    "sunroof",
+                    "heated seats",
+                    "360 camera",
+                    "lane keep assist"
+                ]
+            }
+        ]
+    },
+    "Kia": {
+        "van": [
+            {
+                "msrp": 35000,
+                "features": []
+            },
+            {
+                "msrp": 43000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 52000,
+                "features": [
+                    "360 camera",
+                    "upgraded sound system",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 38000,
+                "features": [
+                    "backup camera"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 32000,
+                "features": []
+            },
+            {
+                "msrp": 40000,
+                "features": [
+                    "backup camera",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 46000,
+                "features": [
+                    "Apple CarPlay",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 44000,
+                "features": [
+                    "360 camera",
+                    "lane keep assist"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 21000,
+                "features": []
+            },
+            {
+                "msrp": 40000,
+                "features": [
+                    "sunroof",
+                    "lane keep assist",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 41000,
+                "features": [
+                    "upgraded sound system",
+                    "leather seats",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 31000,
+                "features": [
+                    "upgraded sound system",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 42000,
+                "features": []
+            },
+            {
+                "msrp": 49000,
+                "features": [
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 52500,
+                "features": [
+                    "Apple CarPlay",
+                    "heated seats",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 53500,
+                "features": [
+                    "navigation system",
+                    "cruise control",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 33000,
+                "features": []
+            },
+            {
+                "msrp": 41000,
+                "features": [
+                    "upgraded sound system",
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 42000,
+                "features": [
+                    "heated seats",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 46000,
+                "features": [
+                    "Apple CarPlay",
+                    "navigation system",
+                    "heated seats"
+                ]
+            }
+        ]
+    },
+    "Mercedes-benz": {
+        "van": [
+            {
+                "msrp": 97000,
+                "features": []
+            },
+            {
+                "msrp": 108000,
+                "features": [
+                    "Apple CarPlay",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 104000,
+                "features": [
+                    "Apple CarPlay",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 123000,
+                "features": [
+                    "sunroof",
+                    "lane keep assist",
+                    "leather seats",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 70000,
+                "features": []
+            },
+            {
+                "msrp": 77000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 78000,
+                "features": [
+                    "Apple CarPlay",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 89500,
+                "features": [
+                    "backup camera",
+                    "heated seats",
+                    "cruise control",
+                    "leather seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 50000,
+                "features": []
+            },
+            {
+                "msrp": 65000,
+                "features": [
+                    "sunroof",
+                    "heated seats",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 58500,
+                "features": [
+                    "wireless phone charging",
+                    "cruise control",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 68000,
+                "features": [
+                    "leather seats",
+                    "lane keep assist",
+                    "backup camera"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 55000,
+                "features": []
+            },
+            {
+                "msrp": 70000,
+                "features": [
+                    "sunroof",
+                    "backup camera",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 74000,
+                "features": [
+                    "lane keep assist",
+                    "sunroof",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 72500,
+                "features": [
+                    "lane keep assist",
+                    "sunroof",
+                    "backup camera",
+                    "cruise control"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 91000,
+                "features": []
+            },
+            {
+                "msrp": 101500,
+                "features": [
+                    "third-row seating",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 98000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 98000,
+                "features": [
+                    "360 camera"
+                ]
+            }
+        ]
+    },
+    "Porsche": {
+        "van": [
+            {
+                "msrp": 130000,
+                "features": []
+            },
+            {
+                "msrp": 145000,
+                "features": [
+                    "navigation system",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 145000,
+                "features": [
+                    "Apple CarPlay",
+                    "heated seats",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 137000,
+                "features": [
+                    "backup camera",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 100000,
+                "features": []
+            },
+            {
+                "msrp": 106000,
+                "features": [
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 117000,
+                "features": [
+                    "backup camera",
+                    "Apple CarPlay",
+                    "lane keep assist",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 113500,
+                "features": [
+                    "navigation system",
+                    "heated seats",
+                    "cruise control",
+                    "wireless phone charging"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 80000,
+                "features": []
+            },
+            {
+                "msrp": 90500,
+                "features": [
+                    "wireless phone charging",
+                    "upgraded sound system",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 87000,
+                "features": [
+                    "lane keep assist",
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 85000,
+                "features": [
+                    "navigation system"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 160000,
+                "features": []
+            },
+            {
+                "msrp": 175000,
+                "features": [
+                    "upgraded sound system",
+                    "Apple CarPlay",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 172000,
+                "features": [
+                    "backup camera",
+                    "navigation system",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 178000,
+                "features": [
+                    "sunroof",
+                    "360 camera",
+                    "heated seats"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 120000,
+                "features": []
+            },
+            {
+                "msrp": 135000,
+                "features": [
+                    "upgraded sound system",
+                    "wireless phone charging",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 132000,
+                "features": [
+                    "sunroof",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 138000,
+                "features": [
+                    "heated seats",
+                    "wireless phone charging",
+                    "360 camera",
+                    "navigation system"
+                ]
+            }
+        ]
+    }
+}

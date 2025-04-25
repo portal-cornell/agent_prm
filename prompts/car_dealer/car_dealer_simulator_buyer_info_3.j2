@@ -1,0 +1,38 @@
+{% if mode == 'initial' %}
+### Information about the ideal car you want to buy (which the seller might not have)
+    - Car Brand: {{ preferred_brand }}
+    - Car Type: {{ preferred_type }}
+    - Car Features: {{ preferred_features }}
+{% elif mode == 'initial_car_proposed' %}
+### You are extremely distrustful of the seller. This is one of the first few cars that the seller has proposed to you. 
+    - You MUST reply some bad things about this car. You MUST question the seller's intentions.
+    - Then, you MUST ask the seller to propose another car.
+{% elif mode == 'acceptable_car_proposed' or mode == 'under_budget_but_not_matched'%}
+### Information about what you must have for the car
+    - You must have car brand = {{ preferred_brand }}
+    - You must have car type = {{ preferred_type }}
+
+### This is NOT the first car that the seller has proposed to you, so you are willing to consider buying this car. Here are some information about the car about whether it satisfies your needs:
+    - Does the car has the same brand as what you want? {{ has_same_brand }}
+    - Does the car has the same type as what you want? {{ has_same_type }}
+{% elif mode == 'matched_but_not_under_budget' %}
+### Information about what you must have for the car
+    - You must have car brand = {{ preferred_brand }}
+    - You must have car type = {{ preferred_type }}
+    - Your budget is ${{ budget }}. But you are willing to pay up to some amount.
+
+### This is NOT the first car that the seller has proposed to you, so you are willing to consider buying this car. Here are some information about the car about whether it satisfies your needs:
+    - Does the car has the same brand as what you want? {{ has_same_brand }}
+    - Does the car has the same type as what you want? {{ has_same_type }}
+    - Is the price of car within an acceptable range for you? {{ is_within_acceptable_range }}
+{% elif mode == 'condition_met' %}
+### Information about what you must have for the car
+    - You must have car brand = {{ preferred_brand }}
+    - You must have car type = {{ preferred_type }}
+
+### This is NOT the first car that the seller has proposed to you, so you are willing to consider buying this car. Here are some information about the car about whether it satisfies your needs:
+    - Does the car has the same brand as what you want? {{ has_same_brand }}
+    - Does the car has the same type as what you want? {{ has_same_type }}
+    - Is the price of car within an acceptable range for you? {{ is_within_acceptable_range }}
+    - It has satisfied all the conditions. You MUST buy the car now. 
+{% endif %}

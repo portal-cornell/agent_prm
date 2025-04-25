@@ -1,0 +1,1473 @@
+{
+    "Volkswagen": {
+        "van": [
+            {
+                "msrp": 55000,
+                "features": []
+            },
+            {
+                "msrp": 64500,
+                "features": [
+                    "cruise control",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 63000,
+                "features": [
+                    "navigation system",
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 62000,
+                "features": [
+                    "360 camera"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 37000,
+                "features": []
+            },
+            {
+                "msrp": 61000,
+                "features": [
+                    "navigation system",
+                    "upgraded sound system",
+                    "blind spot monitoring",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 45000,
+                "features": [
+                    "wireless phone charging",
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 56000,
+                "features": [
+                    "lane keep assist",
+                    "sunroof",
+                    "Apple CarPlay",
+                    "remote start"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 23000,
+                "features": []
+            },
+            {
+                "msrp": 48000,
+                "features": [
+                    "leather seats",
+                    "third-row seating",
+                    "backup camera",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 35000,
+                "features": [
+                    "lane keep assist",
+                    "navigation system",
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 36000,
+                "features": [
+                    "sunroof",
+                    "wireless phone charging",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 33000,
+                "features": []
+            },
+            {
+                "msrp": 52000,
+                "features": [
+                    "lane keep assist",
+                    "360 camera",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 48500,
+                "features": [
+                    "blind spot monitoring",
+                    "remote start",
+                    "Apple CarPlay",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 47000,
+                "features": [
+                    "remote start",
+                    "sunroof",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 36000,
+                "features": []
+            },
+            {
+                "msrp": 44500,
+                "features": [
+                    "cruise control",
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 50000,
+                "features": [
+                    "Apple CarPlay",
+                    "lane keep assist",
+                    "remote start",
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 50000,
+                "features": [
+                    "Apple CarPlay",
+                    "sunroof",
+                    "remote start"
+                ]
+            }
+        ]
+    },
+    "Toyota": {
+        "van": [
+            {
+                "msrp": 39000,
+                "features": []
+            },
+            {
+                "msrp": 60000,
+                "features": [
+                    "lane keep assist",
+                    "upgraded sound system",
+                    "remote start",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 54500,
+                "features": [
+                    "sunroof",
+                    "cruise control",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 43000,
+                "features": [
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 47000,
+                "features": []
+            },
+            {
+                "msrp": 64000,
+                "features": [
+                    "Apple CarPlay",
+                    "sunroof",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 68000,
+                "features": [
+                    "remote start",
+                    "upgraded sound system",
+                    "sunroof",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 50000,
+                "features": [
+                    "remote start"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 22000,
+                "features": []
+            },
+            {
+                "msrp": 35000,
+                "features": [
+                    "360 camera",
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 39000,
+                "features": [
+                    "lane keep assist",
+                    "sunroof",
+                    "wireless phone charging",
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 27000,
+                "features": [
+                    "lane keep assist"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 34000,
+                "features": []
+            },
+            {
+                "msrp": 40000,
+                "features": [
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 48000,
+                "features": [
+                    "navigation system",
+                    "Apple CarPlay",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 51500,
+                "features": [
+                    "wireless phone charging",
+                    "upgraded sound system",
+                    "cruise control",
+                    "sunroof"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 35000,
+                "features": []
+            },
+            {
+                "msrp": 51500,
+                "features": [
+                    "cruise control",
+                    "wireless phone charging",
+                    "lane keep assist",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 42500,
+                "features": [
+                    "cruise control",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 38000,
+                "features": [
+                    "remote start"
+                ]
+            }
+        ]
+    },
+    "Ford": {
+        "van": [
+            {
+                "msrp": 54000,
+                "features": []
+            },
+            {
+                "msrp": 75000,
+                "features": [
+                    "remote start",
+                    "upgraded sound system",
+                    "lane keep assist",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 63000,
+                "features": [
+                    "blind spot monitoring",
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 63500,
+                "features": [
+                    "cruise control",
+                    "360 camera"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 38000,
+                "features": []
+            },
+            {
+                "msrp": 41000,
+                "features": [
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 63000,
+                "features": [
+                    "360 camera",
+                    "blind spot monitoring",
+                    "sunroof",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 60000,
+                "features": [
+                    "blind spot monitoring",
+                    "sunroof",
+                    "sunroof",
+                    "wireless phone charging"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 32000,
+                "features": []
+            },
+            {
+                "msrp": 37000,
+                "features": [
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 35000,
+                "features": [
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 44000,
+                "features": [
+                    "360 camera",
+                    "navigation system"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 40000,
+                "features": []
+            },
+            {
+                "msrp": 65000,
+                "features": [
+                    "sunroof",
+                    "sunroof",
+                    "upgraded sound system",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 53000,
+                "features": [
+                    "upgraded sound system",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 51500,
+                "features": [
+                    "navigation system",
+                    "cruise control",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 37000,
+                "features": []
+            },
+            {
+                "msrp": 50000,
+                "features": [
+                    "upgraded sound system",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 55000,
+                "features": [
+                    "blind spot monitoring",
+                    "sunroof",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 53000,
+                "features": [
+                    "navigation system",
+                    "sunroof",
+                    "Apple CarPlay"
+                ]
+            }
+        ]
+    },
+    "Lexus": {
+        "van": [
+            {
+                "msrp": 100000,
+                "features": []
+            },
+            {
+                "msrp": 125000,
+                "features": [
+                    "leather seats",
+                    "third-row seating",
+                    "backup camera",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 106000,
+                "features": [
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 114500,
+                "features": [
+                    "sunroof",
+                    "cruise control",
+                    "navigation system"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 65000,
+                "features": []
+            },
+            {
+                "msrp": 90000,
+                "features": [
+                    "leather seats",
+                    "third-row seating",
+                    "backup camera",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 79500,
+                "features": [
+                    "360 camera",
+                    "lane keep assist",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 78000,
+                "features": [
+                    "blind spot monitoring",
+                    "lane keep assist",
+                    "wireless phone charging"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 43000,
+                "features": []
+            },
+            {
+                "msrp": 56000,
+                "features": [
+                    "blind spot monitoring",
+                    "Apple CarPlay",
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 56000,
+                "features": [
+                    "wireless phone charging",
+                    "upgraded sound system",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 46000,
+                "features": [
+                    "remote start"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 60000,
+                "features": []
+            },
+            {
+                "msrp": 67000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 71000,
+                "features": [
+                    "lane keep assist",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 67000,
+                "features": [
+                    "sunroof"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 75000,
+                "features": []
+            },
+            {
+                "msrp": 99000,
+                "features": [
+                    "upgraded sound system",
+                    "blind spot monitoring",
+                    "360 camera",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 82000,
+                "features": [
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 91000,
+                "features": [
+                    "sunroof",
+                    "remote start",
+                    "blind spot monitoring"
+                ]
+            }
+        ]
+    },
+    "Audi": {
+        "van": [
+            {
+                "msrp": 109000,
+                "features": []
+            },
+            {
+                "msrp": 127000,
+                "features": [
+                    "sunroof",
+                    "360 camera",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 115000,
+                "features": [
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 119000,
+                "features": [
+                    "blind spot monitoring",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 60000,
+                "features": []
+            },
+            {
+                "msrp": 79000,
+                "features": [
+                    "sunroof",
+                    "360 camera",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 75000,
+                "features": [
+                    "blind spot monitoring",
+                    "360 camera",
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 78000,
+                "features": [
+                    "wireless phone charging",
+                    "lane keep assist",
+                    "sunroof",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 44000,
+                "features": []
+            },
+            {
+                "msrp": 60500,
+                "features": [
+                    "navigation system",
+                    "wireless phone charging",
+                    "sunroof",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 50000,
+                "features": [
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 52000,
+                "features": [
+                    "wireless phone charging",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 65000,
+                "features": []
+            },
+            {
+                "msrp": 72000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 85000,
+                "features": [
+                    "sunroof",
+                    "upgraded sound system",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 72500,
+                "features": [
+                    "cruise control",
+                    "lane keep assist"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 85000,
+                "features": []
+            },
+            {
+                "msrp": 88000,
+                "features": [
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 92000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 94000,
+                "features": [
+                    "360 camera",
+                    "wireless phone charging"
+                ]
+            }
+        ]
+    },
+    "Bmw": {
+        "van": [
+            {
+                "msrp": 110000,
+                "features": []
+            },
+            {
+                "msrp": 117000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 127000,
+                "features": [
+                    "360 camera",
+                    "remote start",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 132000,
+                "features": [
+                    "360 camera",
+                    "blind spot monitoring",
+                    "upgraded sound system",
+                    "remote start"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 84000,
+                "features": []
+            },
+            {
+                "msrp": 96000,
+                "features": [
+                    "360 camera",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 103000,
+                "features": [
+                    "sunroof",
+                    "360 camera",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 101500,
+                "features": [
+                    "upgraded sound system",
+                    "wireless phone charging",
+                    "cruise control",
+                    "sunroof"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 57000,
+                "features": []
+            },
+            {
+                "msrp": 62000,
+                "features": [
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 74000,
+                "features": [
+                    "sunroof",
+                    "360 camera",
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 64000,
+                "features": [
+                    "sunroof"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 75000,
+                "features": []
+            },
+            {
+                "msrp": 96000,
+                "features": [
+                    "sunroof",
+                    "upgraded sound system",
+                    "remote start",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 97000,
+                "features": [
+                    "sunroof",
+                    "remote start",
+                    "lane keep assist",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 84500,
+                "features": [
+                    "sunroof",
+                    "cruise control"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 98000,
+                "features": []
+            },
+            {
+                "msrp": 112000,
+                "features": [
+                    "navigation system",
+                    "upgraded sound system",
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 121000,
+                "features": [
+                    "navigation system",
+                    "blind spot monitoring",
+                    "lane keep assist",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 117000,
+                "features": [
+                    "sunroof",
+                    "navigation system",
+                    "sunroof"
+                ]
+            }
+        ]
+    },
+    "Tesla": {
+        "van": [
+            {
+                "msrp": 98000,
+                "features": []
+            },
+            {
+                "msrp": 119000,
+                "features": [
+                    "wireless phone charging",
+                    "sunroof",
+                    "sunroof",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 102500,
+                "features": [
+                    "cruise control",
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 116000,
+                "features": [
+                    "lane keep assist",
+                    "sunroof",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 86000,
+                "features": []
+            },
+            {
+                "msrp": 105000,
+                "features": [
+                    "upgraded sound system",
+                    "lane keep assist",
+                    "remote start",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 98000,
+                "features": [
+                    "navigation system",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 95000,
+                "features": [
+                    "blind spot monitoring",
+                    "remote start"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 49000,
+                "features": []
+            },
+            {
+                "msrp": 52000,
+                "features": [
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 57500,
+                "features": [
+                    "blind spot monitoring",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 68000,
+                "features": [
+                    "remote start",
+                    "lane keep assist",
+                    "Apple CarPlay",
+                    "360 camera"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 70000,
+                "features": []
+            },
+            {
+                "msrp": 88000,
+                "features": [
+                    "navigation system",
+                    "blind spot monitoring",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 89500,
+                "features": [
+                    "cruise control",
+                    "sunroof",
+                    "remote start",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 81000,
+                "features": [
+                    "wireless phone charging",
+                    "Apple CarPlay",
+                    "lane keep assist"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 95000,
+                "features": []
+            },
+            {
+                "msrp": 103500,
+                "features": [
+                    "cruise control",
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 118000,
+                "features": [
+                    "sunroof",
+                    "blind spot monitoring",
+                    "remote start",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 116000,
+                "features": [
+                    "remote start",
+                    "upgraded sound system",
+                    "lane keep assist",
+                    "sunroof"
+                ]
+            }
+        ]
+    },
+    "Kia": {
+        "van": [
+            {
+                "msrp": 35000,
+                "features": []
+            },
+            {
+                "msrp": 60000,
+                "features": [
+                    "leather seats",
+                    "third-row seating",
+                    "backup camera",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 46000,
+                "features": [
+                    "360 camera",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 50000,
+                "features": [
+                    "sunroof",
+                    "remote start",
+                    "lane keep assist"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 32000,
+                "features": []
+            },
+            {
+                "msrp": 53000,
+                "features": [
+                    "blind spot monitoring",
+                    "360 camera",
+                    "navigation system",
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 54000,
+                "features": [
+                    "360 camera",
+                    "remote start",
+                    "sunroof",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 38000,
+                "features": [
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 21000,
+                "features": []
+            },
+            {
+                "msrp": 29000,
+                "features": [
+                    "remote start",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 39500,
+                "features": [
+                    "sunroof",
+                    "blind spot monitoring",
+                    "remote start",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 27500,
+                "features": [
+                    "Apple CarPlay",
+                    "cruise control"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 42000,
+                "features": []
+            },
+            {
+                "msrp": 52500,
+                "features": [
+                    "wireless phone charging",
+                    "cruise control",
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 61000,
+                "features": [
+                    "sunroof",
+                    "Apple CarPlay",
+                    "lane keep assist",
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 54000,
+                "features": [
+                    "navigation system",
+                    "wireless phone charging",
+                    "lane keep assist"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 33000,
+                "features": []
+            },
+            {
+                "msrp": 58000,
+                "features": [
+                    "leather seats",
+                    "third-row seating",
+                    "backup camera",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 39500,
+                "features": [
+                    "cruise control",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 48000,
+                "features": [
+                    "wireless phone charging",
+                    "upgraded sound system",
+                    "sunroof"
+                ]
+            }
+        ]
+    },
+    "Mercedes-benz": {
+        "van": [
+            {
+                "msrp": 97000,
+                "features": []
+            },
+            {
+                "msrp": 101000,
+                "features": [
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 113000,
+                "features": [
+                    "remote start",
+                    "blind spot monitoring",
+                    "360 camera"
+                ]
+            },
+            {
+                "msrp": 115000,
+                "features": [
+                    "lane keep assist",
+                    "blind spot monitoring",
+                    "360 camera"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 70000,
+                "features": []
+            },
+            {
+                "msrp": 72000,
+                "features": [
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 83000,
+                "features": [
+                    "Apple CarPlay",
+                    "wireless phone charging",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 92000,
+                "features": [
+                    "remote start",
+                    "360 camera",
+                    "lane keep assist",
+                    "sunroof"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 50000,
+                "features": []
+            },
+            {
+                "msrp": 66000,
+                "features": [
+                    "sunroof",
+                    "Apple CarPlay",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 56000,
+                "features": [
+                    "upgraded sound system"
+                ]
+            },
+            {
+                "msrp": 66500,
+                "features": [
+                    "360 camera",
+                    "cruise control",
+                    "sunroof"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 55000,
+                "features": []
+            },
+            {
+                "msrp": 80000,
+                "features": [
+                    "lane keep assist",
+                    "upgraded sound system",
+                    "360 camera",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 77000,
+                "features": [
+                    "360 camera",
+                    "navigation system",
+                    "Apple CarPlay",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 61000,
+                "features": [
+                    "upgraded sound system"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 91000,
+                "features": []
+            },
+            {
+                "msrp": 100000,
+                "features": [
+                    "Apple CarPlay",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 108000,
+                "features": [
+                    "blind spot monitoring",
+                    "Apple CarPlay",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 111000,
+                "features": [
+                    "360 camera",
+                    "sunroof",
+                    "upgraded sound system"
+                ]
+            }
+        ]
+    },
+    "Porsche": {
+        "van": [
+            {
+                "msrp": 130000,
+                "features": []
+            },
+            {
+                "msrp": 145000,
+                "features": [
+                    "remote start",
+                    "sunroof",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 140500,
+                "features": [
+                    "lane keep assist",
+                    "remote start",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 146000,
+                "features": [
+                    "sunroof",
+                    "sunroof",
+                    "wireless phone charging"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 100000,
+                "features": []
+            },
+            {
+                "msrp": 109000,
+                "features": [
+                    "navigation system",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 114500,
+                "features": [
+                    "upgraded sound system",
+                    "cruise control",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 123000,
+                "features": [
+                    "sunroof",
+                    "lane keep assist",
+                    "navigation system",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 80000,
+                "features": []
+            },
+            {
+                "msrp": 90500,
+                "features": [
+                    "cruise control",
+                    "wireless phone charging",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 87000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 92000,
+                "features": [
+                    "wireless phone charging",
+                    "upgraded sound system",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "truck": [
+            {
+                "msrp": 160000,
+                "features": []
+            },
+            {
+                "msrp": 170000,
+                "features": [
+                    "360 camera",
+                    "remote start"
+                ]
+            },
+            {
+                "msrp": 176500,
+                "features": [
+                    "upgraded sound system",
+                    "cruise control",
+                    "remote start",
+                    "lane keep assist"
+                ]
+            },
+            {
+                "msrp": 172000,
+                "features": [
+                    "lane keep assist",
+                    "wireless phone charging",
+                    "navigation system"
+                ]
+            }
+        ],
+        "sports car": [
+            {
+                "msrp": 120000,
+                "features": []
+            },
+            {
+                "msrp": 129000,
+                "features": [
+                    "sunroof",
+                    "wireless phone charging"
+                ]
+            },
+            {
+                "msrp": 129500,
+                "features": [
+                    "sunroof",
+                    "cruise control"
+                ]
+            },
+            {
+                "msrp": 136000,
+                "features": [
+                    "navigation system",
+                    "Apple CarPlay",
+                    "360 camera"
+                ]
+            }
+        ]
+    }
+}

@@ -1,0 +1,612 @@
+{
+    "Volkswagen": {
+        "van": [
+            {
+                "msrp": 55000,
+                "features": []
+            },
+            {
+                "msrp": 75000,
+                "features": [
+                    "backup camera",
+                    "heated seats",
+                    "blind spot monitoring",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 69000,
+                "features": [
+                    "backup camera",
+                    "heated seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 75000,
+                "features": [
+                    "sunroof",
+                    "heated seats",
+                    "backup camera",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 37000,
+                "features": []
+            },
+            {
+                "msrp": 44000,
+                "features": [
+                    "backup camera",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 48000,
+                "features": [
+                    "heated seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 48000,
+                "features": [
+                    "heated seats",
+                    "sunroof"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 23000,
+                "features": []
+            },
+            {
+                "msrp": 29000,
+                "features": [
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 33000,
+                "features": [
+                    "blind spot monitoring",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 40000,
+                "features": [
+                    "sunroof",
+                    "heated seats",
+                    "blind spot monitoring"
+                ]
+            }
+        ]
+    },
+    "Toyota": {
+        "van": [
+            {
+                "msrp": 39000,
+                "features": []
+            },
+            {
+                "msrp": 56000,
+                "features": [
+                    "sunroof",
+                    "heated seats",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 59000,
+                "features": [
+                    "blind spot monitoring",
+                    "heated seats",
+                    "backup camera",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 42000,
+                "features": [
+                    "backup camera"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 47000,
+                "features": []
+            },
+            {
+                "msrp": 63000,
+                "features": [
+                    "sunroof",
+                    "backup camera",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 64000,
+                "features": [
+                    "blind spot monitoring",
+                    "heated seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 54000,
+                "features": [
+                    "sunroof"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 22000,
+                "features": []
+            },
+            {
+                "msrp": 29000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 42000,
+                "features": [
+                    "backup camera",
+                    "blind spot monitoring",
+                    "heated seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 42000,
+                "features": [
+                    "sunroof",
+                    "backup camera",
+                    "heated seats",
+                    "blind spot monitoring"
+                ]
+            }
+        ]
+    },
+    "Ford": {
+        "van": [
+            {
+                "msrp": 54000,
+                "features": []
+            },
+            {
+                "msrp": 71000,
+                "features": [
+                    "blind spot monitoring",
+                    "heated seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 74000,
+                "features": [
+                    "heated seats",
+                    "backup camera",
+                    "sunroof",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 74000,
+                "features": [
+                    "heated seats",
+                    "backup camera",
+                    "sunroof",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 38000,
+                "features": []
+            },
+            {
+                "msrp": 48000,
+                "features": [
+                    "backup camera",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 52000,
+                "features": [
+                    "backup camera",
+                    "sunroof",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 52000,
+                "features": [
+                    "backup camera",
+                    "sunroof",
+                    "heated seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 32000,
+                "features": []
+            },
+            {
+                "msrp": 52000,
+                "features": [
+                    "blind spot monitoring",
+                    "sunroof",
+                    "backup camera",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 52000,
+                "features": [
+                    "sunroof",
+                    "heated seats",
+                    "blind spot monitoring",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 52000,
+                "features": [
+                    "sunroof",
+                    "backup camera",
+                    "heated seats",
+                    "blind spot monitoring"
+                ]
+            }
+        ]
+    },
+    "Lexus": {
+        "van": [
+            {
+                "msrp": 100000,
+                "features": []
+            },
+            {
+                "msrp": 120000,
+                "features": [
+                    "heated seats",
+                    "backup camera",
+                    "sunroof",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 106000,
+                "features": [
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 109000,
+                "features": [
+                    "backup camera",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 65000,
+                "features": []
+            },
+            {
+                "msrp": 79000,
+                "features": [
+                    "heated seats",
+                    "sunroof",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 75000,
+                "features": [
+                    "heated seats",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 72000,
+                "features": [
+                    "sunroof"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 43000,
+                "features": []
+            },
+            {
+                "msrp": 46000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 56000,
+                "features": [
+                    "heated seats",
+                    "blind spot monitoring",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 53000,
+                "features": [
+                    "backup camera",
+                    "sunroof"
+                ]
+            }
+        ]
+    },
+    "Audi": {
+        "van": [
+            {
+                "msrp": 109000,
+                "features": []
+            },
+            {
+                "msrp": 120000,
+                "features": [
+                    "navigation system",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 120000,
+                "features": [
+                    "heated seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 125000,
+                "features": [
+                    "sunroof",
+                    "backup camera",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 60000,
+                "features": []
+            },
+            {
+                "msrp": 66000,
+                "features": [
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 67000,
+                "features": [
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 70000,
+                "features": [
+                    "backup camera",
+                    "sunroof"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 44000,
+                "features": []
+            },
+            {
+                "msrp": 64000,
+                "features": [
+                    "sunroof",
+                    "heated seats",
+                    "blind spot monitoring",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 57000,
+                "features": [
+                    "sunroof",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 60000,
+                "features": [
+                    "sunroof",
+                    "blind spot monitoring",
+                    "backup camera"
+                ]
+            }
+        ]
+    },
+    "Bmw": {
+        "van": [
+            {
+                "msrp": 110000,
+                "features": []
+            },
+            {
+                "msrp": 125000,
+                "features": [
+                    "navigation system",
+                    "heated seats",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 126000,
+                "features": [
+                    "navigation system",
+                    "heated seats",
+                    "sunroof"
+                ]
+            },
+            {
+                "msrp": 120000,
+                "features": [
+                    "sunroof",
+                    "backup camera"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 84000,
+                "features": []
+            },
+            {
+                "msrp": 87000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 94000,
+                "features": [
+                    "sunroof",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 94000,
+                "features": [
+                    "sunroof",
+                    "backup camera"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 57000,
+                "features": []
+            },
+            {
+                "msrp": 67000,
+                "features": [
+                    "blind spot monitoring",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 68000,
+                "features": [
+                    "sunroof",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 63000,
+                "features": [
+                    "blind spot monitoring"
+                ]
+            }
+        ]
+    },
+    "Tesla": {
+        "van": [
+            {
+                "msrp": 98000,
+                "features": []
+            },
+            {
+                "msrp": 103000,
+                "features": [
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 118000,
+                "features": [
+                    "blind spot monitoring",
+                    "heated seats",
+                    "sunroof",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 101000,
+                "features": [
+                    "backup camera"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 86000,
+                "features": []
+            },
+            {
+                "msrp": 89000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 96000,
+                "features": [
+                    "heated seats",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 99000,
+                "features": [
+                    "sunroof",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 49000,
+                "features": []
+            },
+            {
+                "msrp": 62000,
+                "features": [
+                    "blind spot monitoring",
+                    "heated seats",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 62000,
+                "features": [
+                    "backup camera",
+                    "blind spot monitoring",
+                    "heated seats"
+                ]
+            },
+            {
+                "msrp": 63000,
+                "features": [
+                    "backup camera",
+                    "heated seats",
+                    "sunroof"
+                ]
+            }
+        ]
+    }
+}

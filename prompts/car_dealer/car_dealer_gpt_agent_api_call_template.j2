@@ -9,7 +9,8 @@ This will search for all the cars that satisfy both the `api_brand` and the `api
 {
     "api_name": "search_car_by_brand_type",
     "api_brand": "{ TODO: name of the brand that you want to search for }",
-    "api_type": "{ TODO: name of the type that you want to search for }"
+    "api_type": "{ TODO: name of the type that you want to search for }",
+    "api_features": [] # THIS MUST BE EMPTY
 }
 ```
 2. search_car_by_brand
@@ -18,7 +19,8 @@ This will search for all the cars that satisfy the `api_brand` in the database. 
 {
     "api_name": "search_car_by_brand",
     "api_brand": "{ TODO: name of the brand that you want to search for }",
-    "api_type": ""
+    "api_type": "",
+    "api_features": [] # THIS MUST BE EMPTY
 }
 ```
 3. search_car_by_type
@@ -27,7 +29,17 @@ This will search for all the cars that satisfy the `api_type` in the database. Y
 {
     "api_name": "search_car_by_type",
     "api_brand": "",
-    "api_type": "{ TODO: name of the type that you want to search for }"
+    "api_type": "{ TODO: name of the type that you want to search for }",
+    "api_features": [] # THIS MUST BE EMPTY
+}
+4. search_car_that_have_features
+This will search for all the cars that have the features in the database. You must format you API call as the following:
+```json
+{
+    "api_name": "search_car_that_have_features",
+    "api_brand": "",
+    "api_type": "",
+    "api_features": ["feature1", "feature2", ...]
 }
 ```
 4. no_op
@@ -36,7 +48,8 @@ If you don't need any information from the database, you can do nothing.
 {
     "api_name": "no_op",
     "api_brand": "",
-    "api_type": ""
+    "api_type": "",
+    "api_features": []
 }
 ```
 
@@ -47,6 +60,9 @@ Here is all the possible car brands in the database:
 Here is all the possible car types in the database:
 {{ all_car_types }}
 
+Here is all the possible car features in the database:
+{{ all_car_features }}
+
 ### Your goal and instructions
 Your goal is to use database API to get information about cars in your dealership. You will decide what API to call based on the chat history and the previous API call that you have done. 
 
@@ -56,11 +72,13 @@ Please follow these general instructions:
 * If the previous api request and response already answer the buyer's request (e.g., the buyer is just negotiating prices), you can choose no_op since you already have all the necesarry information. 
 * If the buyer is asking for a brand of car, you can choose search_car_by_brand.
 * If the buyer is asking for a type of car, you can choose search_car_by_type.
+* If the buyer is asking for a car that has certain features, you can choose search_car_that_have_features. Note that this will show all the cars that have these features, and they might contain other features as well.
+* If you are not able to find a car that have all the features that the buyer wants, you MUST choose to search on a subset of the features mentioned by the buyer, still using the search_car_that_have_features API.
 * If the buyer has not made any request it, you can choose no_op.
-* DO NOT repeat the exact same API call as the previous one.
+* DO NOT repeat the exact same API call as the previous one. It will NOT lead to a better outcome.
 
 ### Output format
-The output is a JSON containing your reasoning and the API call that you are making. 
+The output is a JSON containing your reasoning and the API call that you are making. You MUST ALWAYS output a json. 
 ```json
 {
     "reason": "string: your rationale for the API call that you will make",
@@ -68,6 +86,7 @@ The output is a JSON containing your reasoning and the API call that you are mak
         "api_name": "string: the name of the API call that you will make",
         "api_brand": "string: the brand of the car that you will search for (if applicable)",
         "api_type": "string: the type of the car that you will search for (if applicable)",
+        "api_features": ["string: the features that you will search for (if applicable)"]
     }
 }
 ```
@@ -76,6 +95,9 @@ The output is a JSON containing your reasoning and the API call that you are mak
 {% if mode == 'input' %}
 Below is the history of the conversation so far:
 {{ observation_action_history }}
+
+All previous {{ past_N }} API calls (include no-ops):
+{{ prev_api_call_history }}
 
 Previous API call (that is not no-op):
 {{ previous_api_call }}

@@ -1,0 +1,615 @@
+{
+    "Volkswagen": {
+        "van": [
+            {
+                "msrp": 55000,
+                "features": []
+            },
+            {
+                "msrp": 65000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 59000,
+                "features": [
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 75000,
+                "features": [
+                    "blind spot monitoring",
+                    "leather seats",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 37000,
+                "features": []
+            },
+            {
+                "msrp": 58000,
+                "features": [
+                    "leather seats",
+                    "blind spot monitoring",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 61000,
+                "features": [
+                    "leather seats",
+                    "navigation system",
+                    "backup camera",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 62000,
+                "features": [
+                    "Apple CarPlay",
+                    "navigation system",
+                    "leather seats",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 23000,
+                "features": []
+            },
+            {
+                "msrp": 31000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 31000,
+                "features": [
+                    "backup camera",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 47000,
+                "features": [
+                    "blind spot monitoring",
+                    "navigation system",
+                    "backup camera",
+                    "leather seats"
+                ]
+            }
+        ]
+    },
+    "Toyota": {
+        "van": [
+            {
+                "msrp": 39000,
+                "features": []
+            },
+            {
+                "msrp": 50000,
+                "features": [
+                    "navigation system",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 43000,
+                "features": [
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 49000,
+                "features": [
+                    "leather seats"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 47000,
+                "features": []
+            },
+            {
+                "msrp": 64000,
+                "features": [
+                    "backup camera",
+                    "Apple CarPlay",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 60000,
+                "features": [
+                    "blind spot monitoring",
+                    "backup camera",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 62000,
+                "features": [
+                    "navigation system",
+                    "leather seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 22000,
+                "features": []
+            },
+            {
+                "msrp": 34000,
+                "features": [
+                    "third-row seating",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 30000,
+                "features": [
+                    "backup camera",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 41000,
+                "features": [
+                    "navigation system",
+                    "Apple CarPlay",
+                    "leather seats"
+                ]
+            }
+        ]
+    },
+    "Ford": {
+        "van": [
+            {
+                "msrp": 54000,
+                "features": []
+            },
+            {
+                "msrp": 72000,
+                "features": [
+                    "blind spot monitoring",
+                    "backup camera",
+                    "navigation system",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 66000,
+                "features": [
+                    "Apple CarPlay",
+                    "backup camera",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 58000,
+                "features": [
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 38000,
+                "features": []
+            },
+            {
+                "msrp": 56000,
+                "features": [
+                    "backup camera",
+                    "Apple CarPlay",
+                    "navigation system",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 60000,
+                "features": [
+                    "Apple CarPlay",
+                    "backup camera",
+                    "navigation system",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 59000,
+                "features": [
+                    "navigation system",
+                    "blind spot monitoring",
+                    "leather seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 32000,
+                "features": []
+            },
+            {
+                "msrp": 46000,
+                "features": [
+                    "leather seats",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 55000,
+                "features": [
+                    "blind spot monitoring",
+                    "backup camera",
+                    "Apple CarPlay",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 43000,
+                "features": [
+                    "blind spot monitoring",
+                    "navigation system"
+                ]
+            }
+        ]
+    },
+    "Lexus": {
+        "van": [
+            {
+                "msrp": 100000,
+                "features": []
+            },
+            {
+                "msrp": 118000,
+                "features": [
+                    "blind spot monitoring",
+                    "backup camera",
+                    "Apple CarPlay",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 107000,
+                "features": [
+                    "Apple CarPlay",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 109000,
+                "features": [
+                    "backup camera",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 65000,
+                "features": []
+            },
+            {
+                "msrp": 89000,
+                "features": [
+                    "backup camera",
+                    "blind spot monitoring",
+                    "leather seats",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 77000,
+                "features": [
+                    "Apple CarPlay",
+                    "backup camera",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 86000,
+                "features": [
+                    "navigation system",
+                    "leather seats",
+                    "blind spot monitoring"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 43000,
+                "features": []
+            },
+            {
+                "msrp": 55000,
+                "features": [
+                    "navigation system",
+                    "backup camera",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 51000,
+                "features": [
+                    "navigation system",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 47000,
+                "features": [
+                    "Apple CarPlay"
+                ]
+            }
+        ]
+    },
+    "Audi": {
+        "van": [
+            {
+                "msrp": 109000,
+                "features": []
+            },
+            {
+                "msrp": 117000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 134000,
+                "features": [
+                    "Apple CarPlay",
+                    "navigation system",
+                    "blind spot monitoring",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 113000,
+                "features": [
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 60000,
+                "features": []
+            },
+            {
+                "msrp": 65000,
+                "features": [
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 78000,
+                "features": [
+                    "backup camera",
+                    "navigation system",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 72000,
+                "features": [
+                    "Apple CarPlay",
+                    "backup camera",
+                    "navigation system"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 44000,
+                "features": []
+            },
+            {
+                "msrp": 68000,
+                "features": [
+                    "navigation system",
+                    "blind spot monitoring",
+                    "leather seats",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 47000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 51000,
+                "features": [
+                    "backup camera",
+                    "Apple CarPlay"
+                ]
+            }
+        ]
+    },
+    "Bmw": {
+        "van": [
+            {
+                "msrp": 110000,
+                "features": []
+            },
+            {
+                "msrp": 127000,
+                "features": [
+                    "backup camera",
+                    "Apple CarPlay",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 123000,
+                "features": [
+                    "blind spot monitoring",
+                    "backup camera",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 120000,
+                "features": [
+                    "leather seats"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 84000,
+                "features": []
+            },
+            {
+                "msrp": 106000,
+                "features": [
+                    "navigation system",
+                    "leather seats",
+                    "Apple CarPlay",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 98000,
+                "features": [
+                    "Apple CarPlay",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 93000,
+                "features": [
+                    "blind spot monitoring",
+                    "backup camera"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 57000,
+                "features": []
+            },
+            {
+                "msrp": 70000,
+                "features": [
+                    "third-row seating",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 74000,
+                "features": [
+                    "third-row seating",
+                    "blind spot monitoring",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 78000,
+                "features": [
+                    "blind spot monitoring",
+                    "leather seats",
+                    "navigation system"
+                ]
+            }
+        ]
+    },
+    "Tesla": {
+        "van": [
+            {
+                "msrp": 98000,
+                "features": []
+            },
+            {
+                "msrp": 116000,
+                "features": [
+                    "Apple CarPlay",
+                    "backup camera",
+                    "blind spot monitoring",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 108000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 122000,
+                "features": [
+                    "leather seats",
+                    "navigation system",
+                    "blind spot monitoring",
+                    "backup camera"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 86000,
+                "features": []
+            },
+            {
+                "msrp": 104000,
+                "features": [
+                    "backup camera",
+                    "leather seats",
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 111000,
+                "features": [
+                    "blind spot monitoring",
+                    "navigation system",
+                    "Apple CarPlay",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 100000,
+                "features": [
+                    "Apple CarPlay",
+                    "leather seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 49000,
+                "features": []
+            },
+            {
+                "msrp": 60000,
+                "features": [
+                    "navigation system",
+                    "blind spot monitoring"
+                ]
+            },
+            {
+                "msrp": 54000,
+                "features": [
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 59000,
+                "features": [
+                    "leather seats"
+                ]
+            }
+        ]
+    }
+}

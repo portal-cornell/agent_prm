@@ -1,0 +1,608 @@
+{
+    "Volkswagen": {
+        "van": [
+            {
+                "msrp": 55000,
+                "features": []
+            },
+            {
+                "msrp": 80000,
+                "features": [
+                    "third-row seating",
+                    "backup camera",
+                    "Apple CarPlay",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 68000,
+                "features": [
+                    "backup camera",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 80000,
+                "features": [
+                    "third-row seating",
+                    "Apple CarPlay",
+                    "backup camera",
+                    "leather seats"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 37000,
+                "features": []
+            },
+            {
+                "msrp": 58000,
+                "features": [
+                    "leather seats",
+                    "backup camera",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 62000,
+                "features": [
+                    "backup camera",
+                    "third-row seating",
+                    "leather seats",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 59000,
+                "features": [
+                    "leather seats",
+                    "third-row seating",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 23000,
+                "features": []
+            },
+            {
+                "msrp": 37000,
+                "features": [
+                    "leather seats",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 35000,
+                "features": [
+                    "third-row seating",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 48000,
+                "features": [
+                    "Apple CarPlay",
+                    "backup camera",
+                    "leather seats",
+                    "third-row seating"
+                ]
+            }
+        ]
+    },
+    "Toyota": {
+        "van": [
+            {
+                "msrp": 39000,
+                "features": []
+            },
+            {
+                "msrp": 62000,
+                "features": [
+                    "navigation system",
+                    "leather seats",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 64000,
+                "features": [
+                    "backup camera",
+                    "Apple CarPlay",
+                    "third-row seating",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 57000,
+                "features": [
+                    "third-row seating",
+                    "leather seats"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 47000,
+                "features": []
+            },
+            {
+                "msrp": 64000,
+                "features": [
+                    "backup camera",
+                    "leather seats",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 58000,
+                "features": [
+                    "backup camera",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 72000,
+                "features": [
+                    "Apple CarPlay",
+                    "third-row seating",
+                    "leather seats",
+                    "backup camera"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 22000,
+                "features": []
+            },
+            {
+                "msrp": 31000,
+                "features": [
+                    "navigation system",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 27000,
+                "features": [
+                    "navigation system"
+                ]
+            },
+            {
+                "msrp": 44000,
+                "features": [
+                    "Apple CarPlay",
+                    "leather seats",
+                    "third-row seating"
+                ]
+            }
+        ]
+    },
+    "Ford": {
+        "van": [
+            {
+                "msrp": 54000,
+                "features": []
+            },
+            {
+                "msrp": 57000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 57000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 79000,
+                "features": [
+                    "third-row seating",
+                    "leather seats",
+                    "Apple CarPlay",
+                    "backup camera"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 38000,
+                "features": []
+            },
+            {
+                "msrp": 42000,
+                "features": [
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 48000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 63000,
+                "features": [
+                    "backup camera",
+                    "third-row seating",
+                    "leather seats",
+                    "Apple CarPlay"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 32000,
+                "features": []
+            },
+            {
+                "msrp": 42000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 35000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 43000,
+                "features": [
+                    "third-row seating",
+                    "backup camera"
+                ]
+            }
+        ]
+    },
+    "Lexus": {
+        "van": [
+            {
+                "msrp": 100000,
+                "features": []
+            },
+            {
+                "msrp": 103000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 110000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 122000,
+                "features": [
+                    "leather seats",
+                    "Apple CarPlay",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 65000,
+                "features": []
+            },
+            {
+                "msrp": 75000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 75000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 82000,
+                "features": [
+                    "leather seats",
+                    "Apple CarPlay",
+                    "backup camera"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 43000,
+                "features": []
+            },
+            {
+                "msrp": 68000,
+                "features": [
+                    "Apple CarPlay",
+                    "third-row seating",
+                    "backup camera",
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 47000,
+                "features": [
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 50000,
+                "features": [
+                    "Apple CarPlay",
+                    "backup camera"
+                ]
+            }
+        ]
+    },
+    "Audi": {
+        "van": [
+            {
+                "msrp": 109000,
+                "features": []
+            },
+            {
+                "msrp": 131000,
+                "features": [
+                    "leather seats",
+                    "third-row seating",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 134000,
+                "features": [
+                    "backup camera",
+                    "leather seats",
+                    "Apple CarPlay",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 134000,
+                "features": [
+                    "Apple CarPlay",
+                    "third-row seating",
+                    "leather seats",
+                    "backup camera"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 60000,
+                "features": []
+            },
+            {
+                "msrp": 64000,
+                "features": [
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 70000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 77000,
+                "features": [
+                    "backup camera",
+                    "Apple CarPlay",
+                    "leather seats"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 44000,
+                "features": []
+            },
+            {
+                "msrp": 67000,
+                "features": [
+                    "navigation system",
+                    "leather seats",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 47000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 52000,
+                "features": [
+                    "third-row seating"
+                ]
+            }
+        ]
+    },
+    "Bmw": {
+        "van": [
+            {
+                "msrp": 110000,
+                "features": []
+            },
+            {
+                "msrp": 123000,
+                "features": [
+                    "navigation system",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 113000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 121000,
+                "features": [
+                    "backup camera",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 84000,
+                "features": []
+            },
+            {
+                "msrp": 109000,
+                "features": [
+                    "Apple CarPlay",
+                    "leather seats",
+                    "third-row seating",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 94000,
+                "features": [
+                    "leather seats"
+                ]
+            },
+            {
+                "msrp": 105000,
+                "features": [
+                    "third-row seating",
+                    "leather seats",
+                    "backup camera"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 57000,
+                "features": []
+            },
+            {
+                "msrp": 64000,
+                "features": [
+                    "Apple CarPlay",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 78000,
+                "features": [
+                    "third-row seating",
+                    "leather seats",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 67000,
+                "features": [
+                    "leather seats"
+                ]
+            }
+        ]
+    },
+    "Tesla": {
+        "van": [
+            {
+                "msrp": 98000,
+                "features": []
+            },
+            {
+                "msrp": 123000,
+                "features": [
+                    "leather seats",
+                    "third-row seating",
+                    "Apple CarPlay",
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 115000,
+                "features": [
+                    "leather seats",
+                    "backup camera",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 109000,
+                "features": [
+                    "backup camera",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "SUV": [
+            {
+                "msrp": 86000,
+                "features": []
+            },
+            {
+                "msrp": 89000,
+                "features": [
+                    "backup camera"
+                ]
+            },
+            {
+                "msrp": 94000,
+                "features": [
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 111000,
+                "features": [
+                    "Apple CarPlay",
+                    "backup camera",
+                    "leather seats",
+                    "third-row seating"
+                ]
+            }
+        ],
+        "sedan": [
+            {
+                "msrp": 49000,
+                "features": []
+            },
+            {
+                "msrp": 74000,
+                "features": [
+                    "third-row seating",
+                    "backup camera",
+                    "leather seats",
+                    "Apple CarPlay"
+                ]
+            },
+            {
+                "msrp": 74000,
+                "features": [
+                    "leather seats",
+                    "backup camera",
+                    "Apple CarPlay",
+                    "third-row seating"
+                ]
+            },
+            {
+                "msrp": 70000,
+                "features": [
+                    "backup camera",
+                    "third-row seating",
+                    "leather seats"
+                ]
+            }
+        ]
+    }
+}

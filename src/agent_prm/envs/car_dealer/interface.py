@@ -1,3 +1,4 @@
+import os
 import copy
 import time
 import json
@@ -5,28 +6,27 @@ from jinja2 import Template
 from typing import List
 
 from agent_prm.agents.agent import Agent
-from agent_prm.envs.car_dealer.env import BatchedCarDealerEnvironment
 from agent_prm.envs.car_dealer.data import DEFAULT_BRANDS, DEFAULT_TYPES
 from agent_prm.envs.car_dealer.data import format_chat_history, format_car_options
 from agent_prm.envs.car_dealer.parser import parse_reason_and_action_car_dealer_api_call, parse_reason_and_action_car_dealer
-from agent_prm.utils.general_utils import load_json
 
-car_inventory_dict = load_json("src/agent_prm/envs/car_dealer/car_inventory_dict.json")
-
-def use_api(arguments: dict):
+def use_api(arguments: dict, car_inventory_dict: dict):
     """
     Return a list of cars that match the given arguments.
     """
     api_brand = arguments["api_brand"].strip().lower().capitalize()
     api_type = arguments["api_type"].strip().lower()
+    api_features = [feature.strip().lower() for feature in arguments["api_features"]]
 
     try:
         if arguments["api_name"] == "search_car_by_brand_type":
-            return search_car_by_brand_type(api_brand, api_type)
+            return search_car_by_brand_type(api_brand, api_type, car_inventory_dict)
         elif arguments["api_name"] == "search_car_by_brand":
-            return search_car_by_brand(api_brand)
+            return search_car_by_brand(api_brand, car_inventory_dict)
         elif arguments["api_name"] == "search_car_by_type":
-            return search_car_by_type(api_type)
+            return search_car_by_type(api_type, car_inventory_dict)
+        elif arguments["api_name"] == "search_car_that_have_features":
+            return search_car_that_have_features(api_features, car_inventory_dict)
         elif arguments["api_name"] == "no_op":
             return []
         else:
@@ -36,7 +36,7 @@ def use_api(arguments: dict):
         # print(f"Error in use_api: {e}")
         return []
 
-def search_car_by_brand_type(brand: str, car_type: str):
+def search_car_by_brand_type(brand: str, car_type: str, car_inventory_dict: dict):
     if car_type not in car_inventory_dict[brand]:
         return []
 
@@ -49,23 +49,7 @@ def search_car_by_brand_type(brand: str, car_type: str):
 
     return car_list
 
-def search_car_by_brand_type_features(brand: str, car_type: str, features: List[str]):
-    """
-    Legacy API.
-
-    Return a list of cars that match the given brand, car type, and features.
-    """
-    car_by_brand_type = search_car_by_brand_type(brand, car_type)
-
-    sorted_features = sorted(features)
-    matching_cars = []
-    for car in car_by_brand_type:
-        car_features = sorted(car["features"])
-        if car_features == sorted_features:
-            matching_cars.append(car)
-    return matching_cars
-
-def search_car_by_brand(brand: str):
+def search_car_by_brand(brand: str, car_inventory_dict: dict):
     car_list = []
     for car_type in car_inventory_dict[brand]:
         for car in car_inventory_dict[brand][car_type]:
@@ -76,7 +60,7 @@ def search_car_by_brand(brand: str):
             car_list.append(car_info)
     return car_list
 
-def search_car_by_type(car_type: str):
+def search_car_by_type(car_type: str, car_inventory_dict: dict):
     car_list = []
     for brand in car_inventory_dict:
         if car_type in car_inventory_dict[brand]:
@@ -86,7 +70,21 @@ def search_car_by_type(car_type: str):
                 car_info["type"] = car_type
                 car_list.append(car_info)
     return car_list
-    
+
+def search_car_that_have_features(features: List[str], car_inventory_dict: dict):
+    car_list = []
+    for brand in car_inventory_dict:
+        for car_type in car_inventory_dict[brand]:
+            for car in car_inventory_dict[brand][car_type]:
+                car_features = sorted(car["features"])
+                car_features = [feature.strip().lower() for feature in car_features]
+                if all([feature in car_features for feature in features]):
+                    car_info = copy.deepcopy(car)
+                    car_info["brand"] = brand
+                    car_info["type"] = car_type
+                    car_list.append(car_info)
+    return car_list
+
 
 def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: Template, agent: Agent, histories: List[List[dict]], prev_api_calls: List[dict], prev_api_responses: List[dict], num_alt_responses: int):
     """
@@ -133,12 +131,12 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
         num_responses=1 + num_alt_responses,
         alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
     ) # List[List[dict]], List[List[str]]
-    # for i in range(len(reason_actions_api)):
-    #     for j in range(1 + num_alt_responses):
-    #         print(generated_api_texts[i * (1 + num_alt_responses) + j])
-    #         print(reason_actions_api[i][j])
-    #         print(f"========= reason_actions_api {i} {j} =========")
-            # input(f"========= reason_actions_api {i} {j} =========")
+    for i in range(len(reason_actions_api)):
+        for j in range(1 + num_alt_responses):
+            print(generated_api_texts[i * (1 + num_alt_responses) + j])
+            print(reason_actions_api[i][j])
+            print(f"========= reason_actions_api {i} {j} =========")
+            input(f"========= reason_actions_api {i} {j} =========")
     
     # Parse the API responses and call the API
     api_calls = [[response["action"] for response in game_responses] for game_responses in reason_actions_api] # List[List[dict]]
@@ -149,10 +147,10 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
     api_responses_used = [] # List[dict] (one per game, unlike above where there are multiple per game)
     # Iterate over the games
     for i in range(len(api_calls)):
-        # print(api_calls[i][0])
-        # print(api_responses[i][0])
-        # print(f"========= actual api call and response {i} =========")
-        # input(f"========= actual api call and response {i} =========")
+        print(api_calls[i][0])
+        print(api_responses[i][0])
+        print(f"========= actual api call and response {i} =========")
+        input(f"========= actual api call and response {i} =========")
         # Assume that the first API call is the one that is used
         if api_calls[i][0]["api_name"] == "no_op":
             api_calls_used.append(prev_api_calls[i])
@@ -161,10 +159,10 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
             api_calls_used.append(api_calls[i][0])
             api_responses_used.append(api_responses[i][0])
 
-        # print(api_calls_used[i])
-        # print(api_responses_used[i])
-        # print(f"========= api_calls_used and api_responses_used {i} =========")
-        # input(f"========= api_calls_used and api_responses_used {i} =========")
+        print(api_calls_used[i])
+        print(api_responses_used[i])
+        print(f"========= api_calls_used and api_responses_used {i} =========")
+        input(f"========= api_calls_used and api_responses_used {i} =========")
 
     ### Step 2: Talk to the user based on the API responses
     agent.set_prompt_template(prompt_template=agent_prompt_template)
@@ -187,12 +185,12 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
         alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
     ) # List[List[dict]], List[List[str]]
 
-    # for i in range(len(reason_actions)):
-    #     for j in range(1 + num_alt_responses):
-    #         print(generated_texts[i * (1 + num_alt_responses) + j])
-    #         print(reason_actions[i][j])
-            # print(f"========= reason_actions {i} {j} =========")
-            # input(f"========= reason_actions {i} {j} =========")
+    for i in range(len(reason_actions)):
+        for j in range(1 + num_alt_responses):
+            print(generated_texts[i * (1 + num_alt_responses) + j])
+            print(reason_actions[i][j])
+            print(f"========= reason_actions {i} {j} =========")
+            input(f"========= reason_actions {i} {j} =========")
 
     proposed_cars = [] # List[dict] (one per game, unlike above where there are multiple per game)
     for i in range(len(api_responses_used)):
@@ -202,21 +200,25 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
         else:
             proposed_cars.append({})
 
-    # for i in range(len(proposed_cars)):
-    #     print(format_car_options(api_responses_used[i]))
-    #     print(proposed_cars[i])
-    #     print(f"========= proposed_cars {i} =========")
-        # input(f"========= proposed_cars {i} =========")
+    for i in range(len(proposed_cars)):
+        print(format_car_options(api_responses_used[i]))
+        print(proposed_cars[i])
+        print(f"========= proposed_cars {i} =========")
+        input(f"========= proposed_cars {i} =========")
 
     return reason_actions_api, generated_api_texts, api_responses, api_calls_used, api_responses_used, reason_actions, proposed_cars, generated_texts
 
 
-def rollout_batch(agent_api_call_template: Template, agent_prompt_template: Template, agent: Agent, batched_env: BatchedCarDealerEnvironment, batch_buyer_infos: List[dict], histories: List[List[dict]], traj_list: List[List[dict]], prev_dones: List[bool], num_alt_responses: int):
+def rollout_batch(agent_api_call_template: Template, agent_prompt_template: Template, agent: Agent, batched_env, batch_buyer_infos: List[dict], histories: List[List[dict]], traj_list: List[List[dict]], prev_dones: List[bool], num_alt_responses: int):
     """
     Rollout a batch of games.
     """
     prev_api_calls = [{} for _ in range(len(histories))] # List[dict]
     prev_api_responses = [[] for _ in range(len(histories))] # List[List[dict]]
+    num_negotiations = [0 for _ in range(len(histories))] # List[int]
+    prev_proposed_cars = [{} for _ in range(len(histories))] # List[dict]
+    num_car_proposed = [0 for _ in range(len(histories))] # List[int]
+    
     while not all(prev_dones):
         # Batched way
         start_time = time.time()
@@ -238,7 +240,7 @@ def rollout_batch(agent_api_call_template: Template, agent_prompt_template: Temp
             data.update(alt_data)
 
         # Query the agent
-        api_reasons_actions_dict, generated_api_texts, api_responses_raw, api_calls_used_raw, api_responses_used_raw, reasons_actions_dict, proposed_cars_raw, generated_raw_texts = query_agent_batch(agent_api_call_template, agent_prompt_template, agent, histories, prev_api_calls, prev_api_responses, num_alt_responses)
+        api_reasons_actions_dict, generated_api_texts, api_responses_raw, api_calls_used_raw, api_responses_used_raw, reasons_actions_dict, proposed_cars_raw, generated_raw_texts = query_agent_batch(agent_api_call_template, agent_prompt_template, agent, histories, prev_api_calls, prev_api_responses, num_alt_responses, num_negotiations, num_car_proposed)
 
         # Update the trajectories (Only if the game is not done)
         for i in range(len(histories)):
@@ -289,12 +291,12 @@ def rollout_batch(agent_api_call_template: Template, agent_prompt_template: Temp
                         
         print(f"[AGENT] time taken for batch_size={len(histories)}: {time.time() - start_time}")
 
-        # print(json.dumps(data, indent=4))
-        # print(f"========= data {i} =========")
-        # input("Check data")
+        print(json.dumps(data, indent=4))
+        print(f"========= data {i} =========")
+        input("Check data")
 
         # Step the environment
-        histories, buyer_reasons, buyer_responses, buyer_decisions, rewards, successes, failure_reasons, dones = batched_env.step(batch_buyer_infos, histories, data['actions'], data['proposed_cars'], prev_dones)
+        histories, buyer_reasons, buyer_responses, buyer_decisions, rewards, successes, failure_reasons, dones, num_negotiations, prev_proposed_cars, num_car_proposed = batched_env.step(batch_buyer_infos, histories, data['actions'], data['proposed_cars'], prev_dones, num_negotiations, prev_proposed_cars, num_car_proposed)
 
         # Log the trajectories
         for i in range(len(histories)):

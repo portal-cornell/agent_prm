@@ -78,7 +78,9 @@ class SGLangServerAgent(Agent):
                       "text": input_text,
                       "sampling_params": {
                           "temperature": self.temperature,
-                          "max_new_tokens": self.max_tokens,},
+                          "max_new_tokens": self.max_tokens,
+                          "stop_token_ids": [self.tokenizer.eos_token_id],
+                          },
                       }
         responses = requests.post(self.server_url, json=data).json()
         generated_text = responses["text"]
@@ -122,8 +124,9 @@ class SGLangServerAgent(Agent):
             data_batch = {"model": self.model_id, 
                           "text": prompts_batch,
                           "sampling_params": {
-                              "temperature": temperature,
+                              "temperature": self.temperature,
                               "max_new_tokens": self.max_tokens,
+                              "stop_token_ids": [self.tokenizer.eos_token_id],
                               },
                           }
             responses_batch = requests.post(self.server_url, 

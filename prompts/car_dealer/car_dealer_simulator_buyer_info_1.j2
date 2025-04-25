@@ -1,0 +1,25 @@
+{% if mode == 'initial' %}
+### Information about the ideal car you want to buy (which the seller might not have)
+    - Car Brand: {{ preferred_brand }}
+    - Car Type: {{ preferred_type }}
+    - Car Features: {{ preferred_features }}
+{% elif mode == 'car_proposed' or mode == 'matched_but_need_discount' or mode == 'discount_given_but_not_matched'%}
+### Information about what you must have for the car
+    - You must have car brand = {{ preferred_brand }}
+    - You must have car type = {{ preferred_type }}
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car has the same brand as what you want? {{ has_same_brand }}
+    - Does the car has the same type as what you want? {{ has_same_type }}
+    - Has the seller offered you a discount? {{ has_discount }}
+{% elif mode == 'condition_met' %}
+### Information about what you must have for the car
+    - You must have car brand = {{ preferred_brand }}
+    - You must have car type = {{ preferred_type }}
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car has the same brand as what you want? {{ has_same_brand }}
+    - Does the car has the same type as what you want? {{ has_same_type }}
+    - Has the seller offered you a discount? {{ has_discount }}
+    - It has satisfied all the conditions. You MUST buy the car now. 
+{% endif %}

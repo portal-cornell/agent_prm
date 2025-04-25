@@ -1,0 +1,35 @@
+{% if mode == 'initial' %}
+### Information about the ideal car you want to buy (which the seller might not have)
+    - Car Brand: {{ preferred_brand }}
+    - Car Type: {{ preferred_type }}
+    - Car Features: {{ preferred_features }}
+{% elif mode == 'car_proposed' or mode == 'expensive_but_not_matched' %}
+### Information about what you must have for the car
+    - You must have car type = {{ preferred_type }}
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car has the same type as what you want? {{ has_same_type }}
+    - Are you still willing to see more cars? {{ under_car_limit }}
+{% elif mode == 'matched_but_not_expensive' %}
+### Information about what you must have for the car
+    - You must have car type = {{ preferred_type }}
+    - You want an expensive car that is at least above ${{ expensive_threshold }}
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car has the same type as what you want? {{ has_same_type }}
+    - Is the car expensive enough? {{ is_expensive }}
+    - Are you still willing to see more cars? {{ under_car_limit }}
+{% elif mode == 'condition_met' %}
+### Information about what you must have for the car
+    - You must have car type = {{ preferred_type }}
+    - You want an expensive car that is at least above ${{ expensive_threshold }}
+
+### Since the seller has proposed a car, here are some information about the car
+    - Does the car has the same type as what you want? {{ has_same_type }}
+    - Is the car expensive enough? {{ is_expensive }}
+    - This car has satisfied all your needs. You MUST buy the car now. 
+{% elif mode == 'exceed_car_limit' %}
+### Number of negotiations
+    - You are extremely impatient. You can only tolerate the seller showing you {{ max_negotiations }} cars.
+    - {{ under_car_limit }}
+{% endif %}
