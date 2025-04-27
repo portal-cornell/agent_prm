@@ -90,14 +90,84 @@ class GuessMyCitySimulator(object):
         city_variants.append(city_name_only)
         city_variants = list(set(city_variants)) 
 
-        city_pattern = re.compile(r"\b(" + "|".join(map(re.escape, city_variants)) + r")\b", re.IGNORECASE)
-        country_pattern = re.compile(r"\b" + re.escape(country_name) + r"\b", re.IGNORECASE) if country_name else None
+        adjective_map = {
+            "south korea": "korean",
+            "india": "indian",
+            "indonesia": "indonesian",
+            "pakistan": "pakistani",
+            "turkey": "turkish",
+            "china": "chinese",
+            "japan": "japanese",
+            "thailand": "thai",
+            "iran": "iranian",
+            "singapore": "singaporean",
+            "iraq": "iraqi",
+            "bangladesh": "bangladeshi",
+            "vietnam": "vietnamese",
+            "north korea": "korean",
+            "myanmar": "burmese",
+            "uzbekistan": "uzbek",
+            "philippines": "filipino",
+            "brazil": "brazilian",
+            "colombia": "colombian",
+            "peru": "peruvian",
+            "chile": "chilean",
+            "argentina": "argentinian",
+            "ecuador": "ecuadorian",
+            "venezuela": "venezuelan",
+            "russia": "russian",
+            "uk": "british",
+            "united kingdom": "british",
+            "germany": "german",
+            "spain": "spanish",
+            "italy": "italian",
+            "ukraine": "ukrainian",
+            "france": "french",
+            "romania": "romanian",
+            "hungary": "hungarian",
+            "mexico": "mexican",
+            "usa": "american",
+            "united states": "american",
+            "canada": "canadian",
+            "cuba": "cuban",
+            "egypt": "egyptian",
+            "morocco": "moroccan",
+            "congo": "congolese",
+            "ethiopia": "ethiopian",
+            "cote d'ivorie": "ivoirian",
+            "côte d'ivoire": "ivoirian",
+            "australia": "australian",
+        }
 
-        text = city_pattern.sub("the city", text)
-        if country_pattern:
-            text = country_pattern.sub("the country", text)
+        # First redact all full city names
+        for variant in city_variants:
+            pattern = re.compile(re.escape(variant), re.IGNORECASE)
+            text = pattern.sub("[city name redacted]", text)
+
+        if country_name:
+            # Redact the full country name
+            pattern_country = re.compile(re.escape(country_name), re.IGNORECASE)
+            text = pattern_country.sub("[country name redacted]", text)
+
+            # Redact important subwords of country name (e.g., "Korea" from "South Korea")
+            country_subwords = re.split(r"[ \-']", country_name)  # Split on space, hyphen, apostrophe
+            for subword in country_subwords:
+                if len(subword) > 2:  # only redact meaningful words (e.g., ignore 'd' in "Cote d'Ivoire")
+                    pattern_subword = re.compile(re.escape(subword), re.IGNORECASE)
+                    text = pattern_subword.sub("[country name redacted]", text)
+
+            # Redact adjective form
+            adj = adjective_map.get(country_name.lower())
+            if adj:
+                pattern_adj = re.compile(re.escape(adj), re.IGNORECASE)
+                text = pattern_adj.sub("[country name redacted]", text)
+
+                pattern_adj_plural = re.compile(re.escape(adj + "s"), re.IGNORECASE)
+                text = pattern_adj_plural.sub("[country name redacted]", text)
 
         return text
+
+
     
     def generate_answer(self, 
                         city: WordVariants, question: str) -> Tuple[str, str]:

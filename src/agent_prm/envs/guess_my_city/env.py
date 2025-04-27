@@ -4,6 +4,7 @@ Adapted from https://github.com/abdulhaim/LMRL-Gym
 from typing import Dict, List, Optional, Tuple
 import random
 import time
+import re
 from agent_prm.envs.guess_my_city.data import WordVariants, get_default_word_list
 from agent_prm.envs.guess_my_city.simulator import GuessMyCitySimulator, SGLangServerGuessMyCitySimulator
 from agent_prm.envs.guess_my_city.data import is_done
@@ -63,6 +64,22 @@ class GuessMyCityEnvironment():
             # Edit the response of the env just in case the env is wrong
             history[-1]["answer"] = "yes"
         else:
+            question_cleaned = action.rstrip("?.!").lower().strip()
+
+            # Check if it is a guessing-type question
+            guess_patterns = [
+                r"^is it .+",
+                r"^is the city .+",
+                r"^is it the city of .+",
+                r"^is the city called .+",
+                r"^is the place .+",
+                r"^is the place called .+",
+                r"^are you from .+",
+            ]
+
+            if any(re.match(pattern, question_cleaned) for pattern in guess_patterns):
+                history[-1]["answer"] = "no"
+
             reward = -1.0
             done = False
 
