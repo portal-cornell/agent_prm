@@ -112,7 +112,7 @@ def main():
                 traj_list = []
 
                 while not done:
-                    last_question = len(history) == env.max_conversation_length
+                    last_question = len(history) == env.max_conversation_length - 1
 
                     if args.debug:
                         reason = input("Reason: ")

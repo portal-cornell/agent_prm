@@ -31,6 +31,11 @@ The output is a JSON containing your reasoning and the question you will ask. Pl
 {% if mode == 'input' %}
 Below is the history of previous questions and answers:
 {{ observation_action_history }}
+{% elif mode == 'input_final' %}
+Below is the history of previous questions and answers:
+{{ observation_action_history }}
+
+You have already asked 19 questions, so this is your final guess. Your goal is to consult the list of cities that the orcale can choose from and quess the city directly. The question must be in the format "Is it {your_guess}?". your_guess must be one of the cities that the oracle can choose from.
 {% elif mode == 'output' %}
 REASON:
 {{ reason }}
