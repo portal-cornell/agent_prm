@@ -2,7 +2,7 @@ prompt_template_file: prompts/guess_my_city/guess_my_city_template.j2
 logs_dir: data/guess_my_city/eval/baseline/gpt4o
 data_dir: data/guess_my_city/sft
 expert_template: prompts/guess_my_city/guess_my_city_gpt_agent_template.j2
-rollout_per_obj: 3
+rollout_per_obj: 1
 train_split: 0.85
 input_fields:
   reason: reason

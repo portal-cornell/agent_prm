@@ -51,7 +51,7 @@ DEFAULT_CITY_DICT = {
         "Daegu, South Korea;Taegu, South Korea;Taega, South Korea",
         "Incheon, South Korea;Inchon, South Korea",
         "Bombay, India;Mumbai, India",
-        "Delhi, India",
+        "Delhi, India;New Delhi, India",
         "Calcutta, India;Kolkata, India",
         "Madras, India;Chennai, India",
         "Bangalore, India;Bengaluru, India",
@@ -83,7 +83,7 @@ DEFAULT_CITY_DICT = {
         "Chongqing, China",
         "Haerbin, China",
         "Chengdu, China",
-        "Xian, China",
+        "Xian, China;Xi'an, China",
         "Nanjing, China",
         "Taipei, China",
         "Zibo, China",
@@ -155,7 +155,7 @@ DEFAULT_CITY_DICT = {
     ],
     "Europe": [
         "Moscow, Russia",
-        "St Petersburg, Russia",
+        "St Petersburg, Russia;St. Petersburg, Russia",
         "Novosibirsk, Russia;Novosibirsk City, Russia",
         "London, UK",
         "Birmingham, UK;Brum, UK;B'ham, UK",
@@ -176,7 +176,7 @@ DEFAULT_CITY_DICT = {
         "Marseille, France;Marseilles, France;Massalia, France",
         "Lyon, France;Lyons, France;Lugdunum, France",
         "Bucuresti, Romania;Bucharest, Romania",
-        "Cluj-Napoca, Romania;Cluj, Romania",
+        "Cluj-Napoca, Romania;Cluj, Romania;Cluj Napoca, Romania",
         "Timișoara, Romania;Timisoara, Romania",
         "Budapest, Hungary",
         "Debrecen, Hungary;Debretin, Hungary",
@@ -226,7 +226,7 @@ TRAIN_CITY_DICT = {
         "Busan, South Korea;Pusan, South Korea",
         "Daegu, South Korea;Taegu, South Korea;Taega, South Korea",
         "Incheon, South Korea;Inchon, South Korea",
-        "Delhi, India",
+        "Delhi, India;New Delhi, India",
         "Calcutta, India;Kolkata, India",
         "Madras, India;Chennai, India",
         "Bangalore, India;Bengaluru, India",
@@ -254,7 +254,7 @@ TRAIN_CITY_DICT = {
         "Chongqing, China",
         "Haerbin, China",
         "Chengdu, China",
-        "Xian, China",
+        "Xian, China;Xi'an, China",
         "Nanjing, China",
         "Taipei, China",
         "Zibo, China",
@@ -307,7 +307,7 @@ TRAIN_CITY_DICT = {
         "Valencia, Venezuela;Valencia del Rey, Venezuela;Valencia City, Venezuela"
     ],
     "Europe": [
-        "St Petersburg, Russia",
+        "St Petersburg, Russia;St. Petersburg, Russia",
         "Novosibirsk, Russia;Novosibirsk City, Russia",
         "Birmingham, UK;Brum, UK;B'ham, UK",
         "Edinburgh, UK;Edinborough, UK",
@@ -321,7 +321,7 @@ TRAIN_CITY_DICT = {
         "Dnipro, Ukraine;Dnipropetrovsk, Ukraine;Dnepropetrovsk, Ukraine",
         "Marseille, France;Marseilles, France;Massalia, France",
         "Lyon, France;Lyons, France;Lugdunum, France",
-        "Cluj-Napoca, Romania;Cluj, Romania",
+        "Cluj-Napoca, Romania;Cluj, Romania;Cluj Napoca, Romania",
         "Timișoara, Romania;Timisoara, Romania",
         "Debrecen, Hungary;Debretin, Hungary",
         "Szeged, Hungary"
@@ -453,9 +453,5 @@ def is_done(city: WordVariants, question: str):
         for pattern in guess_patterns:
             if re.fullmatch(pattern, question):
                 return True
-
-    tokens = nltk.word_tokenize(question)
-    if tokens and tokens[-1] in city_names:
-        return True
 
     return False
