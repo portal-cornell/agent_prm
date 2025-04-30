@@ -3,7 +3,7 @@ Typical usage:
 
 If you are debugging (not using gpt4o), you can set the debug flag to True
 
-python scripts/dataproc/create_sft_data/get_rollout_twenty_questions.py -t train -d
+python scripts/dataproc/create_sft_data/get_rollout_car_dealer.py -t train -sh TODO -sp TODO
 """
 
 import sys
@@ -138,12 +138,13 @@ def query_expert(expert_agent_api_call_template: Template,
             terminate = True
         except Exception as e:
             print(f"Error parsing API call response: {response}")
-            elogger.log(f"Error parsing response: {response}")
+            # elogger.log(f"Error parsing response: {response}")
 
         query_attempts += 1
         querying_cost += cost
 
     if not terminate:
+        elogger.log(f"Failed to get a valid response after {MAX_QUERY_ATTEMPTS} attempts")
         raise Exception(f"Failed to get a valid response after {MAX_QUERY_ATTEMPTS} attempts")
 
     # Determine the car inventory to use
@@ -197,12 +198,14 @@ def query_expert(expert_agent_api_call_template: Template,
             assert "brand" in response_json["proposed_car"] and "type" in response_json["proposed_car"] and "features" in response_json["proposed_car"] and "msrp" in response_json["proposed_car"], f"Invalid proposed car: {response_json['proposed_car']}"
             terminate = True
         except Exception as e:
-            elogger.log(f"Error parsing response: {response}")
+            print(f"Error parsing response: {response}")
+            # elogger.log(f"Error parsing response: {response}")
 
         query_attempts += 1
         querying_cost += cost
 
     if not terminate:
+        elogger.log(f"Failed to get a valid response after {MAX_QUERY_ATTEMPTS} attempts")
         raise Exception(f"Failed to get a valid response after {MAX_QUERY_ATTEMPTS} attempts")
 
     # Determine the car index
@@ -236,9 +239,11 @@ def main():
 
     # A list of tuples
     #  (rollout_idx, game_id, data_type, buyer_info)
-    all_games_to_play_list = get_all_games_to_play(args.data_types, cfg["logs_dir"], rollout_per_obj)
+    all_games_to_play_list = get_all_games_to_play(args.data_types, cfg["logs_dir"], range(rollout_per_obj))
 
     print(all_games_to_play_list)
+    print(f"num of games to play: {len(all_games_to_play_list)}")
+    input("all_games_to_play_list")
 
     total_cost = 0.0
 
@@ -275,17 +280,6 @@ def main():
                 api_reason, api_call, api_response, api_call_used, api_response_used, reason, action, proposed_car, proposed_car_copied_in_response, cost = query_expert(expert_agent_api_call_template, expert_agent_prompt_template, history, prev_api_call, prev_api_response, all_prev_api_calls, all_prev_api_calls_have_responses, buyer_info, car_inventories)
                 prev_api_call = api_call_used
                 prev_api_response = api_response_used
-
-            # api_call = {'api_name': 'no_op', 'api_brand': '', 'api_type': '', 'api_features': []}
-            # api_response = []
-            # api_call_used = api_call
-            # api_response_used = api_response
-            # api_reason = "There is no previous API call made yet, and the user has not made any specific request."
-            # reason = "The conversation has just started, and I haven't gathered any information about the buyer's preferences yet."
-            # action = "No Hello! Welcome to our dealership. What type of car are you interested in today? We have a wide range of options including vans, SUVs, sedans, trucks, and sports cars."
-            # proposed_car = {}
-            # proposed_car_copied_in_response = {}
-            # cost = 0.0
 
             rollout_cost += cost
 

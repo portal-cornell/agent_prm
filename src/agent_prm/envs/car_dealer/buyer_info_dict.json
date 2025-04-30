@@ -2090,147 +2090,167 @@
     "5": {
         "Kia": {
             "truck": {
-                "42000": {
+                "77000": {
                     "preferred_brand": "Kia",
                     "preferred_type": "truck",
                     "features": [
-                        "sunroof",
-                        "Apple CarPlay",
-                        "cruise control",
-                        "navigation system"
+                        "backup camera",
+                        "navigation system",
+                        "blind spot monitoring",
+                        "upgraded sound system",
+                        "sunroof"
                     ],
-                    "msrp": 60500,
-                    "budget": 42000
+                    "msrp": 69000,
+                    "budget": 77000
                 },
-                "78000": {
+                "98000": {
                     "preferred_brand": "Kia",
                     "preferred_type": "truck",
                     "features": [
-                        "sunroof",
-                        "Apple CarPlay",
-                        "cruise control",
-                        "navigation system"
+                        "backup camera",
+                        "navigation system",
+                        "blind spot monitoring",
+                        "upgraded sound system",
+                        "sunroof"
                     ],
-                    "msrp": 60500,
-                    "budget": 78000
+                    "msrp": 69000,
+                    "budget": 98000
                 }
             },
             "sports car": {
-                "43000": {
+                "96000": {
                     "preferred_brand": "Kia",
                     "preferred_type": "sports car",
                     "features": [
-                        "Apple CarPlay",
-                        "upgraded sound system",
-                        "third-row seating"
+                        "blind spot monitoring",
+                        "360 camera",
+                        "navigation system",
+                        "leather seats"
                     ],
-                    "msrp": 51000,
-                    "budget": 43000
+                    "msrp": 61000,
+                    "budget": 96000
                 },
-                "41000": {
+                "75000": {
                     "preferred_brand": "Kia",
                     "preferred_type": "sports car",
                     "features": [
-                        "Apple CarPlay",
-                        "upgraded sound system",
-                        "third-row seating"
+                        "blind spot monitoring",
+                        "360 camera",
+                        "navigation system",
+                        "leather seats"
                     ],
-                    "msrp": 51000,
-                    "budget": 41000
+                    "msrp": 61000,
+                    "budget": 75000
                 }
             }
         },
         "Mercedes-benz": {
             "truck": {
-                "42000": {
+                "33000": {
                     "preferred_brand": "Mercedes-benz",
                     "preferred_type": "truck",
                     "features": [
-                        "navigation system",
-                        "remote start",
-                        "lane keep assist",
-                        "Apple CarPlay"
+                        "cruise control",
+                        "third-row seating",
+                        "backup camera",
+                        "wireless phone charging"
                     ],
-                    "msrp": 72000,
-                    "budget": 42000
+                    "msrp": 70500,
+                    "budget": 33000
+                },
+                "46000": {
+                    "preferred_brand": "Mercedes-benz",
+                    "preferred_type": "truck",
+                    "features": [
+                        "cruise control",
+                        "third-row seating",
+                        "backup camera",
+                        "wireless phone charging"
+                    ],
+                    "msrp": 70500,
+                    "budget": 46000
                 }
             },
             "sports car": {
-                "53000": {
+                "102000": {
                     "preferred_brand": "Mercedes-benz",
                     "preferred_type": "sports car",
                     "features": [
-                        "upgraded sound system",
-                        "360 camera",
-                        "remote start",
+                        "wireless phone charging",
+                        "lane keep assist",
+                        "sunroof",
+                        "cruise control",
                         "sunroof"
                     ],
-                    "msrp": 114000,
-                    "budget": 53000
+                    "msrp": 114500,
+                    "budget": 102000
                 },
-                "71000": {
+                "118000": {
                     "preferred_brand": "Mercedes-benz",
                     "preferred_type": "sports car",
                     "features": [
-                        "upgraded sound system",
-                        "360 camera",
-                        "remote start",
+                        "wireless phone charging",
+                        "lane keep assist",
+                        "sunroof",
+                        "cruise control",
                         "sunroof"
                     ],
-                    "msrp": 114000,
-                    "budget": 71000
+                    "msrp": 114500,
+                    "budget": 118000
                 }
             }
         },
         "Porsche": {
             "truck": {
-                "51000": {
+                "40000": {
                     "preferred_brand": "Porsche",
                     "preferred_type": "truck",
                     "features": [
-                        "leather seats",
+                        "360 camera",
+                        "navigation system",
                         "third-row seating",
-                        "backup camera",
-                        "heated seats"
+                        "wireless phone charging"
                     ],
-                    "msrp": 185000,
-                    "budget": 51000
+                    "msrp": 182000,
+                    "budget": 40000
                 },
-                "57000": {
+                "35000": {
                     "preferred_brand": "Porsche",
                     "preferred_type": "truck",
                     "features": [
-                        "leather seats",
+                        "360 camera",
+                        "navigation system",
                         "third-row seating",
-                        "backup camera",
-                        "heated seats"
+                        "wireless phone charging"
                     ],
-                    "msrp": 185000,
-                    "budget": 57000
+                    "msrp": 182000,
+                    "budget": 35000
                 }
             },
             "sports car": {
-                "92000": {
+                "39000": {
                     "preferred_brand": "Porsche",
                     "preferred_type": "sports car",
                     "features": [
-                        "leather seats",
-                        "upgraded sound system",
-                        "heated seats"
+                        "360 camera",
+                        "lane keep assist",
+                        "cruise control",
+                        "wireless phone charging"
                     ],
-                    "msrp": 140000,
-                    "budget": 92000
+                    "msrp": 136500,
+                    "budget": 39000
                 },
-                "98000": {
+                "57000": {
                     "preferred_brand": "Porsche",
                     "preferred_type": "sports car",
                     "features": [
-                        "leather seats",
-                        "upgraded sound system",
-                        "heated seats"
+                        "360 camera",
+                        "lane keep assist",
+                        "cruise control",
+                        "wireless phone charging"
                     ],
-                    "msrp": 140000,
-                    "budget": 98000
+                    "msrp": 136500,
+                    "budget": 57000
                 }
             }
         }

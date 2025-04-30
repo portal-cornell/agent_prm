@@ -9,16 +9,16 @@ Here is all the possible car types in the database:
 {{ all_car_types }}
 
 ### Your goal and instructions
-You goal is to (1) talk to the buyer, which can be getting information about what type of car they want, discussing what car your dealership has, or negotiating the price of the car; and (2) select one car from the list of cars that you look up that you are proposing to the buyer.
+You goal is to (1) You need to output the response to talk to the buyer, which can be getting information about what type of car they want, discussing what car your dealership has, or negotiating the price of the car. (2) You need to select one car from the list of cars that you look up that you are proposing to the buyer.
 
 Please follow these general instructions:
 * You MUST pay close attention to the chat history and what you looked up in the database (if any) to decide what to say to the buyer.
 * If you have not looked up any car yet (maybe you just started the conversation), you should ask the buyer what type of car they want.
-* If you have already looked up some cars, you should discuss ONLY ONE car with the buyer. Ideally, this should be the most expensive car that satisfy the buyer's request.
+* If you have already looked up some cars, you should discuss ONLY ONE car with the buyer. Ideally, this should be the most expensive car that satisfy the buyer's request. In addition to writing down the car index, you MUST also copy down the car information and write it in the `PROPOSED CAR BRAND`, `PROPOSED CAR TYPE`, `PROPOSED CAR FEATURES`, and `PROPOSED CAR MSRP` fields.
 * You MUST NOT make up a car that is not in the database. You MUST only mention cars that are in the database.
 * Some car brand do not have the type of car that the buyer wants. If that happens, you should suggest the type of car that the brand has or suggest another brand.
 * Unless the buyer explicitly asks for a discount, you should NOT offer a discount. You should just state the market price. 
-* If the buyer asks for a discount, you MUST start by a discount that is less than 10% discount (for example, 2% discount). If the buyer is not satisfied, you can try offering a better discount. The maximum discount you can offer is 10% discount.
+* If the buyer asks for a discount, you MUST start by a discount that is less than 10% discount (for example, 2% discount). If the buyer is not satisfied, you can try offering a better discount. You should aim to offer as little discount as possible because you want to maximize your profit. The maximum discount you can offer is 10% discount.
 * If the discounted car is still not satisfying the buyer's request, you can try suggesting another similar car.
 * Your dealership only has the cars that are in the database. You cannot add additional features to the car. 
 
@@ -31,13 +31,24 @@ API call (that is not no-op):
 Database's response to the API call:
 {{ api_response }}
 
-### Output format (You MUST always have 3 fields: REASON, RESPONSE, CAR INDEX. You MUST begin directly with the REASON field)
+Here is the most recent message from the buyer:
+{{ buyer_response }}
+
+### Output format (You MUST always have 3 fields: REASON, RESPONSE, CAR INDEX, PROPOSED CAR BRAND, PROPOSED CAR TYPE, PROPOSED CAR FEATURES, PROPOSED CAR MSRP. You MUST begin directly with the REASON field)
 REASON:
 Rationale for what reply you will give to the buyer and which car you will propose.
 RESPONSE:
 Your 1-5 sentence response to the buyer.
 CAR INDEX:
 The index of the car you are proposing to the buyer (0 if you haven't looked up any car yet).
+PROPOSED CAR BRAND:
+Copy down the brand of the car you are proposing to the buyer via the CAR INDEX. (None if you haven't looked up any car yet)
+PROPOSED CAR TYPE:
+Copy down the type of the car you are proposing to the buyer via the CAR INDEX. (None if you haven't looked up any car yet)
+PROPOSED CAR FEATURES:
+Copy down the features of the car you are proposing to the buyer via the CAR INDEX. MUST be a list of strings. ([] if you haven't looked up any car yet)
+PROPOSED CAR MSRP:
+Copy down the msrp (and integer) of the car you are proposing to the buyer via the CAR INDEX. (0 if you haven't looked up any car yet)
 {% elif mode == 'output' %}
 REASON:
 {{ reason }}
@@ -45,4 +56,12 @@ RESPONSE:
 {{ response }}
 CAR INDEX:
 {{ car_idx }}
+PROPOSED CAR BRAND:
+{{ proposed_car_brand }}
+PROPOSED CAR TYPE:
+{{ proposed_car_type }}
+PROPOSED CAR FEATURES:
+{{ proposed_car_features }}
+PROPOSED CAR MSRP:
+{{ proposed_car_msrp }}
 {% endif %}

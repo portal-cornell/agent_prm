@@ -144,7 +144,7 @@ class BatchedCarDealerEnvironment():
         self.random = random.Random(None)
                
 
-    def step(self, buyer_infos: List[Dict], histories: List[List[Dict]], actions: List[str], seller_proposed_cars: List[Dict], proposed_cars_copied_in_responses: List[Dict], num_negotiations: List[int], prev_proposed_cars: List[Dict], num_car_proposed: List[int], prev_dones: List[bool]):
+    def step(self, buyer_infos: List[Dict], histories: List[List[Dict]], actions: List[str], seller_proposed_cars: List[Dict], proposed_cars_copied_in_responses: List[Dict], num_negotiations: List[int], prev_proposed_cars: List[Dict], num_car_proposed: List[int], car_inventories: dict, prev_dones: List[bool]):
         """
         Parameters:
             buyer_info (Dict): The information about the buyer.
@@ -178,15 +178,18 @@ class BatchedCarDealerEnvironment():
         for i in range(len(histories)): # For each game
             if not prev_dones[i]:
                 has_discount, _ = check_has_discount(actions[i], seller_proposed_cars[i])
-                if has_discount:
-                    num_negotiations[i] += 1
+                same_car = are_same_cars(prev_proposed_cars[i], seller_proposed_cars[i])
 
-                if prev_proposed_cars[i] != seller_proposed_cars[i]:
+                if not same_car:
                     num_car_proposed[i] += 1
+                    num_negotiations[i] += 1 # Proposing a new car also counts as a negotiation
+                else:
+                    if has_discount:
+                        num_negotiations[i] += 1
 
         # Get batched answer
         start_time = time.time()
-        buyer_reasons, buyer_responses, buyer_decisions = self.buyer.generate_response_batch(buyer_infos, histories, actions, seller_proposed_cars)
+        buyer_reasons, buyer_responses, buyer_decisions = self.buyer.generate_response_batch(buyer_infos, histories, actions, seller_proposed_cars, num_negotiations, num_car_proposed)
         end_time = time.time()
         print(f"[ENV] Time taken to generate answer: {end_time - start_time} seconds")
 
@@ -210,7 +213,9 @@ class BatchedCarDealerEnvironment():
                 final_decision = extract_final_decision_from_buyer_reply(buyer_decisions[i])
                 # Compute the reward
                 if final_decision is not None:
-                    reward, success, failure_reason = compute_reward(buyer_infos[i], final_decision, seller_proposed_cars[i], self.reward_mode)
+                    # Determine the car inventory to use
+                    car_inventory_dict = determine_car_inventory(buyer_infos[i], car_inventories)
+                    reward, success, failure_reason = compute_reward(buyer_infos[i], final_decision, seller_proposed_cars[i], proposed_cars_copied_in_responses[i], num_negotiations[i], num_car_proposed[i], car_inventory_dict, self.reward_mode)
                     done = True
                 else:
                     reward = 0.0 # Punish the seller for not expediting the conversation

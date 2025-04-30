@@ -31,7 +31,7 @@ B1 = {
         "You MUST buy the car now because the car has the same brand and type that you want, and the seller has offered you a discount."
 }
 
-MAX_NEGOTIATIONS_BUYER_2 = 3
+MAX_NEGOTIATIONS_BUYER_2 = 6
 B2 = {
     "id": 2,
     "name": "At least one feature. Must be under budget. Impatient with bargaining.",
@@ -90,15 +90,15 @@ B4 = {
 NUM_CAR_NEEDED_TO_START_NEGOTIATION_BUYER_5 = 3
 B5 = {
     "id": 5,
-    "name": "All features. Distrustful so never accept first proposal. Must be under budget.",
+    "name": "At least two features. Distrustful so never accept first proposal. Must be under budget.",
     "initial":
         "Because you just started shopping, you MUST tell the seller the car brand, car type, and car features that you prefer.",
     "initial_car_proposed":
-        "You are an extremely distrustful buyer who are suspicious of the seller's intentions. You REQUIRE the car to have exactly the same features as the ones you want. The car brand and type DO NOT matter. Because you are distrustful that the seller is trying to scam you with the first few cars that they propose, you will NEVER accept this car no matter what. You will say bad things about the car and that you will not buy it no matter what. You will ask for another car that has the same features as the ones you want. You MUST still choose to negotiate at the moment.",
+        "You are an extremely distrustful buyer who are suspicious of the seller's intentions. You REQUIRE the car to have at least two of the features as the ones you want. The car brand and type DO NOT matter. Because you are distrustful that the seller is trying to scam you with the first few cars that they propose, you will NEVER accept this car no matter what. You will say bad things about the car and that you will not buy it no matter what. You will ask for another car that has the same features as the ones you want. You MUST still choose to negotiate at the moment.",
     "acceptable_car_proposed":
-        "You REQUIRE the car to have exactly the same features as the ones you want. You MUST NOT care about the brand and type of the car. You are still distrustful of the seller, but you are willing to consider buying this car. You MUST still choose to negotiate at the moment.",
+        "You REQUIRE the car to have at least two of the features as the ones you want. You MUST NOT care about the brand and type of the car. You are still distrustful of the seller, but you are willing to consider buying this car. You MUST still choose to negotiate at the moment.",
     "matched_but_not_under_budget":
-        "The car has the exact same features as the ones you want. However, the car is NOT under your budget. You are still distrustful of the seller, but you are willing to consider buying this car. You MUST remind the seller that right now the car is not in the range that is acceptable to you. You MUST NOT tell the seller what is your budget. You MUST still choose to negotiate at the moment.",
+        "The car has at least two . However, the car is NOT under your budget. You are still distrustful of the seller, but you are willing to consider buying this car. You MUST remind the seller that right now the car is not in the range that is acceptable to you. You MUST NOT tell the seller what is your budget. You MUST still choose to negotiate at the moment.",
     "under_budget_but_not_matched":
         "The car is under your budget. However, the car does not have the exact same features as the ones you want. You MUST remind the seller that the car needs to have the exact same features as the ones you want. You MUST still choose to negotiate at the moment.",
     "condition_met":
@@ -179,7 +179,7 @@ def get_mode_and_curr_info_and_buyer_strategy(curr_info_template: Template, buye
     
     mode, input_data, curr_buyer_strategy = data_fn_to_use(buyer_info, seller_proposed_car, seller_response, history, num_negotiations, num_car_proposed)
 
-    print(f"num_negotiations: {num_negotiations}, num_car_proposed: {num_car_proposed}, mode: {mode}")
+    # print(f"num_negotiations: {num_negotiations}, num_car_proposed: {num_car_proposed}, mode: {mode}")
     
     return mode, curr_info_template.render(**input_data).strip(), curr_buyer_strategy
 
@@ -242,7 +242,7 @@ def get_data_for_curr_info_buyer_2(buyer_info: Dict, seller_proposed_car: Dict, 
     - is_under_budget: a sentence that says whether the seller's proposed car is under the buyer's budget
     - under_negotiation_limit: a sentence that says whether the buyer has had too many negotiations with the seller
     """
-    has_at_least_one_feature, has_at_least_one_feature_str = check_has_at_least_one_feature(buyer_info, seller_proposed_car)
+    has_at_least_one_feature, has_at_least_one_feature_str = check_has_at_least_N_features(buyer_info, seller_proposed_car, N=1)
     is_under_budget, is_under_budget_str = check_is_under_budget(buyer_info, seller_proposed_car, seller_response)
     under_negotiation_limit, under_negotiation_limit_str = check_num_negotiations(num_negotiations, MAX_NEGOTIATIONS_BUYER_2)
     
@@ -381,21 +381,21 @@ def get_data_for_curr_info_buyer_5(buyer_info: Dict, seller_proposed_car: Dict, 
     - preferred_type
     - preferred_features
     - budget
-    - has_all_features: a sentence that says whether the seller's proposed car has all the features that the buyer's preferred features
+    - has_at_least_two_features: a sentence that says whether the seller's proposed car has at least two of the features that the buyer's preferred features
     - is_under_budget: a sentence that says whether the seller's proposed car is under the buyer's budget
     """
-    has_all_features, has_all_features_str = check_has_all_features(buyer_info, seller_proposed_car)
+    has_at_least_two_features, has_at_least_two_features_str = check_has_at_least_N_features(buyer_info, seller_proposed_car, N=2)
     is_under_budget, is_under_budget_str = check_is_under_budget(buyer_info, seller_proposed_car, seller_response)
 
     # Determine the mode
     if just_started_shopping(history):
         mode = "initial"
     elif num_car_proposed > NUM_CAR_NEEDED_TO_START_NEGOTIATION_BUYER_5:
-        if has_all_features and not is_under_budget:
+        if has_at_least_two_features and not is_under_budget:
             mode = "matched_but_not_under_budget"
-        elif not has_all_features and is_under_budget:
+        elif not has_at_least_two_features and is_under_budget:
             mode = "under_budget_but_not_matched"
-        elif has_all_features and is_under_budget:
+        elif has_at_least_two_features and is_under_budget:
             mode = "condition_met"
         else:
             mode = "acceptable_car_proposed"
@@ -408,7 +408,7 @@ def get_data_for_curr_info_buyer_5(buyer_info: Dict, seller_proposed_car: Dict, 
         "preferred_type": buyer_info["preferred_type"],
         "preferred_features": buyer_info["features"],
         "budget": buyer_info["budget"],
-        "has_all_features": has_all_features_str,
+        "has_at_least_two_features": has_at_least_two_features_str,
         "is_under_budget": is_under_budget_str,
     }
 
@@ -459,7 +459,6 @@ def get_data_for_curr_info_buyer_6(buyer_info: Dict, seller_proposed_car: Dict, 
     
     return mode, input_data, B6[mode]
 
-
 def format_chat_history(history: List[Dict], mode:str = "") -> str:
     history_str = ""
     if mode != "":
@@ -470,6 +469,18 @@ def format_chat_history(history: List[Dict], mode:str = "") -> str:
     else:
         for message in history:
             history_str += f"- {message['role']}: {message['content']}\n"
+
+    if history_str == "":
+        history_str = "No chat history yet."
+    return history_str
+
+
+def format_most_recent_buyer_message(history: List[Dict]) -> str:
+    history_str = ""
+    if history != [] and history[-1]["role"] == "buyer":
+        history_str += f"- {history[-1]['role']}: {history[-1]['content']}"
+    else:
+        history_str = "No most recent buyer message yet."
     return history_str
 
 def format_car_options(car_options: List[Dict]) -> str:
@@ -498,6 +509,9 @@ def format_api_call_history(all_prev_api_calls: List[Dict], all_prev_api_calls_h
     iterator = range(len(all_prev_api_calls)) if past_N == -1 else range(max(0, len(all_prev_api_calls) - past_N), len(all_prev_api_calls))
     for i in iterator:
         api_call_history_str += f"    API Call {i+1}: {all_prev_api_calls[i]}. {'Found at least one car.' if all_prev_api_calls_have_responses[i] else 'DID NOT find any car.'}\n"
+
+    if api_call_history_str == "":
+        api_call_history_str = "No API calls yet."
     return api_call_history_str
 
 def extract_final_decision_from_buyer_reply(line: str) -> Tuple[Optional[Dict], Optional[str]]:
@@ -525,6 +539,9 @@ def extract_final_decision_from_buyer_reply(line: str) -> Tuple[Optional[Dict], 
 Also in interface.py (but here to avoid circular import)
 """
 def search_car_by_brand_type(brand: str, car_type: str, car_inventory_dict: dict):
+    if brand not in car_inventory_dict:
+        return []
+
     if car_type not in car_inventory_dict[brand]:
         return []
 
@@ -583,7 +600,18 @@ def compute_reward(buyer_info: dict, final_decision: dict, seller_proposed_car: 
     # The car proposed by the seller is actually a car that exists in the database
     if proposed_car_copied_in_response != {}:
         if "brand" in proposed_car_copied_in_response and "type" in proposed_car_copied_in_response and "features" in proposed_car_copied_in_response:
-            matched_car = search_car_by_brand_type_features(proposed_car_copied_in_response["brand"], proposed_car_copied_in_response["type"], proposed_car_copied_in_response["features"], car_inventory_dict)
+            # Make sure the brand and car type aling with the database
+            brand = proposed_car_copied_in_response["brand"]
+            if brand.lower() == "mercedes-benz":
+                brand = "Mercedes-benz"
+            elif brand.lower() == "bmw":
+                brand = "Bmw"
+
+            car_type = proposed_car_copied_in_response["type"]
+            if car_type.lower() == "suv":
+                car_type = "SUV"
+
+            matched_car = search_car_by_brand_type_features(brand, car_type, proposed_car_copied_in_response["features"], car_inventory_dict)
 
             if len(matched_car) > 0:
                 valid_proposed_car = 1
@@ -618,7 +646,7 @@ def compute_reward(buyer_info: dict, final_decision: dict, seller_proposed_car: 
             failure_reason.append("The car offered by the seller does not match the buyer's preferred brand and type.")
 
         # Check there is a discount
-        has_discount = buy_price is not None and (buy_price < original_car_msrp)
+        has_discount = buy_price is not None and (buy_price < dealed_car_msrp)
         if buy_price is None:
             failure_reason.append("The seller did not offer a price.")
         elif not has_discount:
@@ -649,7 +677,7 @@ def compute_reward(buyer_info: dict, final_decision: dict, seller_proposed_car: 
             failure_reason.append("The seller has only offered 1 car.")
 
         # Flexible budget
-        within_budget_range = buy_price is not None and (buy_price < (budget + BUYER_3_ACCEPTABLE_RANGE))
+        within_budget_range = buy_price is not None and (buy_price <= (budget + BUYER_3_ACCEPTABLE_RANGE))
         if not within_budget_range:
             failure_reason.append("The seller's offer is over the acceptable range.")
 
@@ -661,7 +689,7 @@ def compute_reward(buyer_info: dict, final_decision: dict, seller_proposed_car: 
             failure_reason.append("The car offered by the seller does not match the buyer's preferred brand.")
 
         # Flexible budget
-        within_budget_range = buy_price is not None and (buy_price < (budget + BUYER_4_ACCEPTABLE_RANGE))
+        within_budget_range = buy_price is not None and (buy_price <= (budget + BUYER_4_ACCEPTABLE_RANGE))
         if not within_budget_range:
             failure_reason.append("The seller's offer is over the acceptable range.")
 
@@ -672,13 +700,10 @@ def compute_reward(buyer_info: dict, final_decision: dict, seller_proposed_car: 
 
         buyer_satisfied_multiplier = is_matched_brand and within_budget_range and num_negotiations_within_limit
     elif buyer_strategy_id == 5:
-        # All the features are matched
-        sorted_wanted_features = sorted(buyer_info["features"])
-        sorted_car_features = sorted(seller_proposed_car["features"])
-
-        is_matched_all_features = sorted_wanted_features == sorted_car_features
-        if not is_matched_all_features:
-            failure_reason.append("The car offered by the seller does not have all the features that the buyer wanted.")
+        # Have at least two features that matches
+        has_at_least_two_features = len(set(buyer_info["features"]) & set(seller_proposed_car["features"])) >= 2
+        if not has_at_least_two_features:
+            failure_reason.append("The car offered by the seller does not have at least two features that the buyer wanted.")
 
         # Under budget
         under_budget = buy_price is not None and (buy_price <= budget)
@@ -690,7 +715,7 @@ def compute_reward(buyer_info: dict, final_decision: dict, seller_proposed_car: 
         if not proposed_more_than_1_car:
             failure_reason.append("The seller has only offered 1 car.")
 
-        buyer_satisfied_multiplier = is_matched_all_features and under_budget and proposed_more_than_1_car
+        buyer_satisfied_multiplier = has_at_least_two_features and under_budget and proposed_more_than_1_car
     elif buyer_strategy_id == 6:
         # Type matched
         is_matched_type = seller_proposed_car["type"] == buyer_info["preferred_type"]
@@ -781,14 +806,14 @@ def check_has_discount(seller_response: str, seller_proposed_car: Dict) -> Tuple
     else:
         return False, f"No. The seller has not offered a discount. The car is priced at ${seller_offer}, which is equal to the original price of ${seller_proposed_car['msrp']}."
 
-def check_has_at_least_one_feature(buyer_info: Dict, seller_proposed_car: Dict) -> Tuple[bool, str]:
+def check_has_at_least_N_features(buyer_info: Dict, seller_proposed_car: Dict, N: int) -> Tuple[bool, str]:
     """
     Check if the seller's proposed car has at least one of the features that the buyer wants.
     """
     if seller_proposed_car == {}:
         return False, "The seller has not offered a car yet."
     
-    if any(feature in seller_proposed_car["features"] for feature in buyer_info["features"]):
+    if len(set(buyer_info["features"]) & set(seller_proposed_car["features"])) >= N:
         matched_feature = [feature for feature in buyer_info["features"] if feature in seller_proposed_car["features"]]
         return True, f"Yes. The car has at least one of the features that you wanted: {matched_feature}."
     else:
@@ -940,7 +965,7 @@ def determine_car_inventory(buyer_info: dict, car_inventories: dict):
         return car_inventories["default_train"]
 
 
-def get_all_games_to_play(data_types, log_dir, rollout_per_obj):
+def get_all_games_to_play(data_types, log_dir, rollout_per_obj_range):
     buyer_info_dict = load_json("src/agent_prm/envs/car_dealer/buyer_info_dict.json")
 
     all_games_to_play_list = []
@@ -964,7 +989,7 @@ def get_all_games_to_play(data_types, log_dir, rollout_per_obj):
                 for car_type in type_list:
                     budget_list = buyer_info_dict[str(buyer_strategy_id)][brand][car_type].keys()
                     for budget in budget_list:
-                        for rollout_idx in range(rollout_per_obj):
+                        for rollout_idx in rollout_per_obj_range:
                             buyer_strategy = buyer_strategy_dict[buyer_strategy_id]
                             buyer_info = buyer_info_dict[str(buyer_strategy_id)][brand][car_type][budget]
                             buyer_info["id"] = int(buyer_strategy_id)

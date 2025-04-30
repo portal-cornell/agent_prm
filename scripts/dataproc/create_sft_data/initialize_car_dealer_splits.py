@@ -19,6 +19,7 @@ B6 (Type. Want expensive car. Impatient with cars offered.)
 import numpy as np
 import math
 import json
+import random
 import os
 from typing import List
 
@@ -28,6 +29,136 @@ from agent_prm.utils.general_utils import save_json, load_json
 # Set the seed for reproducibility
 np.random.seed(42)
 
+# For each brand and type, generate 2 features 
+def generate_features_data(info_dict, buyer_idx, data_split, brands_to_use, types_to_use, features_to_sample_from):
+    brands_to_gen_inventory_for = TRAIN_BRANDS if data_split == "train" else DEFAULT_BRANDS
+    types_to_gen_inventory_for = TRAIN_TYPES if data_split == "train" else DEFAULT_TYPES
+    for brand in brands_to_use:
+        for car_type in types_to_use:
+            num_features_to_sample = np.random.randint(2 if buyer_idx == 2 else 3, 6)
+            num_features_in_stock = 1 if buyer_idx == 2 else 2
+
+            # For each user, generate num_features_to_sample features
+            random_features = list(np.random.choice(features_to_sample_from, size=num_features_to_sample, replace=False))
+            # Make the first num_features_in_stock features the feature in stock
+            feature_in_stock = random_features[:num_features_in_stock]
+
+            # Generate a car inventory (that doesn't have the same brand and type as the user)
+            features_without_stock = [feature for feature in features_to_sample_from if feature not in random_features]
+
+            car_inventory_dict, cars_with_right_feature_prices = generate_car_inventory_for_features(brands_to_gen_inventory_for, types_to_gen_inventory_for, features_without_stock, feature_in_stock, brand, car_type)
+
+            # For each user, generate 2 budgets (based on the car inventory)
+            info_dict = generate_budget_features(info_dict, buyer_idx, brand, car_type, random_features, cars_with_right_feature_prices=cars_with_right_feature_prices)
+
+            # Save the car inventory
+            os.makedirs(f"src/agent_prm/envs/car_dealer/buyer_{buyer_idx}_car_inventory", exist_ok=True)
+            save_json(f"src/agent_prm/envs/car_dealer/buyer_{buyer_idx}_car_inventory/{brand}_{car_type}_inventory.json", car_inventory_dict)
+
+    return info_dict
+
+def generate_budget_features(info_dict, buyer_idx, brand, car_type, user_features, cars_with_right_feature_prices):
+    """
+    Return:
+        the updated info_dict
+    """
+    for _ in range(2):
+        msrp = CAR_PRICES_BY_BRAND_AND_TYPE[brand][car_type] + sum([CAR_FEATURES_ADDED_VALUE[feature] for feature in user_features])
+
+        cheapest_car_in_brand = min(cars_with_right_feature_prices)
+        median_car_in_brand = sorted(cars_with_right_feature_prices)[len(cars_with_right_feature_prices) // 2]
+   
+        if buyer_idx == 2 or buyer_idx == 5:
+            # Must be under budget
+            raw_min_budget = int(0.9 * cheapest_car_in_brand)
+            raw_max_budget = median_car_in_brand
+        else:
+            raise ValueError(f"Invalid buyer index: {buyer_idx}")
+        
+        min_budget = math.ceil(raw_min_budget / 1000) * 1000
+        max_budget = math.floor(raw_max_budget / 1000) * 1000  # round down to nearest thousand
+
+        # Step 2: Generate all possible thousand-dollar budgets in the range
+        possible_budgets = np.arange(min_budget, max_budget + 1, 1000)
+
+        # Step 3: Randomly select one
+        budget = int(np.random.choice(possible_budgets))
+
+        info_dict[str(buyer_idx)][brand][car_type][budget] = {
+            "preferred_brand": brand,
+            "preferred_type": car_type,
+            "features": user_features,
+            "msrp": msrp,
+            "budget": budget
+        }
+    return info_dict
+
+def generate_car_inventory_for_features(brands_to_use: List[str], types_to_use: List[str], features_to_sample_from: List[str], features_in_stock: List[str], brand_to_exclude: str, type_to_exclude: str):
+    """
+    Parameters:
+        brands_to_use: List[str]
+        types_to_use: List[str]
+        features_to_sample_from: List[str] (assuming that this has already removed the 2 features that the user wants)
+        feature_in_stock: str
+        brand_to_exclude: str
+        type_to_exclude: str
+    """
+    car_inventory_dict = {brand: {car_type: [{
+        "msrp": CAR_PRICES_BY_BRAND_AND_TYPE[brand][car_type],
+        "features": []
+    }] for car_type in types_to_use} for brand in brands_to_use}
+
+    # Generate 4-6 car that don't have the same brand and type as the user (but has the same feature and maybe more features)
+    cars_with_right_feature_prices = []
+    for _ in range(np.random.randint(4, 6)):
+        brand_to_sample_from = [brand for brand in brands_to_use if brand != brand_to_exclude]
+        type_to_sample_from = [car_type for car_type in types_to_use if car_type != type_to_exclude]
+
+        # Generate a random brand and type that is not the user's brand and type
+        random_brand = np.random.choice(brand_to_sample_from)
+        random_type = np.random.choice(type_to_sample_from)
+        # Generate additional features
+        if len(features_in_stock) < (4 if len(features_in_stock) == 1 else 5):
+            max_num_features = (4 if len(features_in_stock) == 1 else 5) - len(features_in_stock)
+            random_additional_features = list(np.random.choice(features_to_sample_from, size=np.random.randint(0, max_num_features), replace=False))
+            random_features = features_in_stock + random_additional_features
+            random.shuffle(random_features)
+
+        msrp_with_features = CAR_PRICES_BY_BRAND_AND_TYPE[random_brand][random_type] + sum([CAR_FEATURES_ADDED_VALUE[feature] for feature in random_features])
+        car_inventory_dict[random_brand][random_type].append({
+            "msrp": msrp_with_features,
+            "features": random_features
+        })
+        cars_with_right_feature_prices.append(msrp_with_features)
+
+    # For all the remaining brand and types, generate enough car until there are at least 4 cars
+    for brand in brands_to_use:
+        for car_type in types_to_use:
+            num_cars_to_generate = 4 - len(car_inventory_dict[brand][car_type])
+            for _ in range(num_cars_to_generate):
+                random_features = list(np.random.choice(features_to_sample_from, size=np.random.randint(1, 5), replace=False))
+                msrp_with_features = CAR_PRICES_BY_BRAND_AND_TYPE[brand][car_type] + sum([CAR_FEATURES_ADDED_VALUE[feature] for feature in random_features])
+                car_inventory_dict[brand][car_type].append({
+                    "msrp": msrp_with_features,
+                    "features": random_features
+                })
+
+    return car_inventory_dict, cars_with_right_feature_prices
+
+regen_buyer_5 = input("Do you just need to regenerate buyer_5? (y/n)")
+if regen_buyer_5 == "y":
+    buyer_info_dict = load_json("src/agent_prm/envs/car_dealer/buyer_info_dict.json")
+    buyer_info_dict["5"] = {brand: {car_type: {} for car_type in TEST_TYPES} for brand in TEST_BRANDS}
+
+    # Step 4: Regenerate the data for buyer_5
+    # Test set
+    buyer_info_dict = generate_features_data(buyer_info_dict, 5, "test", TEST_BRANDS, TEST_TYPES, DEFAULT_FEATURES)
+
+    save_json("src/agent_prm/envs/car_dealer/buyer_info_dict.json", buyer_info_dict)
+    
+    exit()
+
+input("Press Enter to continue...")
 """==============================================================================================================
 
 Making the general car inventory (one for train and one for val + test)
@@ -169,121 +300,8 @@ save_json("src/agent_prm/envs/car_dealer/buyer_info_dict.json", buyer_info_dict)
 Making the one feature data (for B2)
 
 =============================================================================================================="""
-def generate_car_inventory_for_features(brands_to_use: List[str], types_to_use: List[str], features_to_sample_from: List[str], features_in_stock: List[str], brand_to_exclude: str, type_to_exclude: str):
-    """
-    Parameters:
-        brands_to_use: List[str]
-        types_to_use: List[str]
-        features_to_sample_from: List[str] (assuming that this has already removed the 2 features that the user wants)
-        feature_in_stock: str
-        brand_to_exclude: str
-        type_to_exclude: str
-    """
-    car_inventory_dict = {brand: {car_type: [{
-        "msrp": CAR_PRICES_BY_BRAND_AND_TYPE[brand][car_type],
-        "features": []
-    }] for car_type in types_to_use} for brand in brands_to_use}
 
-    # Generate 4-6 car that don't have the same brand and type as the user (but has the same feature and maybe more features)
-    cars_with_right_feature_prices = []
-    for _ in range(np.random.randint(4, 6)):
-        brand_to_sample_from = [brand for brand in brands_to_use if brand != brand_to_exclude]
-        type_to_sample_from = [car_type for car_type in types_to_use if car_type != type_to_exclude]
 
-        # Generate a random brand and type that is not the user's brand and type
-        random_brand = np.random.choice(brand_to_sample_from)
-        random_type = np.random.choice(type_to_sample_from)
-        # Generate additional features
-        if len(features_in_stock) == 1:
-            max_num_features = 4 - len(features_in_stock)
-            random_additional_features = list(np.random.choice(features_to_sample_from, size=np.random.randint(0, max_num_features), replace=False))
-            random_features = features_in_stock + random_additional_features
-        else:
-            random_features = features_in_stock
-
-        msrp_with_features = CAR_PRICES_BY_BRAND_AND_TYPE[random_brand][random_type] + sum([CAR_FEATURES_ADDED_VALUE[feature] for feature in random_features])
-        car_inventory_dict[random_brand][random_type].append({
-            "msrp": msrp_with_features,
-            "features": random_features
-        })
-        cars_with_right_feature_prices.append(msrp_with_features)
-
-    # For all the remaining brand and types, generate enough car until there are at least 4 cars
-    for brand in brands_to_use:
-        for car_type in types_to_use:
-            num_cars_to_generate = 4 - len(car_inventory_dict[brand][car_type])
-            for _ in range(num_cars_to_generate):
-                random_features = list(np.random.choice(features_to_sample_from, size=np.random.randint(1, 5), replace=False))
-                msrp_with_features = CAR_PRICES_BY_BRAND_AND_TYPE[brand][car_type] + sum([CAR_FEATURES_ADDED_VALUE[feature] for feature in random_features])
-                car_inventory_dict[brand][car_type].append({
-                    "msrp": msrp_with_features,
-                    "features": random_features
-                })
-
-    return car_inventory_dict, cars_with_right_feature_prices
-
-def generate_budget_features(info_dict, buyer_idx, brand, car_type, user_features, cars_with_right_feature_prices):
-    """
-    Return:
-        the updated info_dict
-    """
-    for _ in range(2):
-        msrp = CAR_PRICES_BY_BRAND_AND_TYPE[brand][car_type] + sum([CAR_FEATURES_ADDED_VALUE[feature] for feature in user_features])
-
-        cheapest_car_in_brand = min(cars_with_right_feature_prices)
-        median_car_in_brand = sorted(cars_with_right_feature_prices)[len(cars_with_right_feature_prices) // 2]
-   
-        if buyer_idx == 2 or buyer_idx == 5:
-            # Must be under budget
-            raw_min_budget = int(0.9 * cheapest_car_in_brand)
-            raw_max_budget = median_car_in_brand
-        else:
-            raise ValueError(f"Invalid buyer index: {buyer_idx}")
-        
-        min_budget = math.ceil(raw_min_budget / 1000) * 1000
-        max_budget = math.floor(raw_max_budget / 1000) * 1000  # round down to nearest thousand
-
-        # Step 2: Generate all possible thousand-dollar budgets in the range
-        possible_budgets = np.arange(min_budget, max_budget + 1, 1000)
-
-        # Step 3: Randomly select one
-        budget = int(np.random.choice(possible_budgets))
-
-        info_dict[buyer_idx][brand][car_type][budget] = {
-            "preferred_brand": brand,
-            "preferred_type": car_type,
-            "features": user_features,
-            "msrp": msrp,
-            "budget": budget
-        }
-    return info_dict
-
-# For each brand and type, generate 2 features 
-def generate_features_data(info_dict, buyer_idx, data_split, brands_to_use, types_to_use, features_to_sample_from):
-    brands_to_gen_inventory_for = TRAIN_BRANDS if data_split == "train" else DEFAULT_BRANDS
-    types_to_gen_inventory_for = TRAIN_TYPES if data_split == "train" else DEFAULT_TYPES
-    for brand in brands_to_use:
-        for car_type in types_to_use:
-            num_features_to_sample = np.random.randint(2, 5)
-            num_features_in_stock = 1 if buyer_idx == 2 else num_features_to_sample
-
-            # For each user, generate 2 features
-            random_features = list(np.random.choice(features_to_sample_from, size=num_features_to_sample, replace=False))
-            # Make the first feature the feature in stock
-            feature_in_stock = random_features[:num_features_in_stock]
-
-            # Generate a car inventory (that doesn't have the same brand and type as the user)
-            features_without_stock = [feature for feature in features_to_sample_from if feature not in random_features]
-            car_inventory_dict, cars_with_right_feature_prices = generate_car_inventory_for_features(brands_to_gen_inventory_for, types_to_gen_inventory_for, features_without_stock, feature_in_stock, brand, car_type)
-
-            # For each user, generate 2 budgets (based on the car inventory)
-            info_dict = generate_budget_features(info_dict, buyer_idx, brand, car_type, random_features, cars_with_right_feature_prices=cars_with_right_feature_prices)
-
-            # Save the car inventory
-            os.makedirs(f"src/agent_prm/envs/car_dealer/buyer_{buyer_idx}_car_inventory", exist_ok=True)
-            save_json(f"src/agent_prm/envs/car_dealer/buyer_{buyer_idx}_car_inventory/{brand}_{car_type}_inventory.json", car_inventory_dict)
-
-    return info_dict
 
 # Step 3: Generate the data for B2
 # Train set

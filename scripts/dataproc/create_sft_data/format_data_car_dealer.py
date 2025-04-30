@@ -13,7 +13,7 @@ SFT format:
 ...
 
 Use case:
-python format_data_car_dealer.py -i 0
+python scripts/dataproc/create_sft_data/format_data_car_dealer.py -i 0
 """
 
 import json
@@ -22,7 +22,9 @@ import argparse
 import yaml
 from jinja2 import Template
 
-from agent_prm.envs.car_dealer.data import DEFAULT_BRANDS, DEFAULT_TYPES, format_car_options, format_chat_history
+from agent_prm.envs.car_dealer.data import DEFAULT_BRANDS, DEFAULT_TYPES, DEFAULT_FEATURES, format_car_options, format_chat_history, format_api_call_history, format_most_recent_buyer_message
+
+PAST_N = 3 # Number of previous api calls to include in the prompt
 
 def preprocess_args():
     parser = argparse.ArgumentParser(description='Generate raw 20questions logs')
@@ -52,6 +54,8 @@ def process_data(data_type: str, cfg: dict, i: int):
 
     raw_rollout_dir = os.path.join(cfg["logs_dir"], data_type)  # input
     data_dir = os.path.join(cfg["data_dir"], iter_str)  # output
+    response_dir = os.path.join(cfg["data_dir"], f"{iter_str}_response")
+    api_dir = os.path.join(cfg["data_dir"], f"{iter_str}_api")
 
     os.makedirs(data_dir, exist_ok=True)
 
@@ -83,19 +87,25 @@ def process_data(data_type: str, cfg: dict, i: int):
         # Iterate over each timestep
         for i in range(len(data)):
             # Build the history
-            observation_action_history = []
+            history = []
+            all_api_calls = [] # List[Dict]
+            all_api_calls_have_responses = [] # List[bool]
             for j in range(i):
-                observation_action_history.append({
+                history.append({
                     "role": "seller",
                     "content": data[j]["action"]
                 })
-                observation_action_history.append({
+                history.append({
                     "role": "buyer",
                     "content": data[j]["buyer_response"]
                 })
 
+                all_api_calls.append(data[j]["api_call"])
+                all_api_calls_have_responses.append(data[j]["api_response"] != [])
+            
+            observation_action_history = history
             if cfg["max_history_length"] is not None:
-                observation_action_history = observation_action_history[-cfg["max_history_length"]:]
+                observation_action_history = history[-cfg["max_history_length"]:]
 
             observation_action_history = format_chat_history(observation_action_history)
 
@@ -109,11 +119,14 @@ def process_data(data_type: str, cfg: dict, i: int):
                 "mode": 'input',
                 "all_car_brands": DEFAULT_BRANDS,
                 "all_car_types": DEFAULT_TYPES,
+                "all_car_features": DEFAULT_FEATURES,
                 "observation_action_history": observation_action_history,
+                "past_N": PAST_N,
+                "prev_api_call_history": format_api_call_history(all_api_calls, all_api_calls_have_responses, PAST_N),
                 "previous_api_call": prev_api_call,
                 "previous_api_response": format_car_options(prev_api_response)
             }
-            api_prompt = api_call_template.render(**api_input_data)
+            api_prompt = api_call_template.render(**api_input_data).strip()
             # print(api_prompt)
             # input("====== api prompt ======")
 
@@ -122,20 +135,21 @@ def process_data(data_type: str, cfg: dict, i: int):
                 "reason": data[i]["api_reason"],
                 "api_name": data[i]["api_call"]["api_name"],
                 "api_brand": "None" if data[i]["api_call"]["api_brand"] == "" else data[i]["api_call"]["api_brand"], # We ask the open source model to output None instead of an empty string
-                "api_type": "None" if data[i]["api_call"]["api_type"] == "" else data[i]["api_call"]["api_type"]
+                "api_type": "None" if data[i]["api_call"]["api_type"] == "" else data[i]["api_call"]["api_type"],
+                "api_features": data[i]["api_call"]["api_features"]
             }
-            api_response = api_call_template.render(**api_output_data)
+            api_response = api_call_template.render(**api_output_data).strip()
             # print(api_response)
             # input("====== api response ======")
 
-            # api_datapoint = {
-            #     "prompt": [{"role": "user", "content": api_prompt}],
-            #     "response": [{"role": "assistant", "content": api_response}]
-            # }
             api_datapoint = {
-                "prompt": api_prompt,
-                "response": api_response
+                "prompt": [{"role": "user", "content": api_prompt}],
+                "response": [{"role": "assistant", "content": api_response}]
             }
+            # api_datapoint = {
+            #     "prompt": api_prompt,
+            #     "response": api_response
+            # }
 
             api_dataset.append(api_datapoint)
 
@@ -147,8 +161,9 @@ def process_data(data_type: str, cfg: dict, i: int):
                 "observation_action_history": observation_action_history,
                 "api_call": data[i]["api_call_used"],
                 "api_response": format_car_options(data[i]["api_response_used"]),
+                "buyer_response": format_most_recent_buyer_message(history)
             }
-            response_prompt = response_template.render(**response_input_data)
+            response_prompt = response_template.render(**response_input_data).strip()
             # print(response_prompt)
             # input("====== response prompt ======")
 
@@ -159,35 +174,40 @@ def process_data(data_type: str, cfg: dict, i: int):
                 for j in range(len(data[i]["api_response_used"])):
                     car = data[i]["api_response_used"][j]
                     if car["msrp"] == proposed_car["msrp"] and car["features"] == proposed_car["features"] and car["brand"] == proposed_car["brand"] and car["type"] == proposed_car["type"]:
-                        car_index = j
+                        car_index = j + 1 # +1 because we printed out the api response from 1
                         break
 
             response_output_data = {
                 "mode": "output",
                 "reason": data[i]["reason"],
                 "response": data[i]["action"],
-                "car_idx": car_index
+                "car_idx": car_index,
+                # We want to make the model learn to copy down the proposed car brand, type, features, and msrp
+                "proposed_car_brand": proposed_car["brand"] if proposed_car != {} else "None",
+                "proposed_car_type": proposed_car["type"] if proposed_car != {} else "None",
+                "proposed_car_features": proposed_car["features"] if proposed_car != {} else [],
+                "proposed_car_msrp": proposed_car["msrp"] if proposed_car != {} else 0
             }
-            response_response = response_template.render(**response_output_data)
+            response_response = response_template.render(**response_output_data).strip()
             # print(response_response)
             # input("====== response response ======")
 
-            # response_datapoint = {
-            #     "prompt": [{"role": "user", "content": response_prompt}],
-            #     "response": [{"role": "assistant", "content": response_response}]
-            # }
             response_datapoint = {
-                "prompt": response_prompt,
-                "response": response_response
+                "prompt": [{"role": "user", "content": response_prompt}],
+                "response": [{"role": "assistant", "content": response_response}]
             }
+            # response_datapoint = {
+            #     "prompt": response_prompt,
+            #     "response": response_response
+            # }
             response_dataset.append(response_datapoint)
 
     print(f"Collected {len(api_dataset)} API call datapoints and {len(response_dataset)} response datapoints for {data_type}")
 
     # Save the dataset
-    with open(os.path.join(data_dir, f"api_call_{data_type}.json"), "w") as f:
+    with open(os.path.join(api_dir, f"{data_type}.json"), "w") as f:
         json.dump(api_dataset, f, indent=4)
-    with open(os.path.join(data_dir, f"response_{data_type}.json"), "w") as f:
+    with open(os.path.join(response_dir, f"{data_type}.json"), "w") as f:
         json.dump(response_dataset, f, indent=4)
 
     # Merge the API call and response datasets
