@@ -30,9 +30,7 @@ def find_matching_iter(agent_log_name: str) -> str:
     """
     Find the iteration number based on the agent_name
     """
-    if "3B" in agent_log_name:
-        return "baseline"
-    elif "pi3" in agent_log_name:
+    if "pi3" in agent_log_name:
         return "iter3"
     elif "pi2" in agent_log_name:
         return "iter2"
@@ -40,5 +38,7 @@ def find_matching_iter(agent_log_name: str) -> str:
         return "iter1"
     elif "pi0" in agent_log_name:
         return "iter0"
+    elif "3B" in agent_log_name:
+        return "baseline"
     else:
         raise ValueError(f"Unknown agent log name: {agent_log_name}")

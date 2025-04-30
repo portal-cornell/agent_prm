@@ -10,4 +10,40 @@ input_fields:
 output_fields:
   reason: reason
   action: action
-
+# For the LEAP baseline where we relabel the rollouts with expertactions
+leap:
+  expert_correction_prompt: prompts/twenty_questions/twenty_question_expert_gen_prefered_action.j2
+  summary_prompt: prompts/twenty_questions/twenty_question_summary.j2
+  rollout_per_task_range_min: 0
+  rollout_per_task_range_max: 3
+  iter0:
+    # iter0 (to train pi1): pi0-all-data-3epoches
+    rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
+  # iter1:
+  #   # iter1 (to train pi2): pi1-44pct_leap_from-base-3B_1epoch
+  #   rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-44pct_leap_from-base-3B_1epoch_250427_163704_iter1_leap_pi1_leap_from-base_epochs=1
+  iter2:
+    # iter2 (to train pi3): pi2-67pct_leap_from-base-3B_1epoch
+    rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-67pct_leap_from-base-3B_1epoch_250428_014017_iter2_leap_pi2_leap_from-base_epochs=1
+# For the multi-star baseline, we only do SFT on successful rollouts
+multi-star:
+  rollout_per_task: 10 # To ensure fairness, we will ensure that each game has {rollout_per_task} rollouts
+  note: '10k'
+  use_past_rollouts: true
+  pct_of_past_rollouts: 0.9
+  iter0:
+    # iter0 (to train pi1): pi0-all-data-3epoches
+    rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
+  # iter1:
+  #   # iter1 (to train pi2): pi1-83pct_multi-star_from-base-3B_1epoch
+  #   rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-83pct_multi-star_from-base-3B_1epoch_250427_163535_iter1_multi-star_pi1_multi-star_from-base_epochs=1_from-base
+  # iter2:
+  #   # iter2 (to train pi3): pi2_multi-star_from-base-3B_1epoch
+  #   rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2_multi-star_from-base-3B_1epoch_250427_235706_iter2_multi-star_pi2_multi-star_from-base_epochs=1
+  ############ 10k data ############
+  iter1:
+    # pi1-21pct_multi-star_from-base-3B_1epoch_10k-data
+    rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-21pct_multi-star_from-base-3B_1epoch_10k-data_250428_232930_iter1_multi-star_10k_pi1_multi-star_from-base_10k-data_epochs=1
+  iter2:
+    # iter2 (to train pi3): pi2-21pct_multi-star_from-base-3B_1epoch_10k-data
+    rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-21pct_multi-star_from-base-3B_1epoch_10k-data_250429_132535_iter2_multi-star_10k_pi2_multi-star_from-base_10k-data_epochs=1

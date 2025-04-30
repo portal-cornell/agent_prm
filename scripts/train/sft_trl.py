@@ -7,6 +7,8 @@ import wandb
 from dataclasses import dataclass, field
 from datasets import load_dataset, concatenate_datasets
 
+from agent_prm.utils.logger_email import elogger
+
 from trl import (
     ModelConfig,
     SFTConfig,
@@ -26,8 +28,19 @@ class Arguments:
     wandb_project_name: str = field(default="Hinsight_LLM", metadata={"help": "wandb project name"})
 
 if __name__ == "__main__":
+    elogger.set_activate(True)
     parser = TrlParser((Arguments, SFTConfig, ModelConfig))
     args, training_args, model_config = parser.parse_args_and_config()
+
+    print("====== args ======")
+    print(args)
+    print("====== args ======")
+    print("====== training_args ======")
+    print(training_args)
+    print("====== training_args ======")
+    print("====== model_config ======")
+    print(model_config)
+    print("====== model_config ======")
 
     ################
     # Model init kwargs & Tokenizer
@@ -57,8 +70,13 @@ if __name__ == "__main__":
 
     tokenizer.padding_side = "right"
     tokenizer.truncation_side = "left"
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.pad_token = "<|finetune_right_pad_id|>"
+    # if tokenizer.pad_token is None:
+    #     # tokenizer.pad_token = tokenizer.eos_token
+    #     tokenizer.pad_token = "<|finetune_right_pad_id|>"
+
+    print(f"========= tokenizer.pad_token: {tokenizer.pad_token} =========")
+    print(f"========= tokenizer.eos_token: {tokenizer.eos_token} =========")
 
     ################
     # Dataset
@@ -147,6 +165,8 @@ if __name__ == "__main__":
     )
 
     trainer.train()
+
+    elogger.log(f"SFT Training finished. Saving model to {training_args.output_dir}")
 
     # # Save and push to hub
     # trainer.save_model(training_args.output_dir)

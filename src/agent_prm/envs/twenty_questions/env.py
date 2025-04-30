@@ -26,7 +26,7 @@ class TwentyQuestionsEnvironment():
         self.random = random.Random(None)
         self.curr_word: Optional[WordVariants] = None
 
-    def step(self, history, action, obj_category: Optional[str] = None):
+    def step(self, history: List[Dict], action: str, obj_category: Optional[str] = None):
         """
         Parameters:
             history (List[Dict]): The history of the conversation so far. A list of dictionaries, of the form:
@@ -118,7 +118,7 @@ class BatchedTwentyQuestionsEnvironment(object):
         self.ensemble_size = ensemble_size
 
     
-    def step(self, words_to_guess: List[WordVariants], obj_categories: List[Optional[str]], histories: List[Dict], actions: List[str], prev_dones: List[bool]):
+    def step(self, words_to_guess: List[WordVariants], obj_categories: List[Optional[str]], histories: List[List[Dict]], actions: List[str], prev_dones: List[bool]):
         """
         Parameters:
             words_to_guess (List[WordVariants]): The secrete words that the agent is trying to guess.
