@@ -158,6 +158,44 @@ def setup_sglang_server(agent_config: dict, local_sglang: bool = False):
             agent_config.server_url = server_url
 
         processes.append(process)
+    elif agent_config.type == "dual_sglang_server_agents":
+        # Start the api caller
+        if "TODO" in agent_config.api_caller.server_url:
+            port = None
+        else:
+            port = int(agent_config.api_caller.server_url.split(":")[-1][:-1])
+
+        print(f"Starting SGLang server for the api caller on port {port}, serving on the highest ID GPU")
+        process, server_url, base_gpu_id = start_sglang_server(model_path=agent_config.api_caller.model_id,
+                                                port=port, 
+                                                tp=1,
+                                                dist_url_port=agent_config.api_caller.dist_url_port,
+                                                local_sglang=local_sglang)
+        
+        if "TODO" in agent_config.api_caller.server_url:
+            agent_config.api_caller.server_url = server_url
+
+        processes.append(process)
+        
+        # Start the response generator
+        gpu_id = max(0, base_gpu_id - 1)
+        if "TODO" in agent_config.response_generator.server_url:
+            port = None
+        else:
+            port = int(agent_config.response_generator.server_url.split(":")[-1][:-1]) 
+
+        print(f"Starting SGLang server for the response generator on port {port}, serving on the next highest ID GPU {gpu_id}")
+        process, server_url, _ = start_sglang_server(model_path=agent_config.response_generator.model_id,
+                                                port=port, 
+                                                tp=1,
+                                                dist_url_port=agent_config.response_generator.dist_url_port,
+                                                gpu_id=gpu_id,
+                                                local_sglang=local_sglang)
+            
+        if "TODO" in agent_config.response_generator.server_url:
+            agent_config.response_generator.server_url = server_url
+
+        processes.append(process)
     elif agent_config.type == "best_of_n" or agent_config.type == "sglang_server_with_critic":
         # Start the critic
         if "TODO" in agent_config.critic.server_url:

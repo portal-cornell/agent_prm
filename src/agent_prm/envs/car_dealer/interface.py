@@ -134,8 +134,12 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
     ]
 
     ### Step 1: Query the API
-    agent.set_prompt_template(prompt_template=agent_api_call_template)
-    agent.set_parse_reason_action_fn(parse_reason_action_fn=parse_reason_and_action_car_dealer_api_call)
+    if "dual_agents" in agent.name():
+        agent.api_caller.set_prompt_template(prompt_template=agent_api_call_template)
+        agent.api_caller.set_parse_reason_action_fn(parse_reason_action_fn=parse_reason_and_action_car_dealer_api_call)
+    else:
+        agent.set_prompt_template(prompt_template=agent_api_call_template)
+        agent.set_parse_reason_action_fn(parse_reason_action_fn=parse_reason_and_action_car_dealer_api_call)
 
     input_datas = [
         {
@@ -151,11 +155,19 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
         } for formated_history, formatted_prev_api_call_history, prev_api_call, formatted_prev_api_response in zip(formated_histories, formatted_prev_api_call_histories, prev_api_calls, formatted_prev_api_responses)
     ]
 
-    reason_actions_api, generated_api_texts = agent.predict_reason_action_batch(
-        input_datas=input_datas,
-        num_responses=1 + num_alt_responses,
-        alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
-    ) # List[List[dict]], List[List[str]]
+    if "dual_agents" in agent.name():
+        reason_actions_api, generated_api_texts = agent.predict_reason_action_batch(
+            mode="api_call",
+            input_datas=input_datas,
+            num_responses=1 + num_alt_responses,
+            alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
+        ) # List[List[dict]], List[List[str]]
+    else:
+        reason_actions_api, generated_api_texts = agent.predict_reason_action_batch(
+            input_datas=input_datas,
+            num_responses=1 + num_alt_responses,
+            alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
+        ) # List[List[dict]], List[List[str]]
     # for i in range(len(reason_actions_api)):
     #     for j in range(1 + num_alt_responses):
     #         print(generated_api_texts[i * (1 + num_alt_responses) + j])
@@ -195,8 +207,12 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
         # input(f"========= api_calls_used and api_responses_used {i} =========")
 
     ### Step 2: Talk to the user based on the API responses
-    agent.set_prompt_template(prompt_template=agent_prompt_template)
-    agent.set_parse_reason_action_fn(parse_reason_action_fn=parse_reason_and_action_car_dealer)
+    if "dual_agents" in agent.name():
+        agent.response_generator.set_prompt_template(prompt_template=agent_prompt_template)
+        agent.response_generator.set_parse_reason_action_fn(parse_reason_action_fn=parse_reason_and_action_car_dealer)
+    else:
+        agent.set_prompt_template(prompt_template=agent_prompt_template)
+        agent.set_parse_reason_action_fn(parse_reason_action_fn=parse_reason_and_action_car_dealer)
     
     input_datas = [
         {
@@ -210,11 +226,19 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
         } for formated_history, api_call_used, api_response_used, buyer_response in zip(formated_histories, api_calls_used, api_responses_used, buyer_responses)
     ]
 
-    reason_actions, generated_texts = agent.predict_reason_action_batch(
-        input_datas=input_datas,
-        num_responses=1 + num_alt_responses,
-        alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
-    ) # List[List[dict]], List[List[str]]
+    if "dual_agents" in agent.name():
+        reason_actions, generated_texts = agent.predict_reason_action_batch(
+            mode="generate_response",
+            input_datas=input_datas,
+            num_responses=1 + num_alt_responses,
+            alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
+        ) # List[List[dict]], List[List[str]]
+    else:
+        reason_actions, generated_texts = agent.predict_reason_action_batch(
+            input_datas=input_datas,
+            num_responses=1 + num_alt_responses,
+            alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
+        ) # List[List[dict]], List[List[str]]
 
     # for i in range(len(reason_actions)):
     #     for j in range(1 + num_alt_responses):

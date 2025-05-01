@@ -250,7 +250,12 @@ def main(cfg: DictConfig):
             logdir = os.path.join(cfg.logdir, "baseline", agent_config.log_name)
             agent_name = "gpt4o_expert"
         else:
-            agent_name = agent_config.model_id if agent_config.type != "best_of_n" else agent_config.generator.model_id
+            if agent_config.type == "best_of_n":
+                agent_name = agent_config.generator.model_id
+            elif agent_config.type == "dual_sglang_server_agents":
+                agent_name = agent_config.response_generator.model_id
+            else:
+                agent_name = agent_config.model_id
             
             if "checkpoint" in agent_name:
                 agent_name = os.path.basename(agent_name.split("/")[-2])

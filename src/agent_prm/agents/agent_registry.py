@@ -9,7 +9,7 @@ from agent_prm.critics.random_critic import RandomCritic
 from agent_prm.agents.best_of_n_agent import BestofNAgent
 from agent_prm.agents.mixture_agent import MixtureAgent
 from agent_prm.agents.switch_agent import SwitchAgent
-
+from agent_prm.agents.dual_sglang_agents import DualSGLangServerAgents
 def initialize_agent(
     agent_config: Dict[str, Any],
     parse_reason_action_fn: Callable,
@@ -86,6 +86,13 @@ def initialize_agent(
                                           parse_reason_action_fn=parse_reason_action_fn,
                                           temperature=agent_config["temperature"],
                                           batch_limit=agent_config["batch_limit"])
+    elif agent_type == "dual_sglang_server_agents":
+        api_caller = initialize_agent(agent_config=agent_config["api_caller"], parse_reason_action_fn=parse_reason_action_fn, verbose=verbose, debug=debug)
+        response_generator = initialize_agent(agent_config=agent_config["response_generator"], parse_reason_action_fn=parse_reason_action_fn, verbose=verbose, debug=debug)
+        return DualSGLangServerAgents(api_caller=api_caller, 
+                                      response_generator=response_generator, 
+                                      verbose=verbose, 
+                                      debug=debug)
     elif agent_type == "best_of_n":
         generator = initialize_agent(agent_config=agent_config["generator"], parse_reason_action_fn=parse_reason_action_fn, verbose=verbose, debug=debug)        
         critic = initialize_critic(critic_config=agent_config["critic"], verbose=verbose, debug=debug)
