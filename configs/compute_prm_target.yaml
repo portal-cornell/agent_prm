@@ -1,20 +1,47 @@
-domain: twenty_questions # alfworld, twenty_questions
+domain: twenty_questions # alfworld, twenty_questions, car_dealer
 rolloutdirs: 
+  ############################################################################################################
+  #
+  # Twenty Questions
+  #
+  ############################################################################################################
   # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all  # iter1
   # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-80pct_Q0-80pct-lr=5e-6_250312_091827_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_pen=-10_Q0-80pct-lr=5e-6 # iter2
   # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-60pct_Q1-60pct-lr=5e-6_250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct # iter3
-  ############# Investigate Hindsight
+  ################################################################# Investigate Hindsight
   ########### iter 0
   # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight_pi0-all-data-3epoches_250307_212417_peft=false_epoch3+all
   ## iter 0 (trained only on pi0 data rolling out in the new env)
   # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-new-env_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
   # Redo hindsight
-  - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
   ########### iter 1
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-77pct_Q0-80pct-lr=5e-6-hindsight_250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight
-  ## iter 0 (mixing pi0 and pi2 rollouts)
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-60pct_Q1-60pct-lr=5e-6_250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct
+  # baseline: pi1_Q0-60pct-lr=5e-6_pi0-new-env
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1_Q0-60pct-lr=5e-6_pi0-new-env_250418_164049_iter1_pi0-new-env_pi1_Q0-60pct-lr=5e-6_pi0-new-env
+  # hindsight: pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60_250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60
+  ########### iter 2
+  # baseline: pi2-40pct_Q1-40pct-lr=5e-6_new-env
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-40pct_Q1-40pct-lr=5e-6_new-env_250422_005316_iter2_new-env_pi2_Q1-40pct-lr=5e-6_new-env
+  # baseline: pi2_Q1-40pct-lr=5e-6_new-env_from-pi0
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2_Q1-40pct-lr=5e-6_new-env_from-pi0_250424_141029_iter2_new-env_pi2_Q1-40pct-lr=5e-6_new-env_from-pi0
+  # Hindsight: pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0_250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0
+  ############################################################### pi*
+  ########### iter 0
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/best-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
+  ############################################################### explorative-pi
+  ########### iter 0
+  - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
+  ############################################################################################################
+  #
+  # Car Dealer
+  #
+  ############################################################################################################
+  ############################################ PRM + RL #######################################################
+  # - /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-83pct_250430_180817_iter0_pi0_vanilla_epochs=3
+
+
 output_folder: null # So that we don't accidentally overwrite the existing data
 
 # Either one is used
@@ -49,6 +76,9 @@ hindsight:
   onpolicy_pct_for_success: null # Within the successful on-policy rollouts, only X pct of files are from on-policy rollouts
   num_failed_expert_rollouts_to_include: 10 # Only used in hindsight cases. Include X number of failed expert rollouts
   track_offpolicy: true # Whether to track the off-policy rollouts
+  use_past_onpolicy_failed_rollouts: false # Whether to use the old on-policy failed rollouts
+  past_onpolicy_rolloutdirs:
+    - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60_250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60
 
 outputdir: data/${domain}/prm/${output_folder}
 gamma: 0.95
