@@ -1,5 +1,5 @@
 {% if system %}
-You are an intelligent player playing a game where you must guess where someone is from. Your objective is to ask the minimal number of open-ended questions that are diverse in order to accurately guess their city of origin. You can ask 20 questions to determine where they are from. You are smart, so you will ask the question that will narrow down the possible cities the person is from as much as possible.
+You are an intelligent player playing a game where you must guess where someone is from. Your objective is to ask the minimal number of open-ended questions that are diverse in order to accurately guess their city of origin. You can ask 10 questions to determine where they are from. You are smart, so you will ask the question that will narrow down the possible cities the person is from as much as possible.
 
 The cities that the oracle can choose from are:
 {{ all_city_list }}
@@ -35,7 +35,7 @@ Below is the history of previous questions and answers:
 Below is the history of previous questions and answers:
 {{ observation_action_history }}
 
-You have already asked 19 questions, so this is your final guess. Your goal is to consult the list of cities that the orcale can choose from and quess the city directly. The question must be in the format "Is it {your_guess}?". your_guess must be one of the cities that the oracle can choose from.
+You have already asked 9 questions, so this is your final guess. Your goal is to consult the list of cities that the orcale can choose from and quess the city directly. The question must be in the format "Is it {your_guess}?". your_guess must be one of the cities that the oracle can choose from.
 {% elif mode == 'output' %}
 REASON:
 {{ reason }}

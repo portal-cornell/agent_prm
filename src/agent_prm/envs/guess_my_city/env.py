@@ -18,7 +18,7 @@ class GuessMyCityEnvironment():
         self, 
         answerer: GuessMyCitySimulator,
         city_list: List[WordVariants],  
-        max_conversation_length: int=20,
+        max_conversation_length: int=10,
     ):
         self.answerer = answerer
         self.city_list = city_list
@@ -79,9 +79,11 @@ class GuessMyCityEnvironment():
 
             if any(re.match(pattern, question_cleaned) for pattern in guess_patterns):
                 history[-1]["answer"] = "no"
-
-            reward = -1.0
-            done = False
+                reward = -2.0
+                done = True
+            else:
+                reward = -1.0
+                done = False
 
         if len(history) == self.max_conversation_length:
             print("The word was", self.curr_city[0])
@@ -128,7 +130,7 @@ class BatchedGuessMyCityEnvironment(object):
 
     We will use the trick that our simulator is essentially a simulator, which can accept batched inputs.
     """
-    def __init__(self, answerer: GuessMyCitySimulator,  city_list: List[WordVariants],  max_conversation_length: int=20):
+    def __init__(self, answerer: GuessMyCitySimulator,  city_list: List[WordVariants],  max_conversation_length: int=10):
         self.answerer = answerer
         self.city_list = city_list
         self.max_conversation_length = max_conversation_length
@@ -228,7 +230,7 @@ def setup_guess_my_city_env(data_split: str='all') -> GuessMyCityEnvironment:
             verbose=1
         ),
         city_list=get_default_word_list(data_split),
-        max_conversation_length=20,
+        max_conversation_length=10,
     )
     return env
 
@@ -251,6 +253,6 @@ def setup_batched_guess_my_city_env(data_split: str='all', use_sglang_server: bo
     env = BatchedGuessMyCityEnvironment(
         answerer=sim,
         city_list=get_default_word_list(data_split),
-        max_conversation_length=20,
+        max_conversation_length=10,
     )
     return env

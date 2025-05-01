@@ -129,7 +129,11 @@ def main():
 
                     obs, reward, done = env.step(history, action)
                     history, answerer_reason, answer = obs
-                    total_reward += reward
+                    if reward == -2.0:
+                        reward = -(10.0 - abs(total_reward))
+                        total_reward = -10.0
+                    else:
+                        total_reward += reward
 
                     traj_list.append({
                         "reason": reason,
