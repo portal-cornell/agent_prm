@@ -30,7 +30,7 @@ multi-star:
   rollout_per_task: 10 # To ensure fairness, we will ensure that each game has {rollout_per_task} rollouts
   note: '10k'
   use_past_rollouts: true
-  pct_of_past_rollouts: 0.9
+  pct_of_past_rollouts: 0.5
   iter0:
     # iter0 (to train pi1): pi0-all-data-3epoches
     rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all

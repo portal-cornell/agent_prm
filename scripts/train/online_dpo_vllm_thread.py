@@ -77,6 +77,7 @@ from utils import (
 from agent_prm.utils.open_instruct import (
     combine_dataset
 )
+from agent_prm.utils.logger_email import elogger
 
 api = HfApi()
 INVALID_LOGPROB = 1.0
@@ -1152,6 +1153,9 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
             # remove args.checkpoint_output_dir
             if os.path.exists(args.checkpoint_output_dir):
                 shutil.rmtree(args.checkpoint_output_dir, ignore_errors=True)
+
+    elogger.activate(True)
+    elogger.log(f"Online DPO Training finished.")
 
 
 if __name__ == "__main__":

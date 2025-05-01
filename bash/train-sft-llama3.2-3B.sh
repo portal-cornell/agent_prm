@@ -10,6 +10,7 @@ DOMAIN=twenty_questions
 MAX_SEQ_LENGTH=4000
 TRAIN_BATCH_SIZE=4
 GRAD_ACCUM_STEPS=16
+GPU_COUNT=2
 
 ###################
 # Vanilla mode
@@ -67,6 +68,18 @@ GRAD_ACCUM_STEPS=16
 # SAVE_STEPS=16
 # MODEL_LOG_NAME="pi1_multi-star_from-base_10k-data"
 
+# ##### Iter1 (10k datapoints) - lower learning rate
+# # Option 1: Train from base model
+# # 10000 * 1 / 2 / 4 / 16 = 78.125
+# # 79 / 5 = 15.8 (save_steps=16)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter1_multi-star_10k
+# EPOCHS=1
+# SAVE_STEPS=16
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi1_multi-star_from-base_10k-data_lr=3e-6"
+
+
 ##### Iter2 (10k datapoints)
 # Option 1: Train from base model
 # 10000 * 1 / 2 / 4 / 16 = 78.125
@@ -76,6 +89,17 @@ GRAD_ACCUM_STEPS=16
 # EPOCHS=1
 # SAVE_STEPS=16
 # MODEL_LOG_NAME="pi2_multi-star_from-base_10k-data"
+
+##### Iter2 (10k datapoints) - with 50% past rollouts
+# Option 1: Train from base model
+# 10000 * 1 / 2 / 4 / 16 = 78.125
+# 79 / 5 = 15.8 (save_steps=16)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter2_multi-star_10k_mix-50pct-past
+# EPOCHS=1
+# SAVE_STEPS=16
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi2_multi-star_from-base_10k-data_50pct-past_lr=3e-6"
 
 # ##### Iter3 (10k datapoints)
 # # Option 1: Train from base model
@@ -123,13 +147,12 @@ GRAD_ACCUM_STEPS=16
 # Option 1: Train from base model
 # 10000 * 1 / 2 / 4 / 16 = 78.125
 # 79 / 5 = 15.8 (save_steps=16)
-MODEL=meta-llama/Llama-3.2-3B-Instruct
-DATA_DIR=iter3_multi-star_10k_mix-50pct-past
-EPOCHS=1
-SAVE_STEPS=16
-LEARNING_RATE=3e-6
-MODEL_LOG_NAME="pi3_multi-star_from-base_10k-data_50pct-past_lr=3e-6"
-
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter3_multi-star_10k_mix-50pct-past
+# EPOCHS=1
+# SAVE_STEPS=16
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi3_multi-star_from-base_10k-data_50pct-past_lr=3e-6"
 
 # ##### Iter3 (10k datapoints) - 70% past rollouts
 # # Option 1: Train from base model
@@ -172,6 +195,16 @@ MODEL_LOG_NAME="pi3_multi-star_from-base_10k-data_50pct-past_lr=3e-6"
 # SAVE_STEPS=8
 # MODEL_LOG_NAME="pi1_leap_from-pi0"
 
+# ##### Iter1 (lower learning rate)
+# # Option 1: Train from base model
+# # 36 steps (5 ckpts) 36/5=7.2 (so save_steps=8)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter1_leap
+# EPOCHS=1
+# SAVE_STEPS=8
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi1_leap_from-base_lr=3e-6"
+
 ##### Iter2
 # Option 1: Train from base model
 # 4861 * 1 / 2 / 4 / 16 = 37.9765625
@@ -182,7 +215,18 @@ MODEL_LOG_NAME="pi3_multi-star_from-base_10k-data_50pct-past_lr=3e-6"
 # SAVE_STEPS=8
 # MODEL_LOG_NAME="pi2_leap_from-base"
 
-##### Iter2
+##### Iter2 (lower learning rate)
+# Option 1: Train from base model
+# 4861 * 1 / 2 / 4 / 16 = 37.9765625
+# 37.9765625 / 5 = 7.5953125 (save_steps=8)
+MODEL=meta-llama/Llama-3.2-3B-Instruct
+DATA_DIR=iter2_leap
+EPOCHS=1
+SAVE_STEPS=8
+LEARNING_RATE=3e-6
+MODEL_LOG_NAME="pi2_leap_from-base_lr=3e-6"
+
+##### Iter3
 # Option 1: Train from base model
 # 4781 * 1 / 2 / 4 / 16 = 37.3515625 --> 38
 # 38 / 5 = 7.6 (save_steps=8)
@@ -196,7 +240,8 @@ MODEL_LOG_NAME="pi3_multi-star_from-base_10k-data_50pct-past_lr=3e-6"
 # DOMAIN=car_dealer  # car_dealer, twenty_questions
 # MAX_SEQ_LENGTH=6500
 # TRAIN_BATCH_SIZE=2
-# GRAD_ACCUM_STEPS=10
+# GRAD_ACCUM_STEPS=12
+# GPU_COUNT=4
 
 # ###################
 # # Vanilla mode
@@ -218,6 +263,15 @@ MODEL_LOG_NAME="pi3_multi-star_from-base_10k-data_50pct-past_lr=3e-6"
 # # 183 / 5 = 36.6 (save_steps=37)
 # SAVE_STEPS=37
 # MODEL_LOG_NAME="pi0_vanilla_response"
+
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter0
+# EPOCHS=3
+# # num datapoints * epoch / gpu / batch size / gradient accumulation steps
+# # 4858 * 3 / 4 / 2 / 12 = 151.8125
+# # 152 / 5 = 30.4
+# SAVE_STEPS=31
+# MODEL_LOG_NAME="pi0_vanilla"
 
 
 ########################################################################################################################################
@@ -256,7 +310,7 @@ SAVE_DIR=save/${DOMAIN}/sft/${current_date}_${DATA_DIR}_${MODEL_LOG_NAME}_epochs
 echo "Save directory: $SAVE_DIR"
 
 accelerate launch \
-    --num_processes 2 \
+    --num_processes $GPU_COUNT \
     --config_file configs/ds_configs/deepspeed_zero3.yaml scripts/train/sft_trl.py \
     --data_dirs "${DATA_DIRS}" \
     --output_dir ${SAVE_DIR} \

@@ -5,6 +5,7 @@ MODEL_NAME="meta-llama/Llama-3.2-3B-Instruct"
 # Default values
 declare -A MODEL_PORT_MAP
 MODEL_PORT_MAP["meta-llama/Llama-3.2-3B-Instruct"]=40042
+MODEL_PORT_MAP["Qwen/Qwen2.5-14B-Instruct"]=40043
 
 # Set default port based on MODEL_NAME
 PORT=${MODEL_PORT_MAP[$MODEL_NAME]:-30000}

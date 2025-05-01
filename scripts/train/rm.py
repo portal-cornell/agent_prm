@@ -63,7 +63,7 @@ from utils import (
     PROMPT_KEY,
     COMPLETION_KEY
 )
-
+from agent_prm.utils.logger_email import elogger
 
 @dataclass
 class Args:
@@ -490,6 +490,8 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
             tokenizer,
             save_dir,
         )
+    elogger.activate(True)
+    elogger.log(f"RM Training finished.")
 
 if __name__ == "__main__":
     parser = ArgumentParserPlus((Args, DatasetConfig, ModelConfig))
