@@ -80,13 +80,19 @@ from agent_prm.utils.cfg_utils import find_matching_iter
 # POLICY_B_NAME = "pi1-60pct_Q0-20pct-lr=5e-6_hindsight-biased-on-50"
 
 ## 60 pct data
-POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-20pct-lr=5e-6_pi0-new-env_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
-POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-60_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
-POLICY_A_NAME = "BoN_pi0_Q0-20pct-lr=5e-6_pi0-new-env"
-POLICY_B_NAME = "BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-60"
+# POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-20pct-lr=5e-6_pi0-new-env_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+# POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-60_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+# POLICY_A_NAME = "BoN_pi0_Q0-20pct-lr=5e-6_pi0-new-env"
+# POLICY_B_NAME = "BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-60"
 
+## Compare the 60 pct data pi1 vs 100 pct data pi1
+POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-40pct_Q0-20pct-lr=5e-6_pi0-new-env_250405_214137_iter1_pi0-new-env_pi1_Q0-20pct-lr=5e-6_pi0-new-env"
+POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-40pct_Q0-20pct-lr=5e-6_hindsight-biased-on-60_250411_220702_iter1_hindsight-biased-on-60_pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-60"
+POLICY_A_NAME = "pi1-40pct_Q0-20pct-lr=5e-6_pi0-new-env"
+POLICY_B_NAME = "pi1-40pct_Q0-20pct-lr=5e-6_hindsight-biased-on-60"
 
-save_folder_path = os.path.join("playground/compare_two_policies", f"{POLICY_A_NAME}_vs_{POLICY_B_NAME}")
+DOMAIN = "twenty_questions"
+save_folder_path = os.path.join(f"playground/{DOMAIN}/compare_two_policies", f"{POLICY_A_NAME}_vs_{POLICY_B_NAME}")
 
 ROLLOUT_PER_TASK_DICT = {
     "train": 1,
@@ -305,5 +311,5 @@ if __name__ == "__main__":
     print(f"Results will be saved to {save_folder_path}")
     input("Press Enter to continue...")
 
-    # collect_results(POLICY_A_PATH, POLICY_B_PATH, POLICY_A_NAME, POLICY_B_NAME)
+    collect_results(POLICY_A_PATH, POLICY_B_PATH, POLICY_A_NAME, POLICY_B_NAME)
     present_per_data_type_results(POLICY_A_NAME, POLICY_B_NAME)

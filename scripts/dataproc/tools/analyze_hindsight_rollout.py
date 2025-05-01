@@ -6,7 +6,7 @@ data range from
 4-11: From the expert (4 * 2) rollouts
 12-19: From the expert (4 * 2) rollouts (randomly selected some rollouts from 4-11, before getting expert rollouts)
 
-
+python scripts/dataproc/tools/analyze_hindsight_rollout.py -d train
 """
 import os
 import json
@@ -22,11 +22,27 @@ parser.add_argument("-d", "--data_type", type=str, required=True)
 parser.add_argument("-e", "--use_existing_json", default=False, action="store_true", help="Whether to skip the rollout checking process and use the existing json file")
 args = parser.parse_args()
 
-BASE_PATH = "playground/hindsight"
-FOLDER_NAME = "inspect_iter1_hindsight-redo_data"
-data_iter = "iter0"
+BASE_PATH = "playground/twenty_questions/hindsight"
 
-dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+# FOLDER_NAME = "inspect_iter1_hindsight-redo_data"
+# data_iter = "iter0"
+# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+
+# FOLDER_NAME = "inspect_iter2_hindsight-biased-on-60_data"
+# data_iter = "iter1"
+# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60_250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60"
+
+# FOLDER_NAME = "inspect_iter3_hindsight-biased-on-60_data"
+# data_iter = "iter2"
+# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0_250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0"
+
+# FOLDER_NAME = "inspect_iter1_best-pi-relabel_data"
+# data_iter = "iter0"
+# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/best-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+
+FOLDER_NAME = "inspect_iter1_explorative-pi-relabel_data"
+data_iter = "iter0"
+dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
 
 
 os.makedirs(os.path.join(BASE_PATH, FOLDER_NAME, f"{FOLDER_NAME}_{args.data_type}"), exist_ok=True)
@@ -54,7 +70,7 @@ def check_for_original_policy_rollout(expert_rollout_data, policy_rollouts):
                 is_prefix = False
                 break
             
-            if policy_rollout[j]["alternatives"] is not None:
+            if policy_rollout[j]["alternatives"] is not None and expert_rollout_data[j]["alternatives"] is not None:
                 for k in range(len(policy_rollout[j]["alternatives"])):
                     if policy_rollout[j]["alternatives"][k]["reason"] != expert_rollout_data[j]["alternatives"][k]["reason"]:
                         is_prefix = False
@@ -123,7 +139,7 @@ if do_initial_check:
     for obj in objects_to_eval_on:
         if len(file_per_object[obj]) != max_num_files:
             print(f"Object {obj} has {len(file_per_object[obj])} files: {file_per_object[obj]}")
-            obj_missing_files.append((obj, len(file_per_object[obj])))
+            obj_missing_files.append((obj, len(file_per_object[obj]), file_per_object[obj]))
 
     if len(obj_missing_files) > 0:
         print(f"Objects missing files: {obj_missing_files}")

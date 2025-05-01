@@ -63,6 +63,7 @@ folder_to_baselines = {
     "prm-pi1-q1-hd-with-original": ["gpt-4o", "pi0", "pi1_hindsight"],
     "rl-pi1-hd-new-env": ["gpt-4o", "pi0-new-env", "pi2-new-env", "BoN_pi0_Q0*_pi0-new-env", "BoN_pi0_Q0*_hindsight-redo", "BoN_pi0_Q0*_hindsight-biased"],
     "rl-pi1-hd-best": ["gpt-4o", "base-3B", "pi0-new-env", "pi2-new-env"],
+    "rl-pi1-hd-best-val": ["gpt-4o", "base-3B", "pi0-new-env", "pi2-new-env"],
     # pi2
     "rl-pi2-hd": ["gpt-4o", "pi0", "pi1", "BoN_pi1_Q1*_hindsight"],
     "rl-pi1-hd-with-pi0-pi2-mix": ["gpt-4o", "pi0"],
@@ -141,6 +142,12 @@ folder_to_regex = {
             r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_hindsight-biased-on-50$', r'^pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50$',
             r'^(pi1-(\d+)pct)_Q0-20pct-lr=5e-6_hindsight-biased-on-60$', r'^pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-60$',
         ],
+    "rl-pi1-hd-best-val":
+        [
+            r'^(pi1-(\d+)pct)_Q0-60pct-lr=5e-6_pi0-new-env$', r'^pi1_Q0-60pct-lr=5e-6_pi0-new-env$',
+            r'^(pi1-(\d+)pct)_Q0-80pct-lr=5e-6_hindsight-biased-on-40$', r'^pi1_Q0-80pct-lr=5e-6_hindsight-biased-on-40$',
+            r'^(pi1-(\d+)pct)_Q0-lr=5e-6_hindsight-biased-on-60$', r'^pi1_Q0-lr=5e-6_hindsight-biased-on-60$',
+        ],
     # Q1
     "prm-pi1-q1-hd-with-original": 
         [r'BoN_pi1_(Q1-(\d+)pct)-lr=5e-6$', r'BoN_pi1_Q1-lr=5e-6$', r'BoN_pi1_(Q1-(\d+)pct)-lr=5e-6_hindsight', r'BoN_pi1_Q1-lr=5e-6_hindsight'],
@@ -184,13 +191,13 @@ folder_to_plot_models = {
         ],
     "prm-pi0-q0-hd-best":
         ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 
-         'BoN_pi0_Q0-lr=5e-6_pi0-new-env',
         #  'BoN_pi0_Q0-lr=5e-6_hindsight-redo', 
          'BoN_pi0_Q0-lr=5e-6_hindsight-biased',
         #  'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-30',
         #  'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-40',
          'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50',
          'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-60',
+         'BoN_pi0_Q0-lr=5e-6_pi0-new-env',
         #  'BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-70'
         ],
     # pi1
@@ -201,11 +208,18 @@ folder_to_plot_models = {
     "rl-pi1-hd-new-env":
         ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 'BoN_pi0_Q0*_pi0-new-env', 'BoN_pi0_Q0*_hindsight-redo', 'BoN_pi0_Q0*_hindsight-biased', 'pi1_Q0-20pct-lr=5e-6_pi0-new-env', 'pi1_Q0-lr=5e-6_hindsight-redo', 'pi1_Q0-20pct-lr=5e-6_hindsight-redo', 'pi1_Q0-80pct-lr=5e-6_hindsight-50-50', 'pi1_Q0-lr=5e-6_hindsight-biased', 'pi1_Q0-20pct-lr=5e-6_hindsight-biased'],
     "rl-pi1-hd-best":
-        ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 'pi1_Q0-20pct-lr=5e-6_pi0-new-env',
+        ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 
         #  'pi1_Q0-20pct-lr=5e-6_hindsight-redo',
          'pi1_Q0-20pct-lr=5e-6_hindsight-biased',
          'pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-50',
          'pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-60',
+         'pi1_Q0-20pct-lr=5e-6_pi0-new-env',
+        ],
+    "rl-pi1-hd-best-val":
+        ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 
+        'pi1_Q0-60pct-lr=5e-6_pi0-new-env',
+        'pi1_Q0-80pct-lr=5e-6_hindsight-biased-on-40',
+        'pi1_Q0-lr=5e-6_hindsight-biased-on-60',
         ],
     # Q1
     "prm-pi1-q1-hd-with-original": 
@@ -422,12 +436,13 @@ def plot_models(models_to_plot: dict, plot_path: str, models_to_plot_names: list
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", "--name", type=str, required=True, help="The name of folder to save the plot")
+    parser.add_argument("-d", "--domain", type=str, default="twenty_questions", choices=["twenty_questions", "car_dealer"], help="The domain of the eval")
     parser.add_argument("-e", "--use_existing_table", action="store_true")
     parser.add_argument("-b", "--error_bar", action="store_true")
     parser.add_argument("-bb", "--error_bar_baseline", action="store_true")
     args = parser.parse_args()
 
-    save_path = os.path.join("playground/eval", args.name)
+    save_path = os.path.join(f"playground/{args.domain}/eval", args.name)
     os.makedirs(save_path, exist_ok=True)
 
     try:
@@ -438,7 +453,7 @@ if __name__ == "__main__":
         raise ValueError(f"Invalid name: {args.name}, available names are: {folder_to_regex.keys()}")
 
     # Load the yaml file
-    with open("configs/eval_config/twenty_questions.yaml", "r") as f:
+    with open(f"configs/eval_config/{args.domain}.yaml", "r") as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
     if not args.use_existing_table:
