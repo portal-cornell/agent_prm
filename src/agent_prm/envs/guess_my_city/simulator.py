@@ -7,9 +7,9 @@ from typing import Callable, List, Tuple, Any, Optional, Dict, Union
 import requests
 from tqdm import tqdm
 from typing import Tuple, List
-from agent_prm.envs.twenty_questions.data import WordVariants
+from agent_prm.envs.guess_my_city.data import WordVariants
 
-def parse_reason_and_action_20questions_oracle(text: str) -> Tuple[str, str]:
+def parse_reason_and_action_guess_my_city_oracle(text: str) -> Tuple[str, str]:
     """
     Parses the reason and action given prediction from model for ORCALE environment 
 
@@ -25,31 +25,24 @@ def parse_reason_and_action_20questions_oracle(text: str) -> Tuple[str, str]:
     if match:
         reason = match.group(1).strip()  # Remove extra spaces/newlines
         answer = match.group(2).strip()
-
-        # Clean up action to move to lower case and remove any random characters
-        answer = answer.lower()
-        answer = re.sub(r'[^a-z0-9 /]', '', answer)
     else:
         reason = "None"
         answer = "None"
 
-    if answer != "yes" and answer != "no":
-        answer = "no"
-
     return reason, answer
 
-class TwentyQuestionsSimulator(object):
-    """Initialize the TwentyQuestionsOracle agent.
+class GuessMyCitySimulator(object):
+    """Initialize the GuessMyCityOracle agent.
     
     - Initialization doesn't change
-    - Modify the predict reason action to use the twenty questions simulator template
+    - Modify the predict reason action to use the guess my city simulator template
     """
     def __init__(self, 
                  model_id: str, 
                  prompt_template_file: str, 
                  verbose: int = 0, 
                  debug: bool = False, 
-                 parse_reason_action_fn: Callable[[str], Tuple[str, str]] = parse_reason_and_action_20questions_oracle, 
+                 parse_reason_action_fn: Callable[[str], Tuple[str, str]] = parse_reason_and_action_guess_my_city_oracle, 
                  max_length: Optional[int] = None) -> None:
         """
         Initializes the HFAgent with a pre-trained language model, tokenizer, and a prompt template.
@@ -87,15 +80,85 @@ class TwentyQuestionsSimulator(object):
     def name(self) -> str:
         return self.model_id
     
+    def redact_city_country(self, text: str, city: WordVariants) -> str:
+        city_variants = [w.strip().lower() for w in city.words]
+
+        parts = city.words[0].split(",")
+        city_name_only = parts[0].strip().lower()
+        country_name = parts[1].strip().lower() if len(parts) > 1 else ""
+
+        city_variants.append(city_name_only)
+        city_variants = list(set(city_variants)) 
+
+        adjective_map = {
+            "south korea": "korean",
+            "india": "indian",
+            "indonesia": "indonesian",
+            "pakistan": "pakistani",
+            "turkey": "turkish",
+            "china": "chinese",
+            "japan": "japanese",
+            "brazil": "brazilian",
+            "chile": "chilean",
+            "argentina": "argentinian",
+            "ecuador": "ecuadorian",
+            "venezuela": "venezuelan",
+            "italy": "italian",
+            "ukraine": "ukrainian",
+            "france": "french",
+            "romania": "romanian",
+            "hungary": "hungarian",
+            "mexico": "mexican",
+            "usa": "american",
+            "united states": "american",
+            "canada": "canadian",
+            "cuba": "cuban",
+            "egypt": "egyptian",
+            "morocco": "moroccan",
+            "congo": "congolese",
+            "ethiopia": "ethiopian",
+            "cote d'ivorie": "ivoirian",
+            "côte d'ivoire": "ivoirian",
+            "australia": "australian",
+        }
+
+        # First redact all full city names
+        for variant in city_variants:
+            pattern = re.compile(re.escape(variant), re.IGNORECASE)
+            text = pattern.sub("[city name redacted]", text)
+
+        if country_name:
+            # Redact the full country name
+            pattern_country = re.compile(re.escape(country_name), re.IGNORECASE)
+            text = pattern_country.sub("[country name redacted]", text)
+
+            # Redact important subwords of country name (e.g., "Korea" from "South Korea")
+            country_subwords = re.split(r"[ \-']", country_name)  # Split on space, hyphen, apostrophe
+            for subword in country_subwords:
+                if len(subword) > 2:  # only redact meaningful words (e.g., ignore 'd' in "Cote d'Ivoire")
+                    pattern_subword = re.compile(re.escape(subword), re.IGNORECASE)
+                    text = pattern_subword.sub("[country name redacted]", text)
+
+            # Redact adjective form
+            adj = adjective_map.get(country_name.lower())
+            if adj:
+                pattern_adj = re.compile(re.escape(adj), re.IGNORECASE)
+                text = pattern_adj.sub("[country name redacted]", text)
+
+                pattern_adj_plural = re.compile(re.escape(adj + "s"), re.IGNORECASE)
+                text = pattern_adj_plural.sub("[country name redacted]", text)
+
+        return text
+
+
+    
     def generate_answer(self, 
-                        word: WordVariants, 
-                        obj_category: str,
-                        question: str) -> Tuple[str, str]:
+                        city: WordVariants, question: str) -> Tuple[str, str]:
         """
-        Predicts a reason and an answer given the current word and question
+        Predicts a reason and an answer given the current city and question
 
         Args:
-            words: The word to generate an answer for
+            city: The city to generate an answer for
             question: The question to generate an answer for
 
         Returns:
@@ -103,9 +166,8 @@ class TwentyQuestionsSimulator(object):
         """ 
         input_data = {
             'mode': 'input',
-            'thing': word[0].lower(),
-            'question': question,
-            'category': obj_category
+            'city': city[0].lower(),
+            'question': question
         }
         input_prompt = self.prompt_template.render(**input_data)
         
@@ -135,6 +197,7 @@ class TwentyQuestionsSimulator(object):
         
         response = self.tokenizer.decode(output[tokenized_inputs["input_ids"].shape[-1] :],skip_special_tokens=True)
         reason, action = self.parse_reason_action_fn(response)
+        action = self.redact_city_country(action, city)
         if self.verbose > 0:
             print(f"------ env simulator ------")
             print(f" REASON: {reason}")
@@ -150,21 +213,18 @@ class TwentyQuestionsSimulator(object):
     
 
     def generate_answer_batch(self, 
-                              words: List[WordVariants], 
-                              obj_categories: List[str],
-                              questions: List[str],
-                              ensemble_size: int = 5) -> Tuple[List[str], List[str]]:
+                              cities: List[WordVariants], 
+                              questions: List[str]) -> Tuple[List[str], List[str]]:
         """
-        Predicts a reason and an asnwer given the current word and question
+        Predicts a reason and an answer given the current city and question
         """
         input_datas = [
             {
                 'mode': 'input',
-                'thing': word[0].lower(),
-                'question': question,
-                'category': obj_category
+                'city': city[0].lower(),
+                'question': question
             }
-            for word, question, obj_category in zip(words, questions, obj_categories) for _ in range(ensemble_size)
+            for city, question in zip(cities, questions)
         ]
 
         messages = [
@@ -179,7 +239,7 @@ class TwentyQuestionsSimulator(object):
             for msg in messages
         ]
 
-        tokenized_inputs = self.tokenizer(messages, return_tensors="pt", padding=True, truncation=True, max_length=self.max_length).to(self.model.device)  # size for "input_ids" is (bs * ensemble_size, seq_len)
+        tokenized_inputs = self.tokenizer(messages, return_tensors="pt", padding=True, truncation=True, max_length=self.max_length).to(self.model.device)  # size for "input_ids" is (bs, seq_len)
 
         outputs = self.model.generate(
             **tokenized_inputs,
@@ -193,34 +253,23 @@ class TwentyQuestionsSimulator(object):
             temperature=None,
             top_p=None,
             pad_token_id=self.tokenizer.eos_token_id
-        )  # size: (bs * ensemble_size, seq_len)
+        )  # size: (bs, seq_len)
 
         # We want to only decode the last part of the output
         responses = self.tokenizer.batch_decode(outputs[:, tokenized_inputs["input_ids"].shape[-1]:], skip_special_tokens=True)
 
         answer_reasons, answers = [], []
-        for i in range(len(responses)//ensemble_size):
-            voter_reasons = []
-            voter_answers = []
-            for j in range(ensemble_size):
-                reason, answer = self.parse_reason_action_fn(responses[i * ensemble_size + j])
-                voter_reasons.append(reason)
-                voter_answers.append(0 if "no" in answer else 1)
-
-            # Get the most common answer
-            most_common_answer = max(set(voter_answers), key=voter_answers.count)
-            answers.append("no" if most_common_answer == 0 else "yes")
-
-            # Get one of the reasoning that's the most common
-            most_common_answer_index = voter_answers.index(most_common_answer)
-            answer_reasons.append(voter_reasons[most_common_answer_index])
+        for response in responses:
+            reason, answer = self.parse_reason_action_fn(response)
+            answer_reasons.append(reason)
+            answers.append(answer)
 
         return answer_reasons, answers
 
 
-class SGLangServerTwentyQuestionsSimulator(object):
+class SGLangServerGuessMyCitySimulator(object):
     """
-    Initialize the TwentyQuestionsOracle agent.
+    Initialize the GuessMyCityOracle agent.
     """
     def __init__(self, 
                  model_id: str, 
@@ -228,7 +277,7 @@ class SGLangServerTwentyQuestionsSimulator(object):
                  prompt_template_file: str, 
                  verbose: int = 0, 
                  debug: bool = False, 
-                 parse_reason_action_fn: Callable[[str], Tuple[str, str]] = parse_reason_and_action_20questions_oracle, 
+                 parse_reason_action_fn: Callable[[str], Tuple[str, str]] = parse_reason_and_action_guess_my_city_oracle, 
                  max_tokens: int = 256,
                  batch_limit: Optional[int] = None) -> None:
         self.model_id = model_id
@@ -246,21 +295,18 @@ class SGLangServerTwentyQuestionsSimulator(object):
     
 
     def generate_answer_batch(self, 
-                              words: List[WordVariants], 
-                              obj_categories: List[str],
-                              questions: List[str],
-                              ensemble_size: int = 5) -> Tuple[List[str], List[str]]:
+                              cities: List[WordVariants], 
+                              questions: List[str]) -> Tuple[List[str], List[str]]:
         """
-        Predicts a reason and an asnwer given the current word and question
+        Predicts a reason and an answer given the current city and question
         """
         input_datas = [
             {
                 'mode': 'input',
-                'thing': word[0].lower(),
-                'question': question,
-                'category': obj_category
+                'city': city[0].lower(),
+                'question': question
             }
-            for word, question, obj_category in zip(words, questions, obj_categories) for _ in range(ensemble_size)
+            for city, question in zip(cities, questions)
         ]
 
         messages = [
@@ -284,7 +330,7 @@ class SGLangServerTwentyQuestionsSimulator(object):
             data_batch = {"model": self.model_id, 
                           "text": prompts_batch,
                           "sampling_params": {
-                              "temperature": 0.3,
+                              "temperature": 0.0,
                               "max_new_tokens": self.max_tokens,
                               },
                           }
@@ -295,32 +341,9 @@ class SGLangServerTwentyQuestionsSimulator(object):
             generated_texts.extend(generated_texts_batch)
 
         answer_reasons, answers = [], []
-        for i in range(len(generated_texts)//ensemble_size):
-            voter_reasons = []
-            voter_answers = []
-            for j in range(ensemble_size):
-                reason, answer = self.parse_reason_action_fn(generated_texts[i * ensemble_size + j])
-                voter_reasons.append(reason)
-                voter_answers.append(0 if "no" in answer else 1)
-
-            # if 0 in voter_answers and 1 in voter_answers:
-            #     print(f"voter_reasons: {voter_reasons}")
-            #     print(f"voter_answers: {voter_answers}")
-            #     input("stop")
-
-            # Get the most common answer
-            most_common_answer = max(set(voter_answers), key=voter_answers.count)
-            answers.append("no" if most_common_answer == 0 else "yes")
-
-            # Get one of the reasoning that's the most common
-            most_common_answer_index = voter_answers.index(most_common_answer)
-            answer_reasons.append(voter_reasons[most_common_answer_index])
-
-            # if 0 in voter_answers and 1 in voter_answers:
-            #     print(f"most_common_answer: {most_common_answer}")
-            #     print(f"most_common_answer_index: {most_common_answer_index}")
-            #     print(f"reasons: {voter_reasons[most_common_answer_index]}")
-            #     print(f"answers: {answers}")
-            #     input("stop")
+        for response in generated_texts:
+            reason, answer = self.parse_reason_action_fn(response)
+            answer_reasons.append(reason)
+            answers.append(answer)
 
         return answer_reasons, answers

@@ -134,6 +134,8 @@ dmypy.json
 # custom dirs
 wandb/
 data/
+guess_my_city_old/
+eval/
 env_assets/
 save/
 outputs/
