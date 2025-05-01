@@ -2,7 +2,7 @@
 Example usage:
 
 When getting export's alternative actions:
-    python scripts/dataproc/rollout_expert_alt_actions.py -e -m g -i 1 -d val -min 0 -max 4
+    python scripts/dataproc/rollout_expert_alt_actions.py -e -m g -i 0 -d val -min 0 -max 4 -et gpt4o
 
     where
         -e indicates that we are using elogger
@@ -11,22 +11,23 @@ When getting export's alternative actions:
         -d val indicates that we are processing the validation set.
 
 When completing the rollouts:
-    python scripts/dataproc/rollout_expert_alt_actions.py -e -m r -i 1 -d train --rollout_idx_min 4 --rollout_idx_max 12 -si 0 -ei 27 -s -p 40
+    Without specifying the object range:
+        python scripts/dataproc/rollout_expert_alt_actions.py -e -m r -i 0 -d train -min 4 -max 12 -et gpt4o --sim_host TODO --sim_port TODO
 
-    where
-        -e indicates that we are using elogger
-        -m r indicates that we are completing the rollouts
-        -i 1 indicates the iteration that we are on (which affects the rollout directory and the agent config)
-        -d train indicates that we are processing the training set
-        --rollout_idx_min 4 --rollout_idx_max 12 indicates that we are completing the rollouts from idx 4 to 12
-        -si 0 -ei 27 indicates that we are starting from object 0 and ending at object 27 (not inclusive)
-        -s indicates that we are serving the model
-        -p 40 indicates that we are using port 40
+        where
+            -e indicates that we are using elogger
+            -m r indicates that we are completing the rollouts
+            -i 1 indicates the iteration that we are on (which affects the rollout directory and the agent config)
+            -d train indicates that we are processing the training set
+            --min 4 --max 12 indicates that we are completing the rollouts from idx 4 to 12
+            -s indicates that we are serving the model
 
-    python scripts/dataproc/rollout_expert_alt_actions.py -e -m g -i 1 -d train --curr_sample_iter 1 --starting_num_rollouts 4
+    python scripts/dataproc/rollout_expert_alt_actions.py -e -m r -i 1 -d train -min 4 -max 12 -si 0 -ei 27 -et gpt4o --sim_host TODO --sim_port TODO
+        where
+            -si 0 -ei 27 indicates that we are starting from object 0 and ending at object 27 (not inclusive)
 
 When merging the summary dicts:
-    python scripts/dataproc/rollout_expert_alt_actions.py -m merge_gen -i 0 -d train
+    python scripts/dataproc/rollout_expert_alt_actions.py -m merge_gen -i 0 -d train -et gpt4o
 
     python scripts/dataproc/rollout_expert_alt_actions.py -m merge_rollout -i 0 -d val
 """
@@ -50,22 +51,33 @@ from agent_prm.utils.openai import generate_from_openai_completion
 from agent_prm.utils.parser import parse_json, parse_reason_and_action_twenty_questions
 from agent_prm.utils.logger_email import elogger
 from agent_prm.utils.general_utils import start_sglang_server
+from agent_prm.agents.agent import Agent
 
 ALL_OBJ_LIST = [wv[0] for wv in get_default_word_list("all")]
 
 iter_to_rollout_dir = {
     # pi0 3 epochs
     # 0: "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight_pi0-all-data-3epoches_250307_212417_peft=false_epoch3+all",
-    0 : "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
-    # pi1-77pct_Q0-80pct-lr=5e-6-hindsight
-    1: "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-77pct_Q0-80pct-lr=5e-6-hindsight_250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight"
+    0 : {
+        "gpt4o": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
+        "pi*": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/best-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
+        "explorative-pi": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
+    },
+    # pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60 # Best val model
+    1: {
+        "gpt4o": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60_250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60",
+    },
+    # pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0 # Best val model
+    2: {
+        "gpt4o": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0_250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0"
+    }
 }
 
 iter_to_agent_config = {
     0: {
         "type": "sglang_server",
         "log_name": "pi0-all-data-3epoches",
-        "model_id": "/share/portal/hw575/agent_prm/save/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120",
+        "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120",
         "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
         "server_url": "http://localhost:TODO/",
         "dist_url_port": None,
@@ -76,8 +88,20 @@ iter_to_agent_config = {
     },
     1: {
         "type": "sglang_server",
-        "log_name": "pi1-77pct_Q0-80pct-lr=5e-6-hindsight",
-        "model_id": "/share/portal/hw575/agent_prm/save/online_dpo/250321_225328_iter1_hindsight_pi0_Q0-80pct-lr=5e-6-hindsight/checkpoint-160",
+        "log_name": "pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60",
+        "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/online_dpo/250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60/checkpoint-165",
+        "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
+        "server_url": "http://localhost:TODO/",
+        "dist_url_port": None,
+        "temperature": 0.3,
+        "batch_limit": 32,
+        "verbose": 0,
+        "debug": False,
+    },
+    2: {
+        "type": "sglang_server",
+        "log_name": "pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
+        "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/online_dpo/250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
         "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
         "server_url": "http://localhost:TODO/",
         "dist_url_port": None,
@@ -88,6 +112,20 @@ iter_to_agent_config = {
     }
 }
 
+
+best_agent_config = {
+    "type": "sglang_server",
+    "log_name": "pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
+    "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/online_dpo/250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
+    "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
+    "server_url": "http://localhost:TODO/",
+    "dist_url_port": None,
+    "temperature": 0.7,
+    "batch_limit": 32,
+    "verbose": 0,
+    "debug": False,
+}
+
 NUM_ALT_RESPONSES = 5
 
 with open("prompts/twenty_questions/twenty_question_summary.j2", "r") as f:
@@ -95,6 +133,12 @@ with open("prompts/twenty_questions/twenty_question_summary.j2", "r") as f:
 
 with open("prompts/twenty_questions/twenty_question_expert_gen_prefered_action.j2", "r") as f:
     GEN_ACTION_PROMPT_TEMPLATE = Template(f.read())
+
+with open("prompts/twenty_questions/twenty_questions_exploration_template.j2", "r") as f:
+    EXPLORE_ACTION_PROMPT_TEMPLATE = Template(f.read())
+
+with open("prompts/twenty_questions/twenty_questions_template.j2", "r") as f:
+    OG_ACTION_PROMPT_TEMPLATE = Template(f.read())
 
 def is_valid_rollout(f: str) -> bool:
     """
@@ -179,7 +223,7 @@ def check_reasoning_feasibility(reason: str, secret_word: str, category: str) ->
     else:
         return 'high'
 
-def gen_alt_actions(
+def hindsight_gen_alt_actions(
         # Used to verify the feasibility of the reasoning
         secret_word: str,
         category: str,
@@ -236,7 +280,99 @@ def gen_alt_actions(
 
     return reason_action_list, cost
     
+def pi_gen_alt_actions(
+    rollout: List[Dict],
+    t: int,
+    num_alt_actions_to_gen: int,
+    agent: Agent
+) -> List[Dict]:
+    """
+    Generate the alternative actions for the given timestep
+    """
+    history = [
+        {
+            "question": rollout[i]["action"],
+            "answer": rollout[i]["answer"]
+        } for i in range(t)
+    ]
 
+    if t == 19:
+        input("stop")
+
+    input_datas = [{
+        "mode": "input",  # Based on how we sample the timesteps, we will never need to use the "input_final" mode
+        "all_obj_list": ALL_OBJ_LIST,
+        "observation_action_history": history,
+    } for _ in range(num_alt_actions_to_gen)]
+
+    reason_actions, _ = agent.predict_reason_action_batch(input_datas, num_responses=1) # List[List[Dict]]\
+
+    # Flatten the list of lists
+    reason_actions = [item for sublist in reason_actions for item in sublist]
+
+    return reason_actions, 0
+
+def format_common_actions(common_actions: List[str]) -> str:
+    """
+    Format the common actions to be used in the prompt
+    """
+    common_actions_str = ""
+    for i, action in enumerate(common_actions):
+        common_actions_str += f"Idea (You don't know if this is a good idea or not. You MUST NOT generate this question.): {action}\n"
+    return common_actions_str.strip()
+
+def explorative_pi_gen_alt_actions(
+    rollout: List[Dict],
+    t: int,
+    num_alt_actions_to_gen: int,
+    agent: Agent,
+    common_actions_to_gen: int = 5
+) -> List[Dict]:
+    history = [
+        {
+            "question": rollout[i]["action"],
+            "answer": rollout[i]["answer"]
+        } for i in range(t)
+    ]
+
+    if t == 19:
+        input("stop")
+
+    input_datas = [{
+        "mode": "input",  # Based on how we sample the timesteps, we will never need to use the "input_final" mode
+        "all_obj_list": ALL_OBJ_LIST,
+        "observation_action_history": history,
+    } for _ in range(common_actions_to_gen)]
+
+    agent.set_prompt_template(prompt_template=OG_ACTION_PROMPT_TEMPLATE)
+
+    # Generate the common actions
+    reason_actions, _ = agent.predict_reason_action_batch(input_datas, num_responses=1, alt_temperature_for_extra_responses=1.0) # List[List[Dict]]
+
+    # Flatten the list of lists
+    reason_actions = [item for sublist in reason_actions for item in sublist]
+
+    # Collect the common actions
+    common_actions = list(set([reason_action["action"] for reason_action in reason_actions]))
+
+    # Change the prompt to generate the alternative actions
+    agent.set_prompt_template(prompt_template=EXPLORE_ACTION_PROMPT_TEMPLATE)
+
+    # Generate the alternative actions
+    input_datas = [{
+        "mode": "input",  # Based on how we sample the timesteps, we will never need to use the "input_final" mode
+        "all_obj_list": ALL_OBJ_LIST,
+        "observation_action_history": history,
+        "common_questions": format_common_actions(common_actions)
+    } for _ in range(num_alt_actions_to_gen)]
+
+    reason_actions, _ = agent.predict_reason_action_batch(input_datas, num_responses=1, alt_temperature_for_extra_responses=1.0) # List[List[Dict]]
+
+    # Flatten the list of lists
+    reason_actions = [item for sublist in reason_actions for item in sublist]
+
+    return reason_actions, 0
+    
 def generate_rollouts_with_alt_actions(
         rollout_dir: str, 
         n_rollouts_to_sample: int, 
@@ -244,9 +380,11 @@ def generate_rollouts_with_alt_actions(
         actions_to_gen_at_each_timestep: int, 
         rollout_idx_min, 
         rollout_idx_max,
+        expert_type: str,
         data_types: List[str]=["train", "val"],
         start_obj_idx: int=-1, 
-        end_obj_idx: int=-1):
+        end_obj_idx: int=-1,
+        agent: Agent=None):
     total_cost = 0
 
     for data_type in data_types:
@@ -286,16 +424,17 @@ def generate_rollouts_with_alt_actions(
             for rollout_file in selected_rollouts:
                 rollout = load_json(os.path.join(rollout_dir, data_type, rollout_file))
 
-                if "summary" not in rollout[0]:
-                    summary, cost = gen_summary_from_rollout(rollout_file, rollout, category)
-                    rollout[0]["summary"] = summary
-                    save_json(os.path.join(rollout_dir, data_type, rollout_file), rollout)
-                    total_cost += cost
-                else:
-                    summary = rollout[0]["summary"]
-                    total_cost += 0
+                if expert_type == "gpt4o":
+                    if "summary" not in rollout[0]:
+                        summary, cost = gen_summary_from_rollout(rollout_file, rollout, category)
+                        rollout[0]["summary"] = summary
+                        save_json(os.path.join(rollout_dir, data_type, rollout_file), rollout)
+                        total_cost += cost
+                    else:
+                        summary = rollout[0]["summary"]
+                        total_cost += 0
 
-                print(f"Summary for {rollout_file} (cost: {total_cost:.2f}):\n{summary}")
+                    print(f"Summary for {rollout_file} (cost: {total_cost:.2f}):\n{summary}")
 
                 # Randomly sample M distinct timesteps (from 30% of the trajectory to 60% of the trajectory) to generate expert queries.
                 start_timestep = math.floor(0.3 * len(rollout))
@@ -309,10 +448,15 @@ def generate_rollouts_with_alt_actions(
                     summary_dict = load_json(summary_dict_path)
                     if str(rollout_idx) in summary_dict and obj in summary_dict[str(rollout_idx)]:
                         print(f"Rollout {rollout_idx} for {obj} has already been generated. Skipping...")
-                        rollout_idx += 1
+                        rollout_idx += 2 # Skipping 2 because we save 2 files per timestep
                         continue
-
-                    alt_reason_actions, cost = gen_alt_actions(obj, category, summary, rollout, t, actions_to_gen_at_each_timestep)
+                    
+                    if expert_type == "gpt4o":
+                        alt_reason_actions, cost = hindsight_gen_alt_actions(obj, category, summary, rollout, t, actions_to_gen_at_each_timestep)
+                    elif expert_type == "pi*":
+                        alt_reason_actions, cost = pi_gen_alt_actions(rollout, t, actions_to_gen_at_each_timestep, agent)
+                    elif expert_type == "explorative-pi":
+                        alt_reason_actions, cost = explorative_pi_gen_alt_actions(rollout, t, actions_to_gen_at_each_timestep, agent)
 
                     # Edit the rollout file to save the alt actions
                     if "expert_alternatives" not in rollout[t]:
@@ -328,14 +472,22 @@ def generate_rollouts_with_alt_actions(
                         new_partial_rollout[0].pop("summary", None)  # Safely remove the summary
 
                         # Edit the action at t
-                        new_partial_rollout[t] = {
-                            "step": t,
-                            "teacher_reason": alt_reason_actions[i]["teacher_reason"],
-                            "feasibility": alt_reason_actions[i]["feasibility"],
-                            "reason": alt_reason_actions[i]["reason"],
-                            "action": alt_reason_actions[i]["action"],
-                            "raw_text": "",  # Because we are using gpt-4o, it has less parsing issues. 
-                        }
+                        if expert_type == "gpt4o":
+                            new_partial_rollout[t] = {
+                                "step": t,
+                                "teacher_reason": alt_reason_actions[i]["teacher_reason"],
+                                "feasibility": alt_reason_actions[i]["feasibility"],
+                                "reason": alt_reason_actions[i]["reason"],
+                                "action": alt_reason_actions[i]["action"],
+                                "raw_text": "",  # Because we are using gpt-4o, it has less parsing issues. 
+                            }
+                        else:
+                            new_partial_rollout[t] = {
+                                "step": t,
+                                "reason": alt_reason_actions[i]["reason"],
+                                "action": alt_reason_actions[i]["action"],
+                                "raw_text": "",  # This help signify that this action is generated by an expert
+                            }
                         new_partial_rollout = new_partial_rollout[:t+1]
 
                         # Save the new partial rollout
@@ -344,7 +496,8 @@ def generate_rollouts_with_alt_actions(
                         print(f"Saving new partial rollout: {os.path.join(rollout_dir, data_type, f'{task_name}_{rollout_idx}.json')}")
 
                         save_json(os.path.join(rollout_dir, data_type, f"{task_name}_{rollout_idx}.json"), new_partial_rollout)
-                        if alt_reason_actions[i]["feasibility"] == "low":
+
+                        if expert_type == "gpt4o" and alt_reason_actions[i]["feasibility"] == "low":
                             input("Press Enter to continue...")
 
                         # Update the summary dict
@@ -358,6 +511,8 @@ def generate_rollouts_with_alt_actions(
                         rollout_idx += 1
 
                     print(f"Total cost: {total_cost:.2f}")
+                    # input("Press Enter to continue...")
+
 
 
 def prepare_batch(batch_json_files: List[Tuple[str, str, str]], batched_env: BatchedTwentyQuestionsEnvironment):
@@ -447,6 +602,17 @@ def complete_rollouts(sim_host: str, sim_port: int, rollout_dir: str, agent_conf
         summary_dict_path = os.path.join(rollout_dir, data_type, f"_rollout_complete_summary_dict_range={rollout_idx_min}-{rollout_idx_max}_si={start_obj_idx}_ei={end_obj_idx}.json")
         if not os.path.exists(summary_dict_path):
             save_json(summary_dict_path, summary_dict)
+        else:
+            summary_dict = load_json(summary_dict_path)
+
+    # Filter out the rollouts that are already completed
+    filtered_json_files_to_complete = []
+    for file, data_type, category in json_files_to_complete:
+        rollout_idx = file.split("_")[-1].split(".")[0]
+        obj = file.split("_")[0]
+        if rollout_idx not in summary_dict or obj not in summary_dict[rollout_idx]:
+            filtered_json_files_to_complete.append((file, data_type, category))
+    json_files_to_complete = filtered_json_files_to_complete
 
     print(f"Total number of rollouts to complete: {json_files_to_complete}\nlen: {len(json_files_to_complete)}")
     # input("stop")
@@ -533,6 +699,7 @@ def merge_generation_summary_dicts(rollout_dir: str, data_types: List[str]) -> D
         main_summary_dict = load_json(original_rollout_summary_dict_path)
         # Save a copy for rollout_complete
         save_json(os.path.join(rollout_dir, data_type, "_rollout_complete_summary_dict.json"), main_summary_dict)
+        input("Saved the rollout complete summary dict")
 
         for rollout_summary_dict_path in rollout_summary_dicts_path:
             summary_dict = load_json(os.path.join(rollout_dir, data_type, rollout_summary_dict_path))
@@ -565,6 +732,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--iter", type=int, choices=list(range(3)), required=True)
     parser.add_argument("-m", "--mode", type=str, choices=["g", "gen_actions", "r", "rollout", "merge_gen", "merge_rollout"], required=True)
+    parser.add_argument("-et", "--expert_type", type=str, choices=["gpt4o", "pi*", "explorative-pi"], required=True)
     parser.add_argument("-d", "--data_types", help="List of data types to process", nargs="+", choices=["train", "val"])
     parser.add_argument("-e", "--elogger", action="store_true", default=False)
     parser.add_argument("--n_rollouts_to_sample", type=int, default=2)
@@ -585,10 +753,26 @@ if __name__ == "__main__":
 
     elogger.set_activate(args.elogger)
 
+    rollout_dir = iter_to_rollout_dir[args.iter][args.expert_type]
     if args.mode == "g" or args.mode == "gen_actions":
-        rollout_dir = iter_to_rollout_dir[args.iter]
-
         print(f"Generating rollouts with alt actions for data_type={args.data_types} in {rollout_dir}")
+
+        if args.expert_type == "pi*" or args.expert_type == "explorative-pi":
+            agent_config = best_agent_config if args.expert_type == "pi*" else iter_to_agent_config[args.iter]
+            if not args.no_serve_model:
+                # Example of dist_url_port: 29540
+                process, server_url, base_gpu_id = start_sglang_server(model_path=agent_config["model_id"],
+                                                        port=args.port, 
+                                                        tp=1,
+                                                        dist_url_port=agent_config["dist_url_port"])
+                agent_config["server_url"] = server_url
+
+            # Initialize the agent
+            print(f"Initializing agent {agent_config['log_name']}, {agent_config['model_id']}")
+            agent = initialize_agent(agent_config,
+                                    parse_reason_action_fn=parse_reason_and_action_twenty_questions,
+                                    verbose=agent_config["verbose"],
+                                    debug=agent_config["debug"])
 
         try:
             generate_rollouts_with_alt_actions(
@@ -598,16 +782,17 @@ if __name__ == "__main__":
                 actions_to_gen_at_each_timestep=args.actions_to_gen_at_each_timestep, 
                 rollout_idx_min=args.rollout_idx_min, 
                 rollout_idx_max=args.rollout_idx_max,
+                expert_type=args.expert_type,
                 data_types=args.data_types, 
                 start_obj_idx=args.start_obj_idx, 
-                end_obj_idx=args.end_obj_idx)
+                end_obj_idx=args.end_obj_idx,
+                agent=agent)
         except Exception as e:
             elogger.log(f"Error generating rollouts with alt actions: {e}")
             raise e
 
         elogger.log(f"Successfully generated rollouts with alt actions for data_type={args.data_types} in {rollout_dir}")
     elif args.mode == "r" or args.mode == "rollout":
-        rollout_dir = iter_to_rollout_dir[args.iter]
         agent_config = iter_to_agent_config[args.iter]
 
         if not args.no_serve_model:
@@ -622,10 +807,8 @@ if __name__ == "__main__":
 
         elogger.log(f"Successfully completed rollouts for data_type={args.data_types} in {rollout_dir}")
     elif args.mode == "merge_gen":
-        rollout_dir = iter_to_rollout_dir[args.iter]
         merge_generation_summary_dicts(rollout_dir=rollout_dir, data_types=args.data_types)
     elif args.mode == "merge_rollout":
-        rollout_dir = iter_to_rollout_dir[args.iter]
         merge_rollout_summary_dicts(rollout_dir=rollout_dir, data_types=args.data_types)
     else:
         raise ValueError(f"Invalid mode: {args.mode}")
