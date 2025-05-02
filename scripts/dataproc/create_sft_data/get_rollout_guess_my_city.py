@@ -127,13 +127,9 @@ def main():
                     print(f"Reason:\n{reason}\nAction:\n{action}", )
                     print(f"++++++ agent step: {len(history)}, total cost: {rollout_cost} ++++++")
 
-                    obs, reward, done = env.step(history, action)
+                    obs, reward, done = env.step(history, action, total_reward)
                     history, answerer_reason, answer = obs
-                    if reward == -2.0:
-                        reward = -(10.0 - abs(total_reward))
-                        total_reward = -10.0
-                    else:
-                        total_reward += reward
+                    total_reward += reward
 
                     traj_list.append({
                         "reason": reason,

@@ -27,7 +27,7 @@ class GuessMyCityEnvironment():
         self.random = random.Random(None)
         self.curr_city: Optional[WordVariants] = None
 
-    def step(self, history, action):
+    def step(self, history, action, total_reward):
         """
         Parameters:
             history (List[Dict]): The history of the conversation so far. A list of dictionaries, of the form:
@@ -79,7 +79,7 @@ class GuessMyCityEnvironment():
 
             if any(re.match(pattern, question_cleaned) for pattern in guess_patterns):
                 history[-1]["answer"] = "no"
-                reward = -2.0
+                reward = -(10.0 - abs(total_reward))
                 done = True
             else:
                 reward = -1.0
