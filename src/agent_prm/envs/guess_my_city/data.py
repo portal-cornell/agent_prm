@@ -94,7 +94,7 @@ DEFAULT_CITY_DICT = {
         "Wuhan, China",
         "Guangzhou, China",
         "Chongqing, China",
-        "Haerbin, China",
+        "Haerbin, China;Harbin, China",
         "Chengdu, China"
     ],
     "South America": [
@@ -195,7 +195,7 @@ DEFAULT_CITY_DICT = {
         "Szeged, Hungary",
         "Miskolc, Hungary;Miskolcz, Hungary;Miskolc City, Hungary",
         "Pécs, Hungary;Pecs, Hungary",
-        "Gyor, Hungary",
+        "Gyor, Hungary;Gyõr, Hungary",
         "Nyíregyháza, Hungary;Nyiregyhaza, Hungary;Nyíregyháza City, Hungary",
         "Eger, Hungary;Eger City, Hungary",
         "Székesfehérvár, Hungary;Szekesfehervar, Hungary;Szfvár, Hungary",
@@ -239,7 +239,7 @@ DEFAULT_CITY_DICT = {
 
 TRAIN_CITY_DICT = {
     "Asia": [
-        "Daegu, South Korea;Taegu, South Korea;Taega, South Korea",
+        "Busan, South Korea;Pusan, South Korea",
         "Incheon, South Korea;Inchon, South Korea",
         "Daejeon, South Korea;Taejon, South Korea;Daejeon-si, South Korea",
         "Gwangju, South Korea;Kwangju, South Korea;Gwangju Metropolitan City, South Korea",
@@ -249,13 +249,13 @@ TRAIN_CITY_DICT = {
         "Gyeongju, South Korea;Kyǒngju, South Korea;Geyongju-si, South Korea;Seorabeol, South Korea",
         "Calcutta, India;Kolkata, India",
         "Madras, India;Chennai, India",
-        "Bangalore, India;Bengaluru, India",
         "Hyderabad, India",
         "Ahmedabad, India",
         "Kanpur, India",
+        "Bombay, India;Mumbai, India",
         "Bengaluru, India;Bangalore, India;Bengalooru, India",
         "Chennai, India;Madras, India",
-        "Bagor, Indonesia",
+        "Bandung, Indonesia",
         "Malang, Indonesia",
         "Surabaya, Indonesia",
         "Semarang, Indonesia",
@@ -277,7 +277,7 @@ TRAIN_CITY_DICT = {
         "Wuhan, China",
         "Guangzhou, China",
         "Chongqing, China",
-        "Haerbin, China",
+        "Haerbin, China;Harbin, China",
         "Chengdu, China"
     ],
     "South America": [
@@ -291,11 +291,11 @@ TRAIN_CITY_DICT = {
         "Porto Alegre, Brazil;Porto, Brazil",
         "Concepción, Chile;Concepcion, Chile;Conce, Chile",
         "La Serena, Chile;Serena, Chile;La Serena City, Chile",
-        "Antofagasta, Chile;Antofa, Chile;Antofagasta City, Chile",
         "Temuco, Chile;Temuco City, Chile",
         "Puerto Montt, Chile;Puerto, Chile",
         "Iquique, Chile;Iquique City, Chile",
         "Arica, Chile;Arica City, Chile",
+        "Santiago, Chile",
         "Rancagua, Chile;Rancagua City, Chile",
         "Rosario, Argentina;Rosario City, Argentina",
         "Mendoza, Argentina;Mendoza City, Argentina",
@@ -319,8 +319,8 @@ TRAIN_CITY_DICT = {
         "Puerto La Cruz, Venezuela;Puerto, Venezuela;La Cruz, Venezuela",
         "Ciudad Guayana, Venezuela;Cuidad Guayana City, Venezuela",
         "San Cristóbal, Venezuela;San Cristobal, Venezuela",
-        "Barcelona, Venezuela;Barcelona City, Venezuela;Barcelona de Venezuela, Venezuela",
-        "Cumaná, Venezuela;Cumana, Venezuela"
+        "Cumaná, Venezuela;Cumana, Venezuela",
+        "Caracas, Venezuela"
     ],
     "Europe": [
         "Milan, Italy;Milano, Italy",
@@ -332,12 +332,12 @@ TRAIN_CITY_DICT = {
         "Palermo, Italy;Panormus, Italy;Palermo City, Italy",
         "Verona, Italy;Verona City, Italy",
         "Dnipro, Ukraine;Dnipropetrovsk, Ukraine;Dnepropetrovsk, Ukraine",
+        "Kiev, Ukraine;Kyiv, Ukraine",
         "Lviv, Ukraine;Lvov, Ukraine",
         "Kharkiv, Ukraine;Kharkov, Ukraine",
         "Zaporizhzhia, Ukraine;Zaporozhye, Ukraine",
         "Vinnytsia, Ukraine;Vinnitsa, Ukraine;Vinnytsia City, Ukraine",
         "Mykolaiv, Ukraine;Nikolaev, Ukraine;Mykolaiv City, Ukraine",
-        "Chernihiv, Ukraine;Chernigov, Ukraine;Chernihiv City, Ukraine",
         "Ivano-Frankivsk, Ukraine;Stanislav, Ukraine",
         "Birmingham, UK",
         "Glasgow, UK",
@@ -348,19 +348,19 @@ TRAIN_CITY_DICT = {
         "Sheffield, UK;Sheffield City, UK",
         "Cardiff, UK",
         "Timișoara, Romania;Timisoara, Romania",
+        "Bucuresti, Romania;Bucharest, Romania",
         "Iași, Romania;Iasi, Romania;Jassy, Romania",
         "Constanța, Romania;Constanta, Romania",
         "Brașov, Romania;Brasov, Romania",
         "Sibiu, Romania;Sibiu City, Romania",
         "Oradea, Romania;Oradea City, Romania",
-        "Galați, Romania;Galati, Romania;Galați City, Romania",
         "Ploiești, Romania;Ploiesti, Romania;Ploești, Romania;Ploiești City, Romania",
         "Szeged, Hungary",
         "Miskolc, Hungary;Miskolcz, Hungary;Miskolc City, Hungary",
         "Pécs, Hungary;Pecs, Hungary",
-        "Gyor, Hungary",
         "Nyíregyháza, Hungary;Nyiregyhaza, Hungary;Nyíregyháza City, Hungary",
         "Eger, Hungary;Eger City, Hungary",
+        "Budapest, Hungary",
         "Székesfehérvár, Hungary;Szekesfehervar, Hungary;Szfvár, Hungary",
         "Kecskemét, Hungary;Kecskemet, Hungary;Kecskemét City, Hungary"
     ]
@@ -369,11 +369,11 @@ TRAIN_CITY_DICT = {
 VALIDATION_CITY_DICT = {
     "Asia": [
         "Seoul, South Korea",
-        "Busan, South Korea;Pusan, South Korea",
-        "Bombay, India;Mumbai, India",
+        "Daegu, South Korea;Taegu, South Korea;Taega, South Korea",
         "Delhi, India;New Delhi, India",
+        "Bangalore, India;Bengaluru, India",
         "Jakarta, Indonesia;Djakarta, Indonesia",
-        "Bandung, Indonesia",
+        "Bagor, Indonesia",
         "Manila, Philippines",
         "Quezon City, Philippines;Quezon, Philippines",
         "Shanghai, China",
@@ -382,26 +382,26 @@ VALIDATION_CITY_DICT = {
     "South America": [
         "Sao Paulo, Brazil;São Paulo, Brazil",
         "Rio de Janeiro, Brazil",
-        "Santiago, Chile",
         "Valparaíso, Chile;Valparaiso, Chile;Valpo, Chile",
+        "Antofagasta, Chile;Antofa, Chile;Antofagasta City, Chile",
         "Buenos Aires, Argentina",
         "Córdoba, Argentina;Cordoba, Argentina",
         "Guayaquil, Ecuador",
         "Quito, Ecuador;San Francisco de Quito, Ecuador",
-        "Caracas, Venezuela",
-        "Maracaibo, Venezuela;Maracaibo City, Venezuela"
+        "Maracaibo, Venezuela;Maracaibo City, Venezuela",
+        "Barcelona, Venezuela;Barcelona City, Venezuela;Barcelona de Venezuela, Venezuela"
     ],
     "Europe": [
         "Rome, Italy",
         "Naples, Italy;Napoli, Italy",
-        "Kiev, Ukraine;Kyiv, Ukraine",
         "Odesa, Ukraine;Odessa, Ukraine",
+        "Chernihiv, Ukraine;Chernigov, Ukraine;Chernihiv City, Ukraine",
         "London, UK",
         "Manchester, UK",
-        "Bucuresti, Romania;Bucharest, Romania",
         "Cluj-Napoca, Romania;Cluj, Romania;Cluj Napoca, Romania",
-        "Budapest, Hungary",
-        "Debrecen, Hungary;Debretin, Hungary"
+        "Galați, Romania;Galati, Romania;Galați City, Romania",
+        "Debrecen, Hungary;Debretin, Hungary",
+        "Gyor, Hungary;Gyõr, Hungary"
     ]
 }
 
