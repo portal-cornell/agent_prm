@@ -1,5 +1,12 @@
 #!/bin/bash
 
+TRAIN_SPLITS=train_10k
+TEST_SPLITS=val
+TRAIN_EPOCHS=1
+
+# Default values
+GRAD_ACC=6 # When we use 4 GPUs (3 to train, 1 to generate responses)
+
 ########################################################################################
 # Checklist
 # - Verify DATA_DIR
@@ -7,12 +14,10 @@
 # - Verify MODEL_LOG_NAME
 ########################################################################################
 
-DOMAIN=twenty_questions # alfworld, twenty_questions
-# DATA_DIR=iter1_hindsight-biased-on-60
-
-TRAIN_SPLITS=train_10k
-TEST_SPLITS=val
-TRAIN_EPOCHS=1
+# DOMAIN=twenty_questions
+# SAVE_FREQ=55
+# MAX_SEQ_LENGTH=2000
+# OUTPUT_LENGTH=256
 
 ############## iter1
 # POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
@@ -181,12 +186,12 @@ TRAIN_EPOCHS=1
 # REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250425_012544_iter3_new-env_from-pi0_pi2_Q1-40pct-lr=5e-6_new-env_from-pi0_peft=false/model/checkpoint-1250"
 # MODEL_LOG_NAME="pi3_Q2-lr=5e-6_new-env-pi2-from-pi0"
 # # ##### 60% on-policy pi0, 40% off-policy pi0 data (TRAIN POLICY FROM pi0)
-DATA_DIR=iter3_hindsight-biased-on-60
-# pi0-all-data-3epoches
-POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
-# BoN_pi2_Q2-lr=5e-6_hindsight-biased-on-60  (best val model)
-REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250428_224143_iter3_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0_peft=false/model/checkpoint-1250"
-MODEL_LOG_NAME="pi3_Q2-lr=5e-6_hindsight-biased-on-60"
+# DATA_DIR=iter3_hindsight-biased-on-60
+# # pi0-all-data-3epoches
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# # BoN_pi2_Q2-lr=5e-6_hindsight-biased-on-60  (best val model)
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250428_224143_iter3_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0_peft=false/model/checkpoint-1250"
+# MODEL_LOG_NAME="pi3_Q2-lr=5e-6_hindsight-biased-on-60"
 # ##### 60% on-policy pi0, 40% off-policy pi0 data (TRAIN POLICY FROM pi0 - 100% onpolicy low q data
 # DATA_DIR=iter3_hindsight-biased-on-60_with-past-fail
 # # pi0-all-data-3epoches
@@ -194,6 +199,69 @@ MODEL_LOG_NAME="pi3_Q2-lr=5e-6_hindsight-biased-on-60"
 # # BoN_pi2_Q2-40pct-lr=5e-6_hindsight-biased-on-60-with-past-fail  (best val model)
 # REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250429_173031_iter3_hindsight-biased-on-60_with-past-fail_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60-only-onpolicy-failure_from-pi0_peft=false/model/checkpoint-500"
 # MODEL_LOG_NAME="pi3_Q2-40pct-lr=5e-6_hindsight-biased-on-60-with-past-fail"
+
+############################################################################################################################################
+#                          Alternative Exploration
+############################################################################################################################################
+# ###### Using the best pi (pi*) to explore
+# DATA_DIR=iter1_best-pi-on-60
+# # pi0-all-data-3epoches
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# # BoN_pi0_Q0-lr=5e-6_best-pi-on-60 (the best model on the validation set)
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250501_112539_iter1_best-pi-on-60_pi0_best-pi-on-60_peft=false/model/checkpoint-1250"
+# MODEL_LOG_NAME="pi1_Q0-lr=5e-6_best-pi-on-60"
+###### Using the best pi (pi*) to explore
+# DATA_DIR=iter1_explorative-pi-on-60
+# # pi0-all-data-3epoches
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# # BoN_pi0_Q0-80pct-lr=5e-6_explorative-pi-on-60 (the best model on the validation set)
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250501_112654_iter1_explorative-pi-on-60_pi0_explorative-pi-on-60_peft=false/model/checkpoint-1000"
+# MODEL_LOG_NAME="pi1_Q0-80pct-lr=5e-6_explorative-pi-on-60"
+###### Using the high temp pi0 to explore
+# DATA_DIR=iter1_high-temp-on-60
+# # pi0-all-data-3epoches
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# # BoN_pi0_Q0-20pct-lr=5e-6_high-temp-pi-on-60
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250503_175239_iter1_high-temp-on-60_pi0_high-temp-pi-on-60_peft=false/model/checkpoint-250"
+# MODEL_LOG_NAME="pi1_Q0-20pct-lr=5e-6_high-temp-pi-on-60"
+
+############################################################################################################################################
+#                          Car Dealer
+############################################################################################################################################
+DOMAIN=car_dealer
+
+###################### Vanilla RL
+######### Iter 1
+# DATA_DIR=iter1
+# # pi0-83pct
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250430_180817_iter0_pi0_vanilla_epochs=3/checkpoint-124"
+# # BoN_pi0_Q0-lr=5e-6
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250502_055014_iter1_pi0-83pct_peft=false/model/checkpoint-2500"
+# MODEL_LOG_NAME="pi1_Q0-lr=5e-6"
+# # Manullay changing it
+# # 20000 / 5 / 2 / 2 = 1000
+# # 1000 / 5 = 200
+# SAVE_FREQ=200
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# TRAIN_BATCH_SIZE=2, GRAD_ACC=1
+
+######### Iter 1
+DATA_DIR=iter1_max-car-8
+# pi0-62pct_max-car-8
+POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# BoN_pi0_Q0-42pct-lr=5e-6_max-car-8
+REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250504_223511_iter1_max-car-8_pi0-62pct_max-car-8_peft=false/model/checkpoint-500"
+MODEL_LOG_NAME="pi1_Q0-42pct-lr=5e-6_max-car-8"
+# Manullay changing it
+# 20000 / 3 / 2 / 1 = 3333
+# 3333 / 5 = 555.5 --> 556
+SAVE_FREQ=556
+MAX_SEQ_LENGTH=3500
+OUTPUT_LENGTH=400
+GRAD_ACC=1
+# TRAIN_BATCH_SIZE=2, GRAD_ACC=1
+
 
 current_date=$(date +"%y%m%d_%H%M%S")
 
@@ -221,17 +289,6 @@ SAVE_DIR=save/${DOMAIN}/online_dpo/${current_date}_${DATA_DIR}_${MODEL_LOG_NAME}
 
 echo "Save directory: $SAVE_DIR"
 
-#### 4 GPUs requirement (Before)
-# per_device_train_batch_size 2
-# per_device_eval_batch_size 2
-# gradient_accumulation_steps 8
-# save_freq 40
-#### 4 GPUs requirement (Hindsight pi0-pi2-mix)
-# per_device_train_batch_size 2
-# per_device_eval_batch_size 2
-# gradient_accumulation_steps 6
-# save_freq 55
-
 accelerate launch  --num-processes 3 \
     --config_file configs/ds_configs/deepspeed_zero2.yaml scripts/train/online_dpo_vllm_thread.py \
     --dataset_mixer "{\"${DATASET}\": 1.0}" \
@@ -248,10 +305,10 @@ accelerate launch  --num-processes 3 \
     --total_episodes 10000 \
     --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 2 \
-    --gradient_accumulation_steps 6 \
+    --gradient_accumulation_steps ${GRAD_ACC} \
     --gradient_checkpointing True \
-    --max_prompt_token_length 2000 \
-    --response_length 256 \
+    --max_prompt_token_length ${MAX_SEQ_LENGTH} \
+    --response_length ${OUTPUT_LENGTH} \
     --min_response_length 1 \
     --num_train_epochs ${TRAIN_EPOCHS} \
     --beta 0.03 \
@@ -260,7 +317,7 @@ accelerate launch  --num-processes 3 \
     --sanity_check_max_samples 128 \
     --output_dir ${SAVE_DIR} \
     --checkpoint_output_dir tmp/chkpts/ \
-    --save_freq 55 \
+    --save_freq ${SAVE_FREQ} \
     --vllm_device cuda:3 \
     --vllm_gpu_memory_utilization 0.9 \
     --hf_metadata_dataset "" \

@@ -293,30 +293,37 @@ import re
 import json
 
 from agent_prm.utils.parser import parse_reason_and_action_alfworld, parse_reason_and_action_twenty_questions
+from agent_prm.envs.car_dealer.parser import format_reason_action_car_dealer_online_dpo
 
 # Map domain to parser
 PARSER_DICT = {
     "alfworld": parse_reason_and_action_alfworld,
-    "twenty_questions": parse_reason_and_action_twenty_questions
+    "twenty_questions": parse_reason_and_action_twenty_questions,
 }
 
 def clean_up_generation(tokenizer, response_ids, domain:str):
-    # Get parser from domain name
-    parser = PARSER_DICT[domain]
-
     # detokenize
     responses = tokenizer.batch_decode(response_ids, skip_special_tokens=True)
     cleaned_responses = []
     for response in responses:
-        reason, action = parser(response)
-
-        action_header_name = "ACTION:" if domain != "twenty_questions" else "QUESTION:"
-
-        if reason == "" or action == "":
-            print(f"invalid response:\n{response}\nreason: {reason}\naction: {action}")
-            cleaned_responses.append(f"<|eot_id|>") # A trick to penalize ill-formed responses that cannot be parsed
+        if domain == "car_dealer":
+            # We have to do a special formatting for the car dealer domain (because there are 2 modes in the response)
+            cleaned_responses.append(format_reason_action_car_dealer_online_dpo(response))
         else:
-            cleaned_responses.append(f"REASON:\n{reason}\n{action_header_name}\n{action}<|eot_id|>")
+            # Get parser from domain name
+            parser = PARSER_DICT[domain]
+    
+            reason, action = parser(response)
+
+            action_header_name = "ACTION:" if domain != "twenty_questions" else "QUESTION:"
+
+            if reason == "" or action == "":
+                print(f"invalid response:\n{response}\nreason: {reason}\naction: {action}")
+                cleaned_responses.append(f"<|eot_id|>") # A trick to penalize ill-formed responses that cannot be parsed
+            else:
+                cleaned_responses.append(f"REASON:\n{reason}\n{action_header_name}\n{action}<|eot_id|>")
+
+    print(f"cleaned_responses: {cleaned_responses}")
 
     # Re-tokenize the cleaned responses
     response_ids_reversed = [tokenizer.encode(response, add_special_tokens=False) for response in cleaned_responses]
@@ -1154,7 +1161,7 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
             if os.path.exists(args.checkpoint_output_dir):
                 shutil.rmtree(args.checkpoint_output_dir, ignore_errors=True)
 
-    elogger.activate(True)
+    elogger.set_activate(True)
     elogger.log(f"Online DPO Training finished.")
 
 

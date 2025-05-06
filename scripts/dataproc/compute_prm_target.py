@@ -24,6 +24,8 @@ from typing import List, Dict
 
 from agent_prm.utils.general_utils import load_json
 
+from agent_prm.envs.car_dealer.interface import format_chat_history, format_api_call_history, format_car_options, format_most_recent_buyer_message
+
 """================================================================================
     Alfworld processing functions
 ================================================================================"""
@@ -89,7 +91,7 @@ def alfworld_success_file_condition(file_name):
 """================================================================================
     20 Questions processing functions
 ================================================================================"""
-def twenty_questions_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False):
+def twenty_questions_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False, dataset_min_reward=-1, dataset_max_reward=1):
     try:
         with open(file_path, 'r') as file:
             trajectory = json.load(file)
@@ -177,6 +179,157 @@ def twenty_questions_success_file_condition(file_name):
 ================================================================================"""
 def car_dealer_skip_file_condition(rolloutdir, file_name, max_rollout_per_task_per_dir=None):
     return (not file_name.endswith(".json")) or ('_summary_dict' in file_name) or ('original' in file_name) or (max_rollout_per_task_per_dir is not None and int(file_name.split("_")[-1].split(".")[0]) >= max_rollout_per_task_per_dir)
+
+def car_dealer_filter_condition_checker(rolloutdir, file_name):
+    """
+    Return
+        - True if the file failed
+        - True if the file is an expert rollout that led to success
+    """
+    rollout = load_json(os.path.join(rolloutdir, file_name))
+
+    is_expert_rollout = False
+    idx_of_expert_action = 0
+    for t in range(len(rollout)):
+        if rollout[t]['raw_text'] == "":
+            is_expert_rollout = True
+            idx_of_expert_action = t
+
+    failed = not rollout[-1]['success']
+    if is_expert_rollout:
+        # Filtering out the following cases:
+        # 1. The expert rollout failed
+        # 2. The expert action led to success
+        expert_action_led_to_success = rollout[idx_of_expert_action]['success']
+
+        return failed, expert_action_led_to_success
+    else:
+        return failed, False
+    
+def car_dealer_normalize_reward(reward, dataset_min_reward=-2, dataset_max_reward=2):
+    # normalize outcome reward from [dataset_min_reward, dataset_max_reward] to [-1, 1]
+    #   We normalize the outcome reward to -1 and 1 so that we can proprogate the negative effect of failed trajectories
+    #   We assume that the reward before the last step is still 0
+    return 2 * (reward - dataset_min_reward) / (dataset_max_reward - dataset_min_reward) - 1
+    
+def car_dealer_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False, dataset_min_reward=-2, dataset_max_reward=2):
+    try:
+        with open(file_path, 'r') as file:
+            trajectory = json.load(file)
+
+        Q_target = {}
+        outcome_reward = car_dealer_normalize_reward(trajectory[-1]['reward'], dataset_min_reward, dataset_max_reward)  # transform from [-1, 1]
+        for t in range(len(trajectory) - 1, -1, -1):
+            api_state, api_reason_action, response_state, response_reason_action = car_dealer_extract_state_reason_action(trajectory, t, exclude_reason=exclude_reason)
+            api_state_hash = sha256(json.dumps({'state': api_state, 'action': api_reason_action['action']}, sort_keys=True).encode()).hexdigest()
+            update_Q(api_state, api_reason_action, api_state_hash, Q_target, outcome_reward, gamma, k=t, T=len(trajectory), is_offpolicy=is_offpolicy)
+
+            response_state_hash = sha256(json.dumps({'state': response_state, 'action': response_reason_action['action']}, sort_keys=True).encode()).hexdigest()
+            update_Q(response_state, response_reason_action, response_state_hash, Q_target, outcome_reward, gamma, k=t, T=len(trajectory), is_offpolicy=is_offpolicy)
+        return Q_target
+    except Exception as e:
+        print(f"Error processing {file_path}: {e}")
+        return {}
+
+def car_dealer_extract_state_reason_action(trajectory, t, exclude_reason=False):
+    """
+    Car Dealer contains both API reason, action. AND reponse reason, action
+    """
+    MAX_CAR = 8  # TODO: Hardcoded for now
+
+    # Get the history
+    history = []
+    all_api_calls = []
+    all_api_calls_have_responses = []
+    for i in range(t-1):
+        step = trajectory[i]
+        history.append({
+            "role": "seller",
+            "content": step['action']
+        })
+        history.append({
+            "role": "buyer",
+            "content": step['buyer_response']
+        })
+        
+        all_api_calls.append(step['api_call'])
+        all_api_calls_have_responses.append(step['api_response'] != [])
+    
+    # Trim all_api_calls and all_api_calls_have_response to past_N
+    past_N = 3 # Hardcoded for now
+    all_api_calls = all_api_calls[-past_N:]
+    all_api_calls_have_responses = all_api_calls_have_responses[-past_N:]
+
+    prev_api_call = trajectory[t-1]["api_call_used"] if t > 0 else {}
+    if t > 0:
+        if "car_list" in trajectory[t-1]:
+            prev_api_response = trajectory[t-1]["car_list"]
+            prev_api_response_str, _ = format_car_options(prev_api_response, max_car=MAX_CAR)
+        else:
+            prev_api_response = trajectory[t-1]["api_response_used"]
+            prev_api_response_str, _ = format_car_options(prev_api_response, max_car=MAX_CAR)
+    else:
+        prev_api_response = []
+        prev_api_response_str, _ = format_car_options(prev_api_response, max_car=MAX_CAR)
+
+    # Part 1: API call
+    api_state = {
+        'type': 'api',
+        'observation_action_history': format_chat_history(history),
+        'prev_api_call_history': format_api_call_history(all_api_calls, all_api_calls_have_responses, past_N),
+        'previous_api_call': str(prev_api_call),
+        'previous_api_response': prev_api_response_str,
+    }
+
+    api_reason_action = {
+        'action': {
+            "api_name": trajectory[t]['api_call']['api_name'],
+            "api_brand": trajectory[t]['api_call']['api_brand'] if trajectory[t]['api_call']['api_brand'] != "" else "None",
+            "api_type": trajectory[t]['api_call']['api_type'] if trajectory[t]['api_call']['api_type'] != "" else "None",
+            "api_features": str(trajectory[t]['api_call']['api_features']) if trajectory[t]['api_call']['api_features'] != [] else str([]),
+        }
+    }
+
+    if not exclude_reason:
+        api_reason_action['reason'] = trajectory[t]['reason']
+
+    if "car_list" in trajectory[t]:
+        inventory_to_look_up_from = trajectory[t]["car_list"]
+    else:
+        inventory_to_look_up_from = trajectory[t]["api_response_used"]
+
+    # Part 2: Response
+    response_state = {
+        'type': 'response',
+        'observation_action_history': format_chat_history(history),
+        'api_call': str(trajectory[t]['api_call_used']),
+        'api_response': format_car_options(inventory_to_look_up_from, max_car=MAX_CAR)[0],
+        'buyer_response': format_most_recent_buyer_message(history),
+    }
+
+    # Unfortunately, we saved the proposed car instead of the index. We have to find it in the list of cars
+    car_index = 0 # Default (when no car is proposed)
+    proposed_car = trajectory[t]['proposed_car']
+
+    if proposed_car != {}:
+        for j in range(len(inventory_to_look_up_from)):
+            car = inventory_to_look_up_from[j]
+            if car["msrp"] == proposed_car["msrp"] and car["features"] == proposed_car["features"] and car["brand"] == proposed_car["brand"] and car["type"] == proposed_car["type"]:
+                car_index = j + 1 # +1 because we printed out the api response from 1
+                break
+    
+    response_reason_action = {
+        'action':{
+            "response": trajectory[t]['action'],
+            "car_idx": car_index,
+            "proposed_car_brand": trajectory[t]['proposed_car'].get('brand', "None") if trajectory[t]['proposed_car'] != {} else "None",
+            "proposed_car_type": trajectory[t]['proposed_car'].get('type', "None") if trajectory[t]['proposed_car'] != {} else "None",
+            "proposed_car_features": str(trajectory[t]['proposed_car'].get('features', [])) if trajectory[t]['proposed_car'] != {} else str([]),
+            "proposed_car_msrp": trajectory[t]['proposed_car'].get('msrp', 0) if trajectory[t]['proposed_car'] != {} else 0,
+        }
+    }
+
+    return api_state, api_reason_action, response_state, response_reason_action
 
 """================================================================================
     General functions shared by all tasks
@@ -346,11 +499,13 @@ def subsample_data(data: List[Dict], count_to_reduce: int, bins: int = 5, low_or
 
     
 # Main function using multiprocessing
-def compute_prm_target(files, files_breakdown, domain, outputdir, gamma, cpu_count=None, train_split=None, split_name=None, balance_data=True, onpolicy_pct_for_success=None, track_offpolicy=False):
+def compute_prm_target(files, files_breakdown, domain, outputdir, gamma, cpu_count=None, train_split=None, split_name=None, balance_data=True, onpolicy_pct_for_success=None, track_offpolicy=False, dataset_min_reward=None, dataset_max_reward=None):
     if domain == "alfworld":
         process_file = alfworld_process_file
     elif domain == "twenty_questions":
         process_file = twenty_questions_process_file
+    elif domain == "car_dealer":
+        process_file = car_dealer_process_file
     else:
         raise ValueError(f"Invalid domain: {domain}")
 
@@ -372,23 +527,23 @@ def compute_prm_target(files, files_breakdown, domain, outputdir, gamma, cpu_cou
         results = []
 
         with Pool(processes=num_cpus_per_type) as pool:
-            process_func = partial(process_file, gamma=gamma, is_offpolicy=False)
+            process_func = partial(process_file, gamma=gamma, is_offpolicy=False, dataset_min_reward=dataset_min_reward, dataset_max_reward=dataset_max_reward)
             results.extend(list(tqdm(pool.imap(process_func, onpolicy_rollouts_failed), total=len(onpolicy_rollouts_failed), desc="Processing onpolicy rollouts failed")))
 
         with Pool(processes=num_cpus_per_type) as pool:
-            process_func = partial(process_file, gamma=gamma, is_offpolicy=False)
+            process_func = partial(process_file, gamma=gamma, is_offpolicy=False, dataset_min_reward=dataset_min_reward, dataset_max_reward=dataset_max_reward)
             results.extend(list(tqdm(pool.imap(process_func, onpolicy_rollouts_succeeded), total=len(onpolicy_rollouts_succeeded), desc="Processing onpolicy rollouts succeeded")))
 
         with Pool(processes=num_cpus_per_type) as pool:
-            process_func = partial(process_file, gamma=gamma, is_offpolicy=True)
+            process_func = partial(process_file, gamma=gamma, is_offpolicy=True, dataset_min_reward=dataset_min_reward, dataset_max_reward=dataset_max_reward)
             results.extend(list(tqdm(pool.imap(process_func, offpolicy_files_failed_to_include), total=len(offpolicy_files_failed_to_include), desc="Processing offpolicy files failed to include")))
         
         with Pool(processes=num_cpus_per_type) as pool:
-            process_func = partial(process_file, gamma=gamma, is_offpolicy=True)
+            process_func = partial(process_file, gamma=gamma, is_offpolicy=True, dataset_min_reward=dataset_min_reward, dataset_max_reward=dataset_max_reward)
             results.extend(list(tqdm(pool.imap(process_func, offpolicy_files_good), total=len(offpolicy_files_good), desc="Processing offpolicy files good")))
     else:
         with Pool(processes=num_cpus) as pool:
-            process_func = partial(process_file, gamma=gamma)
+            process_func = partial(process_file, gamma=gamma, dataset_min_reward=dataset_min_reward, dataset_max_reward=dataset_max_reward)
             results = list(tqdm(pool.imap(process_func, files), total=len(files), desc="Processing files"))
     
     # # First test with single process
@@ -401,6 +556,32 @@ def compute_prm_target(files, files_breakdown, domain, outputdir, gamma, cpu_cou
     for key in Q_target.keys():
         Q_target[key]['qestimate'] = 0.5 * (Q_target[key]['qestimate'] + 1)
 
+    if domain == "car_dealer":
+        # Split the Q_target into 2 parts (api and response)
+        # We will make sure each part has 10k datapoints with balanaced 50% low data and 50% high data
+        api_Q_target = {k: v for k, v in Q_target.items() if v['state']['type'] == 'api'}
+        response_Q_target = {k: v for k, v in Q_target.items() if v['state']['type'] == 'response'}
+
+        # Set save_to_local to False because we will combine the datapoints and save them
+        print("=============================== Processing API data =================================")
+        api_data_to_save = general_save_data(api_Q_target, outputdir, split_name, balance_data, onpolicy_pct_for_success, track_offpolicy, save_to_local=False)
+        # Add missing fields
+
+        print("=============================== Processing Response data =================================")
+        response_data_to_save = general_save_data(response_Q_target, outputdir, split_name, balance_data, onpolicy_pct_for_success, track_offpolicy, save_to_local=False)
+        # Add missing fields
+        
+        # Combine the datapoints
+        data_to_save = api_data_to_save + response_data_to_save
+
+        # Save the combined datapoints
+        data_table = pa.Table.from_pylist(data_to_save)
+        pq.write_table(data_table, os.path.join(outputdir, f"{split_name}{'_10k' if split_name == 'train' else ''}.parquet"))
+    else:
+        general_save_data(Q_target, outputdir, split_name, balance_data, onpolicy_pct_for_success, track_offpolicy)
+
+
+def general_save_data(Q_target, outputdir, split_name, balance_data, onpolicy_pct_for_success, track_offpolicy, save_to_local=True):
     print_qestimate_histogram(Q_target)
     # print_count_histogram(Q_target, bins=np.array(list(range(1, 6)) + list(range(6, 10, 2)) +list(range(10, 100, 10)) + list(range(100, max([x['count'] for x in Q_target.values()]), 100))))
     if track_offpolicy:
@@ -414,50 +595,19 @@ def compute_prm_target(files, files_breakdown, domain, outputdir, gamma, cpu_cou
         print("======= Off-policy (Hindsight) Q-estimate =======")
         print_qestimate_histogram(Q_target_off_policy)
     input("Press any key to continue...")
-
-    if split_name is not None:
-        if not track_offpolicy:
-            reduce_and_save_data_for_split(Q_target, outputdir, split_name, balance_data)
-        else:
-            reduce_and_save_data_for_split_biased(Q_target, outputdir, split_name, balance_data, onpolicy_pct_for_success)
+        
+    if not track_offpolicy:
+        data_to_save = reduce_and_save_data_for_split(Q_target, outputdir, split_name, balance_data, save_to_local)
     else:
-        keys = list(Q_target.keys())
-        random.shuffle(keys)
+        data_to_save = reduce_and_save_data_for_split_biased(Q_target, outputdir, split_name, balance_data, onpolicy_pct_for_success, save_to_local)
+    
+    return data_to_save
 
-        # Split into train/val and save
-        split_idx = int(len(keys) * train_split)
-        train_keys, val_keys = keys[:split_idx], keys[split_idx:]
-
-        train_data = [
-            {'state': Q_target[k]['state'], 
-            'reason_action': Q_target[k]['reason_action'], 
-            'qestimate': Q_target[k]['qestimate']}
-            for k in train_keys
-        ]
-        val_data = [
-            {'state': Q_target[k]['state'], 
-             'reason_action': Q_target[k]['reason_action'], 
-             'qestimate': Q_target[k]['qestimate']}
-            for k in val_keys
-        ]
-
-        # Convert lists of dictionaries to Arrow tables
-        train_table = pa.Table.from_pylist(train_data)
-        val_table = pa.Table.from_pylist(val_data)
-
-        # Save the Arrow tables to Parquet files
-        os.makedirs(outputdir, exist_ok=True)
-        train_path = os.path.join(outputdir, 'train.parquet')
-        val_path = os.path.join(outputdir, 'val.parquet')
-
-        pq.write_table(train_table, train_path)
-        pq.write_table(val_table, val_path)
-
-        # Subsample the data to strictly having 10k datapoints
-        train_table_10k = train_table.slice(0, 10000)
-        pq.write_table(train_table_10k, os.path.join(outputdir, 'train_10k.parquet'))
-
-def reduce_and_save_data_for_split(Q_target, outputdir, split_name, balance_data=True):
+def reduce_and_save_data_for_split(Q_target, outputdir, split_name, balance_data=True, save_to_local=True):
+    """
+    Return:
+        data_to_save: List[dict]
+    """
     keys = list(Q_target.keys())
     random.shuffle(keys)
 
@@ -495,10 +645,12 @@ def reduce_and_save_data_for_split(Q_target, outputdir, split_name, balance_data
         data_table = pa.Table.from_pylist(data_to_save)
         
         # Save the Arrow tables to Parquet files
-        os.makedirs(outputdir, exist_ok=True)
-        pq.write_table(data_table, os.path.join(outputdir, f"{split_name}.parquet"))
-        
-        print(f"Saving {len(data_to_save)} datapoints as {split_name}.parquet")
+        if save_to_local:
+            os.makedirs(outputdir, exist_ok=True)
+            pq.write_table(data_table, os.path.join(outputdir, f"{split_name}.parquet"))
+            
+            print(f"Saving {len(data_to_save)} datapoints as {split_name}.parquet")
+
     elif split_name == "train":
         # Subsample the data to strictly having 10k datapoints
         if balance_data:
@@ -520,20 +672,26 @@ def reduce_and_save_data_for_split(Q_target, outputdir, split_name, balance_data
             input("Press any key to continue...")
 
             data_to_save = low_data_subsampled + high_data_subsampled
-
-            data_table_10k = pa.Table.from_pylist(data_to_save)
+            
+            if save_to_local:
+                pq.write_table(data_table_10k, os.path.join(outputdir, f"{split_name}_10k.parquet"))
+                data_table_10k = pa.Table.from_pylist(data_to_save)
         else:
-            data_table_10k = data_table.slice(0, 10000)
+            if save_to_local:
+                data_table_10k = data_table.slice(0, 10000)
+                pq.write_table(data_table_10k, os.path.join(outputdir, f"{split_name}_10k.parquet"))
+        
+    return data_to_save
 
-        pq.write_table(data_table_10k, os.path.join(outputdir, f"{split_name}_10k.parquet"))
-
-
-def reduce_and_save_data_for_split_biased(Q_target, outputdir, split_name, balance_data=True, onpolicy_pct_for_success=None):
+def reduce_and_save_data_for_split_biased(Q_target, outputdir, split_name, balance_data=True, onpolicy_pct_for_success=None, save_to_local=True):
     """
     Biased in the sense that
         - For low data, we prioritize removing off-policy rollouts (removing the hindsight data that failed)
         - For high data, we prioritize removing on-policy rollouts (removing the agent rollouts that failed)
             We assume that expert's alternative actions would be better
+
+    Return:
+        data_to_save: List[dict]
     """
     assert balance_data, "Balance data is required for biased subsampling"
 
@@ -630,20 +788,24 @@ def reduce_and_save_data_for_split_biased(Q_target, outputdir, split_name, balan
 
     data_table = pa.Table.from_pylist(data_to_save)
     
-    # Save the Arrow tables to Parquet files
-    os.makedirs(outputdir, exist_ok=True)
+    if save_to_local:
+        # Save the Arrow tables to Parquet files
+        os.makedirs(outputdir, exist_ok=True)
 
-    if split_name == "train":
-        pq.write_table(data_table, os.path.join(outputdir, f"{split_name}_10k.parquet"))
-    else:
-        pq.write_table(data_table, os.path.join(outputdir, f"{split_name}.parquet"))
+        if split_name == "train":
+            pq.write_table(data_table, os.path.join(outputdir, f"{split_name}_10k.parquet"))
+        else:
+            pq.write_table(data_table, os.path.join(outputdir, f"{split_name}.parquet"))
 
+    return data_to_save
 
 def compute_file_list(rolloutdirs, domain, max_files_per_dir=None, max_rollout_per_task_per_dir_list=None):
     if domain == "alfworld":
         skip_condition = alfworld_skip_file_condition
     elif domain == "twenty_questions":
         skip_condition = twenty_questions_skip_file_condition
+    elif domain == "car_dealer":
+        skip_condition = car_dealer_skip_file_condition
     else:
         raise ValueError(f"Invalid domain: {domain}")
 
@@ -797,7 +959,7 @@ def main(cfg: DictConfig):
     else:
         rolloutdirs = cfg.rolloutdirs
 
-    is_hindsight_data = all(["hindsight" in rolloutdir for rolloutdir in rolloutdirs]) or all(['best-pi-relabel' in rolloutdir for rolloutdir in rolloutdirs]) or all(['explorative-pi-relabel' in rolloutdir for rolloutdir in rolloutdirs])
+    is_hindsight_data = all(["hindsight" in rolloutdir for rolloutdir in rolloutdirs]) or all(['best-pi-relabel' in rolloutdir for rolloutdir in rolloutdirs]) or all(['explorative-pi-relabel' in rolloutdir for rolloutdir in rolloutdirs]) or all(['high-temp-pi-relabel' in rolloutdir for rolloutdir in rolloutdirs])
 
     print(f"Confirm the following\n- rolloutdirs: {rolloutdirs}\n- domain: {cfg.domain}\n- outputdir: {cfg.outputdir}\n- is_hindsight_data: {is_hindsight_data}\n{cfg.hindsight if is_hindsight_data else ''}")
     input("Press any key to continue...")
@@ -810,7 +972,7 @@ def main(cfg: DictConfig):
         files, files_breakdown = compute_file_list(rolloutdirs, cfg.domain, cfg.max_files_per_dir, cfg.max_rollout_per_task_per_dir_list)
     
     input("Press any key to continue...")
-    compute_prm_target(files, files_breakdown, cfg.domain, cfg.outputdir, cfg.gamma, cfg.cpu_count, cfg.train_split, cfg.split_name, cfg.balance_data, cfg.hindsight.onpolicy_pct_for_success if is_hindsight_data else None, cfg.hindsight.track_offpolicy if is_hindsight_data else False)
+    compute_prm_target(files, files_breakdown, cfg.domain, cfg.outputdir, cfg.gamma, cfg.cpu_count, cfg.train_split, cfg.split_name, cfg.balance_data, cfg.hindsight.onpolicy_pct_for_success if is_hindsight_data else None, cfg.hindsight.track_offpolicy if is_hindsight_data else False, cfg.reward_min, cfg.reward_max)
 
 if __name__ == "__main__":
     main()

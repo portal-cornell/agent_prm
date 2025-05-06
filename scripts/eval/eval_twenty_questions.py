@@ -332,7 +332,7 @@ def main(cfg: DictConfig):
 
     if cfg.mode == "online":
         # Because this takes a long time, we notify when the online eval is done
-        elogger.log(f"Online eval results saved for Agents: {[agent_config.log_name for agent_config in cfg.agents]}")
+        elogger.log(f"[20 Questions] Online eval results saved for Agents: {[agent_config.log_name for agent_config in cfg.agents]}, data_types: {cfg.data_types}, rollout range[{cfg.online.rollout_per_task_range_min}, {cfg.online.rollout_per_task_range_max})")
     
 
 if __name__ == "__main__":

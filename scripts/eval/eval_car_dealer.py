@@ -26,8 +26,6 @@ from jinja2 import Template
 
 from agent_prm.agents.agent_registry import initialize_agent
 from agent_prm.agents.agent import Agent
-from agent_prm.utils.parser import parse_reason_and_action_twenty_questions
-from agent_prm.utils.cfg_utils import get_output_folder_name
 from agent_prm.utils.general_utils import load_json, save_json
 from agent_prm.utils.logger_email import elogger
 from agent_prm.utils.general_utils import setup_sglang_server 
@@ -36,7 +34,7 @@ from agent_prm.utils.cfg_utils import get_output_path, find_matching_iter
 from agent_prm.envs.car_dealer.env import setup_batched_car_dealer_env
 from agent_prm.envs.car_dealer.data import get_all_games_to_play, load_car_inventories
 from agent_prm.envs.car_dealer.interface import rollout_batch
-
+from agent_prm.envs.car_dealer.parser import format_reason_action_car_dealer_critic
 
 def online_eval(cfg: dict, logdir: str, agent: Agent, agent_api_call_template: Template, agent_prompt_template: Template):
     """
@@ -283,7 +281,8 @@ def main(cfg: DictConfig):
                 agent = initialize_agent(agent_config,
                                             parse_reason_action_fn=lambda x: x, # Placeholder. This is getting set in rollout_batch (because we both need to call the API and also generate responses to the user)
                                             verbose=cfg["verbose"],
-                                            debug=cfg["debug"])
+                                            debug=cfg["debug"],
+                                            format_reason_action_fn=format_reason_action_car_dealer_critic)
                 
                 print(f"Evaluating {agent_name} in {logdir}")
 
@@ -311,7 +310,7 @@ def main(cfg: DictConfig):
 
     if cfg.mode == "online":
         # Because this takes a long time, we notify when the online eval is done
-        elogger.log(f"Online eval results saved for Agents: {[agent_config.log_name for agent_config in cfg.agents]}")
+        elogger.log(f"[Car Dealer] Online eval results saved for Agents: {[agent_config.log_name for agent_config in cfg.agents]}, data_types: {cfg.data_types}, rollout range[{cfg.online.rollout_per_task_range_min}, {cfg.online.rollout_per_task_range_max})")
     
 
 if __name__ == "__main__":
