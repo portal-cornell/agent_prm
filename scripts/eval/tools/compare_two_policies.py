@@ -14,6 +14,8 @@ Each will be stored as a separate csv file, with the following columns:
 - path_to_policy_A_model
 - path_to_policy_B_model
 - investigation_comments
+
+python scripts/eval/tools/compare_two_policies.py
 """
 
 import os
@@ -22,9 +24,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from tabulate import tabulate
 from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, VALIDATION_OBJECT_DICT, TEST_OBJECT_DICT
+from agent_prm.envs.car_dealer.data import TRAIN_BUYER_STRATEGIES, VAL_BUYER_STRATEGIES, TEST_BUYER_STRATEGIES, TRAIN_BRANDS, VAL_BRANDS, TEST_BRANDS, TRAIN_TYPES, VAL_TYPES, TEST_TYPES
 from agent_prm.utils.general_utils import load_json, save_json
 from agent_prm.utils.cfg_utils import find_matching_iter
 
+# DOMAIN = "twenty_questions"
 ##### Compare p0 and BoN_pi0_Q0-80pct-lr=5e-5
 # POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
 # POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/BoN_pi0_Q0-80pct-lr=5e-5_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
@@ -86,12 +90,20 @@ from agent_prm.utils.cfg_utils import find_matching_iter
 # POLICY_B_NAME = "BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-60"
 
 ## Compare the 60 pct data pi1 vs 100 pct data pi1
-POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-40pct_Q0-20pct-lr=5e-6_pi0-new-env_250405_214137_iter1_pi0-new-env_pi1_Q0-20pct-lr=5e-6_pi0-new-env"
-POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-40pct_Q0-20pct-lr=5e-6_hindsight-biased-on-60_250411_220702_iter1_hindsight-biased-on-60_pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-60"
-POLICY_A_NAME = "pi1-40pct_Q0-20pct-lr=5e-6_pi0-new-env"
-POLICY_B_NAME = "pi1-40pct_Q0-20pct-lr=5e-6_hindsight-biased-on-60"
+# POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-40pct_Q0-20pct-lr=5e-6_pi0-new-env_250405_214137_iter1_pi0-new-env_pi1_Q0-20pct-lr=5e-6_pi0-new-env"
+# POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-40pct_Q0-20pct-lr=5e-6_hindsight-biased-on-60_250411_220702_iter1_hindsight-biased-on-60_pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-60"
+# POLICY_A_NAME = "pi1-40pct_Q0-20pct-lr=5e-6_pi0-new-env"
+# POLICY_B_NAME = "pi1-40pct_Q0-20pct-lr=5e-6_hindsight-biased-on-60"
 
-DOMAIN = "twenty_questions"
+##################
+DOMAIN = "car_dealer"
+
+POLICY_A_PATH = "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-83pct_250430_180817_iter0_pi0_vanilla_epochs=3"
+POLICY_B_PATH = "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-83pct_250430_180817_iter0_pi0_vanilla_epochs=3"
+POLICY_A_NAME = "pi0"
+POLICY_B_NAME = "pi0"
+##################
+
 save_folder_path = os.path.join(f"playground/{DOMAIN}/compare_two_policies", f"{POLICY_A_NAME}_vs_{POLICY_B_NAME}")
 
 ROLLOUT_PER_TASK_DICT = {
@@ -116,6 +128,48 @@ def plot_confusion_matrix(df_confusion_matrix, policy_A_name: str, policy_B_name
     plt.title(file_name)
     plt.savefig(os.path.join(save_folder_path, file_name))
 
+def get_iterator_for_domain(domain: str, data_type: str):
+    """
+    List of 
+        prefix, domain_specific_info_to_track
+    """
+    if domain == "twenty_questions":
+        if data_type == "train":
+            object_dict_to_use = TRAIN_OBJECT_DICT
+        elif data_type == "val":
+            object_dict_to_use = VALIDATION_OBJECT_DICT
+        elif data_type == "test":
+            object_dict_to_use = TEST_OBJECT_DICT
+
+        game_list = [(obj, category) for category in object_dict_to_use.keys() for obj in object_dict_to_use[category]]
+    elif domain == "car_dealer":
+        buyer_info_dict = load_json("src/agent_prm/envs/car_dealer/buyer_info_dict.json")
+
+        if data_type == "train":
+            buyer_strategy_dict = TRAIN_BUYER_STRATEGIES
+            brand_list = TRAIN_BRANDS
+            type_list = TRAIN_TYPES
+        elif data_type == "val":
+            buyer_strategy_dict = VAL_BUYER_STRATEGIES
+            brand_list = VAL_BRANDS
+            type_list = VAL_TYPES
+        elif data_type == "test":
+            buyer_strategy_dict = TEST_BUYER_STRATEGIES
+            brand_list = TEST_BRANDS
+            type_list = TEST_TYPES
+        
+        game_list = []
+        for buyer_strategy_id in buyer_strategy_dict.keys():
+            for brand in brand_list:
+                for car_type in type_list:
+                    budget_list = buyer_info_dict[str(buyer_strategy_id)][brand][car_type].keys()
+                    for budget in budget_list:
+                        features = buyer_info_dict[str(buyer_strategy_id)][brand][car_type][budget]["features"]
+                        game_id = f"{buyer_strategy_id}_{brand}_{car_type}_{budget}"
+                        game_list.append((game_id, f"{features}:{buyer_strategy_dict[buyer_strategy_id]['name']}"))
+        
+    return game_list
+        
 
 def collect_results(policy_A_path: str, policy_B_path: str, policy_A_name: str, policy_B_name: str):
     os.makedirs(save_folder_path, exist_ok=True)
@@ -133,7 +187,7 @@ def collect_results(policy_A_path: str, policy_B_path: str, policy_A_name: str, 
     # Initialize the csvs
     policy_A_1_policy_B_0_dict = {
         "task_id": [],
-        "task_category": [],
+        "task_info": [],
         "data_type": [],
         "path_to_policy_A_model": [],
         "path_to_policy_B_model": [],
@@ -141,7 +195,7 @@ def collect_results(policy_A_path: str, policy_B_path: str, policy_A_name: str, 
     }
     policy_A_0_policy_B_1_dict = { 
         "task_id": [],
-        "task_category": [],
+        "task_info": [],
         "data_type": [],
         "path_to_policy_A_model": [],
         "path_to_policy_B_model": [],
@@ -149,7 +203,7 @@ def collect_results(policy_A_path: str, policy_B_path: str, policy_A_name: str, 
     }
     policy_A_1_policy_B_1_dict = {
         "task_id": [],
-        "task_category": [],
+        "task_info": [],
         "data_type": [],
         "path_to_policy_A_model": [],
         "path_to_policy_B_model": [],
@@ -157,7 +211,7 @@ def collect_results(policy_A_path: str, policy_B_path: str, policy_A_name: str, 
     }
     policy_A_0_policy_B_0_dict = {
         "task_id": [],
-        "task_category": [],
+        "task_info": [],
         "data_type": [],
         "path_to_policy_A_model": [],
         "path_to_policy_B_model": [],
@@ -165,25 +219,22 @@ def collect_results(policy_A_path: str, policy_B_path: str, policy_A_name: str, 
     }
 
     for data_type in ["train", "val", "test"]:
-        if data_type == "train":
-            object_dict_to_use = TRAIN_OBJECT_DICT
-        elif data_type == "val":
-            object_dict_to_use = VALIDATION_OBJECT_DICT
-        elif data_type == "test":
-            object_dict_to_use = TEST_OBJECT_DICT
+        game_list = get_iterator_for_domain(DOMAIN, data_type)
 
-        objs_list = [(obj, data_type, category) for category in object_dict_to_use.keys() for obj in object_dict_to_use[category]]
-
-        for obj, data_type, category in objs_list:
+        for game_id, domain_specific_info in game_list:
             for rollout_id in range(ROLLOUT_PER_TASK_DICT[data_type]):
-                policy_A_rollout_path = os.path.join(policy_A_path, data_type, f"{obj}_{rollout_id}.json")
-                policy_B_rollout_path = os.path.join(policy_B_path, data_type, f"{obj}_{rollout_id}.json")
+                policy_A_rollout_path = os.path.join(policy_A_path, data_type, f"{game_id}_{rollout_id}.json")
+                policy_B_rollout_path = os.path.join(policy_B_path, data_type, f"{game_id}_{rollout_id}.json")
 
                 policy_A_rollout = load_json(policy_A_rollout_path)
                 policy_B_rollout = load_json(policy_B_rollout_path)
 
-                policy_A_success = policy_A_rollout[-1]["reward"] == 0
-                policy_B_success = policy_B_rollout[-1]["reward"] == 0
+                if DOMAIN == "car_dealer":
+                    policy_A_success = policy_A_rollout[-1]["success"]
+                    policy_B_success = policy_B_rollout[-1]["success"]
+                else:
+                    policy_A_success = policy_A_rollout[-1]["reward"] == 0
+                    policy_B_success = policy_B_rollout[-1]["reward"] == 0
 
                 if policy_A_success and not policy_B_success:
                     dict_to_add_to = policy_A_1_policy_B_0_dict
@@ -194,8 +245,8 @@ def collect_results(policy_A_path: str, policy_B_path: str, policy_A_name: str, 
                 elif not policy_A_success and not policy_B_success:
                     dict_to_add_to = policy_A_0_policy_B_0_dict
 
-                dict_to_add_to["task_id"].append(f"{obj}_0")
-                dict_to_add_to["task_category"].append(category)
+                dict_to_add_to["task_id"].append(f"{game_id}_{rollout_id}")
+                dict_to_add_to["task_info"].append(domain_specific_info)
                 dict_to_add_to["data_type"].append(data_type)
                 dict_to_add_to["path_to_policy_A_model"].append(policy_A_rollout_path)
                 dict_to_add_to["path_to_policy_B_model"].append(policy_B_rollout_path)

@@ -198,6 +198,378 @@ agents:
   #   dist_url_port: null
   #   temperature: 0.3
   #   batch_limit: 32
+  ##########################################################################################
+  # - type: sglang_server
+  #   log_name: pi0-21pct_max-car-8
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-31
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi0-41pct_max-car-8
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-62
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi0-62pct_max-car-8  # pi0 Best val model
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi0-83pct_max-car-8
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-124
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi0_max-car-8
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-150
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  ##########################################################################################
+  #
+  # Iteration 1: PRM + RL
+  # 
+  ##########################################################################################
+  ############## Best pi0: pi0-83pct
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-25pct-lr=5e-6
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250430_180817_iter0_pi0_vanilla_epochs=3/checkpoint-124
+  #     prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/car_dealer/rm/250502_055014_iter1_pi0-83pct_peft=false/model/checkpoint-500
+  #     prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-40pct-lr=5e-6
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250430_180817_iter0_pi0_vanilla_epochs=3/checkpoint-124
+  #     prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/car_dealer/rm/250502_055014_iter1_pi0-83pct_peft=false/model/checkpoint-1000
+  #     prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-60pct-lr=5e-6
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250430_180817_iter0_pi0_vanilla_epochs=3/checkpoint-124
+  #     prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/car_dealer/rm/250502_055014_iter1_pi0-83pct_peft=false/model/checkpoint-1500
+  #     prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-80pct-lr=5e-6
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250430_180817_iter0_pi0_vanilla_epochs=3/checkpoint-124
+  #     prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/car_dealer/rm/250502_055014_iter1_pi0-83pct_peft=false/model/checkpoint-2000
+  #     prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  # - type: best_of_n
+  #   log_name: BoN_pi0_Q0-lr=5e-6  # Vanilla RL q0 Best val model
+  #   num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   generator:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250430_180817_iter0_pi0_vanilla_epochs=3/checkpoint-124
+  #     prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.7
+  #     batch_limit: 32
+  #     dist_url_port: null
+  #   critic:
+  #     type: sglang_server
+  #     model_id: /share/portal/hw575/agent_prm/save/car_dealer/rm/250502_055014_iter1_pi0-83pct_peft=false/model/checkpoint-2500
+  #     prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #     server_url: http://localhost:TODO/
+  #     temperature: 0.3
+  #     batch_limit: 16
+  #     dist_url_port: null
+  #   verbose: 3
+  ############## pi1 trained from pi0: pi0-83pct + Q0: BoN_pi0_Q0-lr=5e-6 (we had to cut the max seq length from 6500 to 3500)
+  # - type: sglang_server
+  #   log_name: pi1-20pct_Q0-lr=5e-6
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/online_dpo/250504_011341_iter1_pi1_Q0-lr=5e-6/checkpoint-200
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi1-40pct_Q0-lr=5e-6
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/online_dpo/250504_011341_iter1_pi1_Q0-lr=5e-6/checkpoint-400
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi1-60pct_Q0-lr=5e-6
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/online_dpo/250504_011341_iter1_pi1_Q0-lr=5e-6/checkpoint-600
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi1-80pct_Q0-lr=5e-6
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/online_dpo/250504_011341_iter1_pi1_Q0-lr=5e-6/checkpoint-800
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi1_Q0-lr=5e-6
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/online_dpo/250504_011341_iter1_pi1_Q0-lr=5e-6
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  ############## Best pi0: pi0-62pct_max-car-8
+  - type: best_of_n
+    log_name: BoN_pi0_Q0-42pct-lr=5e-6_max-car-8  # Q0 max-car-8 Best val model
+    num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+    api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+    prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+    generator:
+      type: sglang_server
+      model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93
+      prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+      server_url: http://localhost:TODO/
+      temperature: 0.7
+      batch_limit: 32
+      dist_url_port: null
+    critic:
+      type: sglang_server
+      model_id: /share/portal/hw575/agent_prm/save/car_dealer/rm/250504_223511_iter1_max-car-8_pi0-62pct_max-car-8_peft=false/model/checkpoint-500
+      prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+      server_url: http://localhost:TODO/
+      temperature: 0.3
+      batch_limit: 16
+      dist_url_port: null
+    verbose: 3
+  - type: best_of_n
+    log_name: BoN_pi0_Q0-85pct-lr=5e-6_max-car-8
+    num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+    api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+    prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+    generator:
+      type: sglang_server
+      model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93
+      prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+      server_url: http://localhost:TODO/
+      temperature: 0.7
+      batch_limit: 32
+      dist_url_port: null
+    critic:
+      type: sglang_server
+      model_id: /share/portal/hw575/agent_prm/save/car_dealer/rm/250504_223511_iter1_max-car-8_pi0-62pct_max-car-8_peft=false/model/checkpoint-1000
+      prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+      server_url: http://localhost:TODO/
+      temperature: 0.3
+      batch_limit: 16
+      dist_url_port: null
+    verbose: 3
+  - type: best_of_n
+    log_name: BoN_pi0_Q0-lr=5e-6_max-car-8
+    num_generations: 15 # Best of N (The critic will pick the best out of N responses)
+    api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+    prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+    generator:
+      type: sglang_server
+      model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93
+      prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+      server_url: http://localhost:TODO/
+      temperature: 0.7
+      batch_limit: 32
+      dist_url_port: null
+    critic:
+      type: sglang_server
+      model_id: /share/portal/hw575/agent_prm/save/car_dealer/rm/250504_223511_iter1_max-car-8_pi0-62pct_max-car-8_peft=false/model/checkpoint-1180
+      prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+      server_url: http://localhost:TODO/
+      temperature: 0.3
+      batch_limit: 16
+      dist_url_port: null
+    verbose: 3
+  ##########################################################################################
+  #
+  #       Multi-STaR
+  # 
+  ##########################################################################################
+  ################################# iter1
+  # - type: sglang_server
+  #   log_name: pi1-21pct_multi-star
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250502_015227_iter1_multi-star_10k_pi0_multi-star_from-base_10k-data_lr=3e-6_epochs=1/checkpoint-42
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi1-41pct_multi-star  # Multi-STaR pi1 Best val model
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250502_015227_iter1_multi-star_10k_pi0_multi-star_from-base_10k-data_lr=3e-6_epochs=1/checkpoint-84
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi1-62pct_multi-star
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250502_015227_iter1_multi-star_10k_pi0_multi-star_from-base_10k-data_lr=3e-6_epochs=1/checkpoint-126
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi1-83pct_multi-star
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250502_015227_iter1_multi-star_10k_pi0_multi-star_from-base_10k-data_lr=3e-6_epochs=1/checkpoint-168
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi1_multi-star
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250502_015227_iter1_multi-star_10k_pi0_multi-star_from-base_10k-data_lr=3e-6_epochs=1/checkpoint-208
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  ################################# iter2
+  # - type: sglang_server
+  #   log_name: pi2-21pct_multi-star
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250502_215649_iter2_multi-star_10k_mix-50pct-past_pi0_multi-star_from-base_10k-data-mix-50pct-past_lr=3e-6_epochs=1/checkpoint-42
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi2-41pct_multi-star
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250502_215649_iter2_multi-star_10k_mix-50pct-past_pi0_multi-star_from-base_10k-data-mix-50pct-past_lr=3e-6_epochs=1/checkpoint-84
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi2-62pct_multi-star
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250502_215649_iter2_multi-star_10k_mix-50pct-past_pi0_multi-star_from-base_10k-data-mix-50pct-past_lr=3e-6_epochs=1/checkpoint-126
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi2-83pct_multi-star
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250502_215649_iter2_multi-star_10k_mix-50pct-past_pi0_multi-star_from-base_10k-data-mix-50pct-past_lr=3e-6_epochs=1/checkpoint-168
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
+  # - type: sglang_server
+  #   log_name: pi2_multi-star
+  #   api_prompt_template_file: prompts/car_dealer/car_dealer_api_template.j2
+  #   prompt_template_file: prompts/car_dealer/car_dealer_template.j2
+  #   model_id: /share/portal/hw575/agent_prm/save/car_dealer/sft/250502_215649_iter2_multi-star_10k_mix-50pct-past_pi0_multi-star_from-base_10k-data-mix-50pct-past_lr=3e-6_epochs=1/checkpoint-208
+  #   server_url: http://localhost:TODO/
+  #   dist_url_port: null
+  #   temperature: 0.3
+  #   batch_limit: 32
 
 
 defaults:

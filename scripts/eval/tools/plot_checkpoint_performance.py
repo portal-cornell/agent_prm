@@ -145,7 +145,6 @@ folder_to_regex = {
     "rl-pi1-hd-best-val":
         [
             r'^(pi1-(\d+)pct)_Q0-60pct-lr=5e-6_pi0-new-env$', r'^pi1_Q0-60pct-lr=5e-6_pi0-new-env$',
-            r'^(pi1-(\d+)pct)_Q0-80pct-lr=5e-6_hindsight-biased-on-40$', r'^pi1_Q0-80pct-lr=5e-6_hindsight-biased-on-40$',
             r'^(pi1-(\d+)pct)_Q0-lr=5e-6_hindsight-biased-on-60$', r'^pi1_Q0-lr=5e-6_hindsight-biased-on-60$',
         ],
     # Q1
@@ -216,9 +215,8 @@ folder_to_plot_models = {
          'pi1_Q0-20pct-lr=5e-6_pi0-new-env',
         ],
     "rl-pi1-hd-best-val":
-        ['gpt-4o', 'pi0-new-env', 'pi2-new-env', 
+        ['gpt-4o', 'pi0-new-env',
         'pi1_Q0-60pct-lr=5e-6_pi0-new-env',
-        'pi1_Q0-80pct-lr=5e-6_hindsight-biased-on-40',
         'pi1_Q0-lr=5e-6_hindsight-biased-on-60',
         ],
     # Q1
@@ -240,7 +238,7 @@ ROLLOUT_PER_TASK_DICT = {
 }
 
 REWARD_MIN, REWARD_MAX = -18, -4
-SUCCESS_RATE_MIN, SUCCESS_RATE_MAX = 0.4, 1.1
+SUCCESS_RATE_MIN, SUCCESS_RATE_MAX = 0.4, 0.85
 
 def is_valid_rollout(f: str, data_type: str) -> bool:
     """

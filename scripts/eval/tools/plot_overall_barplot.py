@@ -1,3 +1,6 @@
+"""
+python scripts/eval/tools/plot_overall_barplot.py
+"""
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -128,28 +131,39 @@ EVAL_CSV_PATH = f"data/{DOMAIN}/eval/online_eval_table{TABLE_SUFFIX}.csv"
 # }
 
 # Hindsight PRM plot
-# COLORS = ['#a6a6a6', '#abdea1', '#83CE74']
+# COLORS = ['#a6a6a6', '#abdea1', '#83CE74', '#abdea1']
 # model_to_name_in_csv = {
 #     "3B π0": "pi0-new-env",
 #     "3B π1 (Hindsight)": "pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60",
 #     "3B π2 (Hindsight)": "pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
-#     # "3B π3 (Hindsight)": "pi3-80pct_Q2-lr=5e-6_new-env-pi2-from-pi0_from-pi0",
+#     "3B π3 (Hindsight)": "pi3-60pct_Q2-lr=5e-6_hindsight-biased-on-60",
 # }
 
-# # LEAP plot
-# COLORS = ['#a6a6a6', '#a892d3', '#7D5CBD']
+# LEAP plot
+# COLORS = ['#a6a6a6', '#a892d3', '#7D5CBD', '#b6a4da']
 # model_to_name_in_csv = {
 #     "3B π0": "pi0-new-env",
 #     "3B π1 (LEAP)": "pi1-44pct_leap_from-base-3B_1epoch",
 #     "3B π2 (LEAP)": "pi2-67pct_leap_from-base-3B_1epoch",
+#     "3B π3 (LEAP)": "pi3-67pct_leap_from-base-3B_1epoch",
 # }
 
-# Multi-STaR plot
-COLORS = ['#a6a6a6', '#b3d9ff', '#69B3FF']
+# # Multi-STaR plot
+# COLORS = ['#a6a6a6', '#b3d9ff', '#69B3FF', '#99ccff']
+# model_to_name_in_csv = {
+#     "3B π0": "pi0-new-env",
+#     "3B π1 (Multi-STaR)": "pi1-41pct_multi-star_from-base-3B_1epoch_10k-data_lr=3e-6",
+#     "3B π2 (Multi-STaR)": "pi2-62pct_multi-star_from-base-3B_1epoch_10k-data-mix-50pct-past_lr=3e-6",
+#     "3B π3 (Multi-STaR)": "pi3-82pct_multi-star_from-base-3B_1epoch_10k-data-mix-50pct-past_lr=3e-6",
+# }
+
+# Exploration Strategy Plot
+COLORS = ['#a6a6a6', '#ffe43d', '#e6c700', '#abdea1']
 model_to_name_in_csv = {
     "3B π0": "pi0-new-env",
-    "3B π1 (Multi-STaR)": "pi1-83pct_multi-star_from-base-3B_1epoch",
-    "3B π2 (Multi-STaR)": "pi2_multi-star_from-base-3B_1epoch",
+    "3B π1 (π0 to explore)": "pi1-40pct_Q0-80pct-lr=5e-6_explorative-pi-on-60",
+    "3B π1 (π* to explore)": "pi1-25pct_Q0-lr=5e-6_best-pi-on-60",
+    "3B π1 (Hindsight)": "pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60",
 }
 
 
