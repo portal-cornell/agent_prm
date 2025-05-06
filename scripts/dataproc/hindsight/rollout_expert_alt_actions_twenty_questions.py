@@ -2,7 +2,7 @@
 Example usage:
 
 When getting export's alternative actions:
-    python scripts/dataproc/rollout_expert_alt_actions.py -e -m g -i 0 -d val -min 0 -max 4 -et gpt4o
+    python scripts/dataproc/hindsight/rollout_expert_alt_actions_twenty_questions.py -e -m g -i 0 -d val -min 0 -max 4 -et gpt4o
 
     where
         -e indicates that we are using elogger
@@ -12,7 +12,7 @@ When getting export's alternative actions:
 
 When completing the rollouts:
     Without specifying the object range:
-        python scripts/dataproc/rollout_expert_alt_actions.py -e -m r -i 0 -d train -min 4 -max 12 -et gpt4o --sim_host TODO --sim_port TODO
+        python scripts/dataproc/hindsight/rollout_expert_alt_actions_twenty_questions.py -e -m r -i 0 -d train -min 4 -max 12 -et gpt4o --sim_host TODO --sim_port TODO
 
         where
             -e indicates that we are using elogger
@@ -22,14 +22,14 @@ When completing the rollouts:
             --min 4 --max 12 indicates that we are completing the rollouts from idx 4 to 12
             -s indicates that we are serving the model
 
-    python scripts/dataproc/rollout_expert_alt_actions.py -e -m r -i 1 -d train -min 4 -max 12 -si 0 -ei 27 -et gpt4o --sim_host TODO --sim_port TODO
+    python scripts/dataproc/hindsight/rollout_expert_alt_actions_twenty_questions.py -e -m r -i 1 -d train -min 4 -max 12 -si 0 -ei 27 -et gpt4o --sim_host TODO --sim_port TODO
         where
             -si 0 -ei 27 indicates that we are starting from object 0 and ending at object 27 (not inclusive)
 
 When merging the summary dicts:
-    python scripts/dataproc/rollout_expert_alt_actions.py -m merge_gen -i 0 -d train -et gpt4o
+    python scripts/dataproc/hindsight/rollout_expert_alt_actions_twenty_questions.py -m merge_gen -i 0 -d train -et gpt4o
 
-    python scripts/dataproc/rollout_expert_alt_actions.py -m merge_rollout -i 0 -d val
+    python scripts/dataproc/hindsight/rollout_expert_alt_actions_twenty_questions.py -m merge_rollout -i 0 -d val
 """
 import argparse
 import os
@@ -38,6 +38,7 @@ import json
 import math
 import time
 import copy
+from collections import Counter
 from tqdm import tqdm
 from typing import List, Dict, Tuple
 from jinja2 import Template
@@ -62,6 +63,7 @@ iter_to_rollout_dir = {
         "gpt4o": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
         "pi*": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/best-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
         "explorative-pi": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
+        "high-temp-pi": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/high-temp-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
     },
     # pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60 # Best val model
     1: {
@@ -112,6 +114,19 @@ iter_to_agent_config = {
     }
 }
 
+
+high_temp_agent_config = {
+    "type": "sglang_server",
+    "log_name": "pi0-all-data-3epoches",
+    "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120",
+    "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
+    "server_url": "http://localhost:TODO/",
+    "dist_url_port": None,
+    "temperature": 1.0,
+    "batch_limit": 32,
+    "verbose": 0,
+    "debug": False,
+}
 
 best_agent_config = {
     "type": "sglang_server",
@@ -372,7 +387,62 @@ def explorative_pi_gen_alt_actions(
     reason_actions = [item for sublist in reason_actions for item in sublist]
 
     return reason_actions, 0
+
+def high_temp_pi_gen_alt_actions(
+    rollout: List[Dict],
+    t: int,
+    num_alt_actions_to_gen: int,
+    agent: Agent,
+    candidate_actions_to_gen: int = 15
+) -> List[Dict]:
+    history = [
+        {
+            "question": rollout[i]["action"],
+            "answer": rollout[i]["answer"]
+        } for i in range(t)
+    ]
+
+    if t == 19:
+        input("stop")
+
+    input_datas = [{
+        "mode": "input",  # Based on how we sample the timesteps, we will never need to use the "input_final" mode
+        "all_obj_list": ALL_OBJ_LIST,
+        "observation_action_history": history,
+    } for _ in range(candidate_actions_to_gen)]
+
+    agent.set_prompt_template(prompt_template=OG_ACTION_PROMPT_TEMPLATE)
+
+    # Generate the common actions
+    reason_actions, _ = agent.predict_reason_action_batch(input_datas, num_responses=1, alt_temperature_for_extra_responses=1.0) # List[List[Dict]]
+
+    # Flatten the list of lists
+    reason_actions = [item for sublist in reason_actions for item in sublist]
+
+    # Collect the common actions
+    common_action_occurence_count = Counter([reason_action["action"] for reason_action in reason_actions])
     
+    lack_enough_unique_action = len(common_action_occurence_count) < num_alt_actions_to_gen
+    if lack_enough_unique_action:
+        print(f"Lack enough unique actions. Only {len(common_action_occurence_count)} unique actions found.")
+
+    # Rank the reason actions by the number of occurences
+    reason_actions = sorted(reason_actions, key=lambda x: common_action_occurence_count[x["action"]], reverse=True)
+
+    unique_reasons = []
+    unique_actions = []
+    for reason_action in reason_actions:
+        if (lack_enough_unique_action or reason_action["action"] not in unique_actions) and len(unique_actions) < num_alt_actions_to_gen:
+            unique_actions.append(reason_action["action"])
+            unique_reasons.append(reason_action["reason"])
+
+    assert len(unique_actions) == num_alt_actions_to_gen, f"Expected {num_alt_actions_to_gen} unique actions, but got {len(unique_actions)}"
+
+    # Format unique_reasons and unique_actions into a List[Dict]
+    unique_reason_actions = [{"reason": reason, "action": action} for reason, action in zip(unique_reasons, unique_actions)]
+
+    return unique_reason_actions, 0
+
 def generate_rollouts_with_alt_actions(
         rollout_dir: str, 
         n_rollouts_to_sample: int, 
@@ -457,6 +527,8 @@ def generate_rollouts_with_alt_actions(
                         alt_reason_actions, cost = pi_gen_alt_actions(rollout, t, actions_to_gen_at_each_timestep, agent)
                     elif expert_type == "explorative-pi":
                         alt_reason_actions, cost = explorative_pi_gen_alt_actions(rollout, t, actions_to_gen_at_each_timestep, agent)
+                    elif expert_type == "high-temp-pi":
+                        alt_reason_actions, cost = high_temp_pi_gen_alt_actions(rollout, t, actions_to_gen_at_each_timestep, agent)
 
                     # Edit the rollout file to save the alt actions
                     if "expert_alternatives" not in rollout[t]:
@@ -732,7 +804,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--iter", type=int, choices=list(range(3)), required=True)
     parser.add_argument("-m", "--mode", type=str, choices=["g", "gen_actions", "r", "rollout", "merge_gen", "merge_rollout"], required=True)
-    parser.add_argument("-et", "--expert_type", type=str, choices=["gpt4o", "pi*", "explorative-pi"], required=True)
+    parser.add_argument("-et", "--expert_type", type=str, choices=["gpt4o", "pi*", "explorative-pi", "high-temp-pi"], required=True)
     parser.add_argument("-d", "--data_types", help="List of data types to process", nargs="+", choices=["train", "val"])
     parser.add_argument("-e", "--elogger", action="store_true", default=False)
     parser.add_argument("--n_rollouts_to_sample", type=int, default=2)
@@ -757,8 +829,13 @@ if __name__ == "__main__":
     if args.mode == "g" or args.mode == "gen_actions":
         print(f"Generating rollouts with alt actions for data_type={args.data_types} in {rollout_dir}")
 
-        if args.expert_type == "pi*" or args.expert_type == "explorative-pi":
-            agent_config = best_agent_config if args.expert_type == "pi*" else iter_to_agent_config[args.iter]
+        if args.expert_type == "pi*" or args.expert_type == "explorative-pi" or args.expert_type == "high-temp-pi":
+            if args.expert_type == "high-temp-pi":
+                agent_config = high_temp_agent_config
+            elif args.expert_type == "pi*":
+                agent_config = best_agent_config
+            else:
+                agent_config = iter_to_agent_config[args.iter]
             if not args.no_serve_model:
                 # Example of dist_url_port: 29540
                 process, server_url, base_gpu_id = start_sglang_server(model_path=agent_config["model_id"],

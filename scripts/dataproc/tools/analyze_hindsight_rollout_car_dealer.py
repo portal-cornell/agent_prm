@@ -6,7 +6,7 @@ data range from
 4-11: From the expert (4 * 2) rollouts
 12-19: From the expert (4 * 2) rollouts (randomly selected some rollouts from 4-11, before getting expert rollouts)
 
-python scripts/dataproc/tools/analyze_hindsight_rollout.py -d train
+python scripts/dataproc/tools/analyze_hindsight_rollout_car_dealer.py -d train
 """
 import os
 import json
@@ -15,35 +15,19 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, VALIDATION_OBJECT_DICT
+from agent_prm.envs.car_dealer.data import TRAIN_BUYER_STRATEGIES, VAL_BUYER_STRATEGIES, TEST_BUYER_STRATEGIES, TRAIN_BRANDS, VAL_BRANDS, TEST_BRANDS, TRAIN_TYPES, VAL_TYPES, TEST_TYPES
+from agent_prm.utils.general_utils import load_json
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--data_type", type=str, required=True)
 parser.add_argument("-e", "--use_existing_json", default=False, action="store_true", help="Whether to skip the rollout checking process and use the existing json file")
 args = parser.parse_args()
 
-BASE_PATH = "playground/twenty_questions/hindsight"
+BASE_PATH = "playground/car_dealer/hindsight"
 
-# FOLDER_NAME = "inspect_iter1_hindsight-redo_data"
-# data_iter = "iter0"
-# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
-
-# FOLDER_NAME = "inspect_iter2_hindsight-biased-on-60_data"
-# data_iter = "iter1"
-# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60_250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60"
-
-# FOLDER_NAME = "inspect_iter3_hindsight-biased-on-60_data"
-# data_iter = "iter2"
-# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0_250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0"
-
-# FOLDER_NAME = "inspect_iter1_best-pi-relabel_data"
-# data_iter = "iter0"
-# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/best-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
-
-FOLDER_NAME = "inspect_iter1_explorative-pi-relabel_data"
+FOLDER_NAME = "inspect_iter1_hindsight_data"
 data_iter = "iter0"
-dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
-
+dir_path = "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3"
 
 os.makedirs(os.path.join(BASE_PATH, FOLDER_NAME, f"{FOLDER_NAME}_{args.data_type}"), exist_ok=True)
 
@@ -64,21 +48,10 @@ def check_for_original_policy_rollout(expert_rollout_data, policy_rollouts):
     for i in range(len(policy_rollouts)):
         policy_rollout = policy_rollouts[i]
         is_prefix = True
-        check = False
         for j in range(min(len(policy_rollout), expert_rollout_start_idx)):
-            if policy_rollout[j]["reason"] != expert_rollout_data[j]["reason"]:
+            if policy_rollout[j]["reason"] != expert_rollout_data[j]["reason"] or policy_rollout[j]["api_reason"] != expert_rollout_data[j]["api_reason"] or policy_rollout[j]["action"] != expert_rollout_data[j]["action"] or policy_rollout[j]["buyer_response"] != expert_rollout_data[j]["buyer_response"] or policy_rollout[j]["buyer_reason"] != expert_rollout_data[j]["buyer_reason"]:
                 is_prefix = False
                 break
-            
-            if policy_rollout[j]["alternatives"] is not None and expert_rollout_data[j]["alternatives"] is not None:
-                for k in range(len(policy_rollout[j]["alternatives"])):
-                    if policy_rollout[j]["alternatives"][k]["reason"] != expert_rollout_data[j]["alternatives"][k]["reason"]:
-                        is_prefix = False
-                        break
-            else:
-                check = True
-                # print(f"Policy rollout {i} at idx {j}:\n{policy_rollout[j]}")
-                # input("sotp")
         
         if is_prefix:
             # print(f"Found matching policy rollout {i}")
@@ -110,51 +83,77 @@ def plot_confusion_matrix(df_confusion_matrix, policy_A_name: str, policy_B_name
 
 data_type = args.data_type
 
-object_dict_to_use = TRAIN_OBJECT_DICT if data_type == "train" else VALIDATION_OBJECT_DICT
-objects_to_eval_on = [obj for category in object_dict_to_use.keys() for obj in object_dict_to_use[category]]
-
 # Step 1: assert that all objects have the same number of files
 do_initial_check = input("Do initial check? (y/n): ").lower() == "y"
 
-if do_initial_check:
-    file_per_object = {obj: [] for obj in objects_to_eval_on}
+buyer_info_dict = load_json("src/agent_prm/envs/car_dealer/buyer_info_dict.json")
 
-    for obj in objects_to_eval_on:
+all_games_to_play_list = []
+if data_type == "train":
+    buyer_strategy_dict = TRAIN_BUYER_STRATEGIES
+    brand_list = TRAIN_BRANDS
+    type_list = TRAIN_TYPES
+elif data_type == "val":
+    buyer_strategy_dict = VAL_BUYER_STRATEGIES
+    brand_list = VAL_BRANDS
+    type_list = VAL_TYPES
+elif data_type == "test":
+    buyer_strategy_dict = TEST_BUYER_STRATEGIES
+    brand_list = TEST_BRANDS
+    type_list = TEST_TYPES
+    
+for buyer_strategy_id in buyer_strategy_dict.keys():
+    for brand in brand_list:
+        for car_type in type_list:
+            budget_list = buyer_info_dict[str(buyer_strategy_id)][brand][car_type].keys()
+            for budget in budget_list:
+                buyer_strategy = buyer_strategy_dict[buyer_strategy_id]
+                buyer_info = buyer_info_dict[str(buyer_strategy_id)][brand][car_type][budget]
+                buyer_info["id"] = int(buyer_strategy_id)
+                buyer_info["name"] = buyer_strategy["name"]
+
+                game_id = f"{buyer_strategy_id}_{brand}_{car_type}_{budget}"
+                all_games_to_play_list.append(game_id)
+
+if do_initial_check:
+    file_per_game_id = {obj: [] for obj in all_games_to_play_list}
+
+    for game_id in all_games_to_play_list:
         for file in os.listdir(os.path.join(dir_path, data_type)):
-            if f"{obj}_" in file and int(file.split("_")[-1].split(".")[0]) < 32:
-                file_per_object[obj].append(file)
+            if f"{game_id}_" in file and int(file.split("_")[-1].split(".")[0]) < 32:
+                file_per_game_id[game_id].append(file)
 
     # most common number of files
-    num_files_per_object = [len(file_per_object[obj]) for obj in objects_to_eval_on]
+    num_files_per_game = [len(file_per_game_id[game_id]) for game_id in all_games_to_play_list]
     # mode of the number of files per object
-    max_num_files = max(num_files_per_object)
+    max_num_files = max(num_files_per_game)
     print(f"Most common number of files per object: {max_num_files}")
 
-    # assert all the objects exist in the directory
-    objs_not_in_dir = [obj for obj in objects_to_eval_on if obj not in file_per_object]
-    assert objs_not_in_dir == [], f"Objects not in directory: {objs_not_in_dir}"
+    # assert all the games exist in the directory
+    games_not_in_dir = [game_id for game_id in all_games_to_play_list if game_id not in file_per_game_id]
+    assert games_not_in_dir == [], f"Games not in directory: {games_not_in_dir}"
 
     # assert that all objects have the same number of files
-    obj_missing_files = []
-    for obj in objects_to_eval_on:
-        if len(file_per_object[obj]) != max_num_files:
-            print(f"Object {obj} has {len(file_per_object[obj])} files: {file_per_object[obj]}")
-            obj_missing_files.append((obj, len(file_per_object[obj]), file_per_object[obj]))
+    game_ids_missing_files = []
+    for game_id in all_games_to_play_list:
+        if len(file_per_game_id[game_id]) != max_num_files:
+            print(f"Game {game_id} has {len(file_per_game_id[game_id])} files: {file_per_game_id[game_id]}")
+            game_ids_missing_files.append((game_id, len(file_per_game_id[game_id]), file_per_game_id[game_id]))
 
-    if len(obj_missing_files) > 0:
-        print(f"Objects missing files: {obj_missing_files}")
-        assert obj_missing_files == [], "There are objects that do not have the same number of files"
+    if len(game_ids_missing_files) > 0:
+        print(f"Game ids missing files: {game_ids_missing_files}")
+        assert game_ids_missing_files == [], "There are game ids that do not have the same number of files"
 
     # Total number of files in the directory
-    total_num_files = sum(num_files_per_object)
-    print(f"Number of objects: {len(objects_to_eval_on)}")
+    total_num_files = sum(num_files_per_game)
+    print(f"Number of game ids: {len(all_games_to_play_list)}")
     print(f"Total number of files in the directory: {total_num_files}")
 
     input("Press Enter to continue...")
 
 iteration_range = [
-    [(0, 4), (4, 12)],
-    [(20, 24), (24, 32)]
+    [(0, 4), (4, 20)],
+    [(30, 34), (34, 50)]
 ]
 
 rollout_idx_list = []
@@ -166,7 +165,7 @@ print(f"Rollout idx list: {rollout_idx_list}")
 input("Press Enter to continue...")
 
 if not args.use_existing_json:
-    policy_2_expert_dict = {iteration: {obj: {rollout_idx: [] for rollout_idx in rollout_idx_list} for obj in objects_to_eval_on} for iteration in range(len(iteration_range))}  # Keeps track of which policy rollouts are used to branch out expert rollouts
+    policy_2_expert_dict = {iteration: {game_id: {rollout_idx: [] for rollout_idx in rollout_idx_list} for game_id in all_games_to_play_list} for iteration in range(len(iteration_range))}  # Keeps track of which policy rollouts are used to branch out expert rollouts
 
     policy_rollout_success_count = 0
     policy_total_count = 0
@@ -176,11 +175,11 @@ if not args.use_existing_json:
     for iteration in range(len(iteration_range)):
         policy_rollout_range = iteration_range[iteration][0]
         expert_rollout_range = iteration_range[iteration][1]
-        for obj in objects_to_eval_on:
+        for game_id in all_games_to_play_list:
             policy_rollouts = []
             policy_rollouts_success_list = []
             for rollout_idx in range(policy_rollout_range[0], policy_rollout_range[1]):
-                rollout_dir = os.path.join(dir_path, data_type, f"{obj}_{rollout_idx}.json")
+                rollout_dir = os.path.join(dir_path, data_type, f"{game_id}_{rollout_idx}.json")
 
                 if not os.path.exists(rollout_dir):
                     print(f"Policy rollout {rollout_dir} does not exist")
@@ -189,13 +188,13 @@ if not args.use_existing_json:
                 with open(rollout_dir, "r") as f:
                     rollout_data = json.load(f)
                 policy_rollouts.append(rollout_data)
-                success = 1 if rollout_data[-1]["reward"] == 0 else 0
+                success = rollout_data[-1]["success"]
                 policy_rollouts_success_list.append(success)
                 policy_rollout_success_count += success
                 policy_total_count += 1
 
             for rollout_idx in range(expert_rollout_range[0], expert_rollout_range[1]):
-                rollout_dir = os.path.join(dir_path, data_type, f"{obj}_{rollout_idx}.json")
+                rollout_dir = os.path.join(dir_path, data_type, f"{game_id}_{rollout_idx}.json")
                 # print(f"Checking for expert rollout {rollout_dir}")
                 
                 if not os.path.exists(rollout_dir):
@@ -204,7 +203,7 @@ if not args.use_existing_json:
 
                 with open(rollout_dir, "r") as f:
                     expert_rollout_data = json.load(f)
-                success = 1 if expert_rollout_data[-1]["reward"] == 0 else 0
+                success = rollout_data[-1]["success"]
                 expert_rollout_success_count += success
                 expert_total_count += 1
 
@@ -212,7 +211,7 @@ if not args.use_existing_json:
                 policy_rollout_idx = policy_rollout_range[0] + raw_policy_rollout_idx
                 # print(f"iteration: {iteration}, obj: {obj}, policy_rollout_idx: {policy_rollout_idx}")
                 if policy_rollout_idx != -1:
-                    policy_2_expert_dict[iteration][obj][policy_rollout_idx].append({
+                    policy_2_expert_dict[iteration][game_id][policy_rollout_idx].append({
                         "expert_path": rollout_dir,
                         "pct_covered": pct_covered,
                         "policy_0_expert_0": int(policy_rollouts_success_list[raw_policy_rollout_idx] == 0 and success == 0),
@@ -260,12 +259,12 @@ pct_covered_dict = {
 confusion_matrix = np.zeros((2, 2))
 
 for iteration in range(len(iteration_range)):
-    for obj in objects_to_eval_on:
+    for game_id in all_games_to_play_list:
         for rollout_idx in rollout_idx_list:
             iteration_str = str(iteration)
             rollout_idx_str = str(rollout_idx)
-            if policy_2_expert_dict[iteration_str][obj][rollout_idx_str] != []:
-                for policy_2_expert_dict_item in policy_2_expert_dict[iteration_str][obj][rollout_idx_str]:
+            if policy_2_expert_dict[iteration_str][game_id][rollout_idx_str] != []:
+                for policy_2_expert_dict_item in policy_2_expert_dict[iteration_str][game_id][rollout_idx_str]:
                     confusion_matrix[0, 0] += policy_2_expert_dict_item["policy_0_expert_0"]
                     confusion_matrix[0, 1] += policy_2_expert_dict_item["policy_0_expert_1"]
                     confusion_matrix[1, 0] += policy_2_expert_dict_item["policy_1_expert_0"]
@@ -284,10 +283,10 @@ for iteration in range(len(iteration_range)):
                         pct_covered_dict["policy_1_expert_1"].append(policy_2_expert_dict_item["pct_covered"])
                     
                     if dict_to_append_to is not None:
-                        dict_to_append_to["task_id"].append(obj + "_" + rollout_idx_str)
-                        dict_to_append_to["task_category"].append(obj)
+                        dict_to_append_to["task_id"].append(game_id + "_" + rollout_idx_str)
+                        dict_to_append_to["task_category"].append(game_id)
                         dict_to_append_to["data_type"].append(data_type)
-                        policy_path = os.path.join(dir_path, data_type, f"{obj}_{rollout_idx}.json")
+                        policy_path = os.path.join(dir_path, data_type, f"{game_id}_{rollout_idx}.json")
                         dict_to_append_to["path_to_policy_A_model"].append(policy_path)
                         dict_to_append_to["path_to_policy_B_model"].append(policy_2_expert_dict_item["expert_path"])
                         dict_to_append_to["investigation_comments"].append("")

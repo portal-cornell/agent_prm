@@ -68,7 +68,7 @@ def query_human(prev_api_call, prev_api_response):
 
     # Step 2: Talk to the user based on the API response
     print(f"api_call: {api_call}")
-    print(format_car_options(api_response))
+    print(format_car_options(api_response)[0])
     reason = "reason placeholder"
     action = input("Action: ")
     
@@ -98,7 +98,7 @@ def query_expert(expert_agent_api_call_template: Template,
     querying_cost = 0.0
 
     formated_history = format_chat_history(history)
-    formatted_prev_api_response = format_car_options(prev_api_response)
+    formatted_prev_api_response = format_car_options(prev_api_response)[0]
 
     # Step 1: Get the system prompt
     system_prompt = expert_agent_api_call_template.render(system=True, all_car_brands=DEFAULT_BRANDS, all_car_types=DEFAULT_TYPES, all_car_features=DEFAULT_FEATURES).strip()
@@ -185,11 +185,6 @@ def query_expert(expert_agent_api_call_template: Template,
         response, cost = generate_from_openai_completion(
             messages=messages, model="gpt-4o"
         )
-        # print(f"gpt 4o cost (response): {cost}")
-        # print(f"api_call_used: {api_call_used}")
-        # print(format_car_options(api_response_used))
-        # print(response)
-        # input("response")
     
         response_json = parse_json(response)
         try:
@@ -287,7 +282,7 @@ def main():
             all_prev_api_calls_have_responses.append(api_response != [])
 
             print(f"++++++ agent step: {len(history)//2} ++++++")
-            print(f"API Reason:\n{api_reason}\nAPI Call:\n{api_call}\nAPI Response:\n{format_car_options(api_response)}")
+            print(f"API Reason:\n{api_reason}\nAPI Call:\n{api_call}\nAPI Response:\n{format_car_options(api_response)[0]}")
             print(f"Reason:\n{reason}\nAction:\n{action}\nProposed Car:\n{proposed_car}\nProposed Car Copied in Response:\n{proposed_car_copied_in_response}")
             print(f"++++++ agent step: {len(history)//2}, total cost: {rollout_cost} ++++++")
 

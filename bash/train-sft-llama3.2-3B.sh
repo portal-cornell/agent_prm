@@ -6,11 +6,11 @@ DATA_DIRS=""
 
 LEARNING_RATE=3e-5
 ######################## Twenty Questions #########################################
-DOMAIN=twenty_questions
-MAX_SEQ_LENGTH=4000
-TRAIN_BATCH_SIZE=4
-GRAD_ACCUM_STEPS=16
-GPU_COUNT=2
+# DOMAIN=twenty_questions
+# MAX_SEQ_LENGTH=4000
+# TRAIN_BATCH_SIZE=4
+# GRAD_ACCUM_STEPS=16
+# GPU_COUNT=2
 
 ###################
 # Vanilla mode
@@ -219,12 +219,12 @@ GPU_COUNT=2
 # Option 1: Train from base model
 # 4861 * 1 / 2 / 4 / 16 = 37.9765625
 # 37.9765625 / 5 = 7.5953125 (save_steps=8)
-MODEL=meta-llama/Llama-3.2-3B-Instruct
-DATA_DIR=iter2_leap
-EPOCHS=1
-SAVE_STEPS=8
-LEARNING_RATE=3e-6
-MODEL_LOG_NAME="pi2_leap_from-base_lr=3e-6"
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter2_leap
+# EPOCHS=1
+# SAVE_STEPS=8
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi2_leap_from-base_lr=3e-6"
 
 ##### Iter3
 # Option 1: Train from base model
@@ -237,42 +237,58 @@ MODEL_LOG_NAME="pi2_leap_from-base_lr=3e-6"
 # MODEL_LOG_NAME="pi3_leap_from-base"
 
 ######################## Car Dealer #########################################
-# DOMAIN=car_dealer  # car_dealer, twenty_questions
-# MAX_SEQ_LENGTH=6500
-# TRAIN_BATCH_SIZE=2
-# GRAD_ACCUM_STEPS=12
-# GPU_COUNT=4
+DOMAIN=car_dealer  # car_dealer, twenty_questions
+MAX_SEQ_LENGTH=6500
+TRAIN_BATCH_SIZE=2
+GRAD_ACCUM_STEPS=12
+GPU_COUNT=4
 
 # ###################
 # # Vanilla mode
 # ###################
-# MODEL=meta-llama/Llama-3.2-3B-Instruct
-# DATA_DIR=iter0_api
-# EPOCHS=3
-# # num datapoints * epoch / gpu / batch size / gradient accumulation steps
-# # 2429 * 3 / 2 / 2 / 10 = 182.175
-# # 183 / 5 = 36.6 (save_steps=37)
-# SAVE_STEPS=37
-# MODEL_LOG_NAME="pi0_vanilla_api"
-
-# MODEL=meta-llama/Llama-3.2-3B-Instruct
-# DATA_DIR=iter0_response
-# EPOCHS=3
-# # num datapoints * epoch / gpu / batch size / gradient accumulation steps
-# # 2429 * 3 / 2 / 2 / 10 = 182.175
-# # 183 / 5 = 36.6 (save_steps=37)
-# SAVE_STEPS=37
-# MODEL_LOG_NAME="pi0_vanilla_response"
-
-# MODEL=meta-llama/Llama-3.2-3B-Instruct
-# DATA_DIR=iter0
-# EPOCHS=3
 # # num datapoints * epoch / gpu / batch size / gradient accumulation steps
 # # 4858 * 3 / 4 / 2 / 12 = 151.8125
 # # 152 / 5 = 30.4
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter0
+# EPOCHS=3
+# GPU_COUNT=4
 # SAVE_STEPS=31
 # MODEL_LOG_NAME="pi0_vanilla"
 
+#### Shorter Chat History
+MODEL=meta-llama/Llama-3.2-3B-Instruct
+DATA_DIR=iter0-max-car-8
+EPOCHS=3
+GPU_COUNT=4
+SAVE_STEPS=31
+MAX_SEQ_LENGTH=3500
+MODEL_LOG_NAME="pi0_vanilla_max-car-8"
+
+###################
+# Multi-STaR
+###################
+##### Iter1 (20k datapoints, 10k per response type) - lower learning rate
+# num datapoints * epoch / gpu / batch size / gradient accumulation steps
+# 20000 * 1 / 4 / 2 / 12 = 208.3333333333
+# 208 / 5 = 41.6 (save_steps=42)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter1_multi-star_10k
+# EPOCHS=1
+# SAVE_STEPS=42
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi0_multi-star_from-base_10k-data_lr=3e-6"
+
+##### Iter2 (20k datapoints, 10k per response type) - lower learning rate
+# num datapoints * epoch / gpu / batch size / gradient accumulation steps
+# 20000 * 1 / 4 / 2 / 12 = 208.3333333333
+# 208 / 5 = 41.6 (save_steps=42)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter2_multi-star_10k_mix-50pct-past
+# EPOCHS=1
+# SAVE_STEPS=42
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi0_multi-star_from-base_10k-data-mix-50pct-past_lr=3e-6"
 
 ########################################################################################################################################
 

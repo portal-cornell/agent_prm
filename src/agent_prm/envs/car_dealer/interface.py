@@ -23,7 +23,11 @@ def use_api(arguments: dict, car_inventory_dict: dict):
     api_type = arguments["api_type"].strip().lower()
     if api_type == "suv":
         api_type = "SUV"  # The database uses "SUV" instead of "suv"
-    api_features = [feature.strip().lower() for feature in arguments["api_features"]]
+
+    try:
+        api_features = [feature.strip().lower() for feature in arguments["api_features"]]
+    except Exception as e:
+        api_features = []
 
     try:
         if arguments["api_name"] == "search_car_by_brand_type":
@@ -120,6 +124,12 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
         proposed_cars_copied_in_response_raw: List[dict]
         generated_raw_texts: List[str]  
     """
+    if "max-car-8" in agent.name():
+        max_car = 8
+    else:
+        # Show all the cars
+        max_car = -1
+
     formated_histories = [
         format_chat_history(history) for history in histories
     ]
@@ -127,7 +137,7 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
         format_most_recent_buyer_message(history) for history in histories
     ]
     formatted_prev_api_responses = [
-        format_car_options(prev_api_response) for prev_api_response in prev_api_responses
+        format_car_options(prev_api_response, max_car=max_car)[0] for prev_api_response in prev_api_responses
     ]
     formatted_prev_api_call_histories= [
         format_api_call_history(all_prev_api_call_list, all_prev_api_calls_have_response_list, past_N) for all_prev_api_call_list, all_prev_api_calls_have_response_list in zip(all_prev_api_calls, all_prev_api_calls_have_responses)
@@ -157,14 +167,14 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
 
     if "dual_agents" in agent.name():
         reason_actions_api, generated_api_texts = agent.predict_reason_action_batch(
-            mode="api_call",
-            input_datas=input_datas,
+            "api_call",
+            input_datas,
             num_responses=1 + num_alt_responses,
             alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
         ) # List[List[dict]], List[List[str]]
     else:
         reason_actions_api, generated_api_texts = agent.predict_reason_action_batch(
-            input_datas=input_datas,
+            input_datas,
             num_responses=1 + num_alt_responses,
             alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
         ) # List[List[dict]], List[List[str]]
@@ -194,7 +204,7 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
         # print(f"========= actual api call and response {i} =========")
         # input(f"========= actual api call and response {i} =========")
         # Assume that the first API call is the one that is used
-        if api_calls[i][0]["api_name"] == "no_op":
+        if api_responses[i][0] == []:
             api_calls_used.append(prev_api_calls[i])
             api_responses_used.append(prev_api_responses[i])
         else:
@@ -214,6 +224,13 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
         agent.set_prompt_template(prompt_template=agent_prompt_template)
         agent.set_parse_reason_action_fn(parse_reason_action_fn=parse_reason_and_action_car_dealer)
     
+    car_lists = []
+    api_responses_used_str = []
+    for i in range(len(api_responses_used)):
+        api_response_str, car_list = format_car_options(api_responses_used[i], max_car=max_car)
+        car_lists.append(car_list)
+        api_responses_used_str.append(api_response_str)
+
     input_datas = [
         {
             "mode": "input",
@@ -221,21 +238,21 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
             "all_car_types": DEFAULT_TYPES,
             "observation_action_history": formated_history,
             "api_call": api_call_used,
-            "api_response": format_car_options(api_response_used),
+            "api_response": api_response_str,
             "buyer_response": buyer_response
-        } for formated_history, api_call_used, api_response_used, buyer_response in zip(formated_histories, api_calls_used, api_responses_used, buyer_responses)
+        } for formated_history, api_call_used, api_response_str, buyer_response in zip(formated_histories, api_calls_used, api_responses_used_str, buyer_responses)
     ]
 
     if "dual_agents" in agent.name():
         reason_actions, generated_texts = agent.predict_reason_action_batch(
-            mode="generate_response",
-            input_datas=input_datas,
+            "generate_response",
+            input_datas,
             num_responses=1 + num_alt_responses,
             alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
         ) # List[List[dict]], List[List[str]]
     else:
         reason_actions, generated_texts = agent.predict_reason_action_batch(
-            input_datas=input_datas,
+            input_datas,
             num_responses=1 + num_alt_responses,
             alt_temperature_for_extra_responses=1.0 if num_alt_responses > 0 else None
         ) # List[List[dict]], List[List[str]]
@@ -250,21 +267,33 @@ def query_agent_batch(agent_api_call_template: Template, agent_prompt_template: 
     proposed_cars = [] # List[dict] (one per game, unlike above where there are multiple per game)
     for i in range(len(api_responses_used)):
         car_idx = reason_actions[i][0]["action"]["car_idx"]
-        if api_responses_used[i] != [] and car_idx != 0 and car_idx <= len(api_responses_used[i]):
-            proposed_cars.append(api_responses_used[i][car_idx-1])
+        if car_lists[i] != [] and car_idx != 0 and car_idx <= len(car_lists[i]):
+            proposed_cars.append(car_lists[i][car_idx-1])
         else:
             proposed_cars.append({})
 
-    # for i in range(len(proposed_cars)):
-    #     print(format_car_options(api_responses_used[i]))
-    #     print(proposed_cars[i])
-    #     print(f"========= proposed_cars {i} =========")
-        # input(f"========= proposed_cars {i} =========")
-
-    return reason_actions_api, generated_api_texts, api_responses, api_calls_used, api_responses_used, reason_actions, proposed_cars, generated_texts
+    return reason_actions_api, generated_api_texts, api_responses, api_calls_used, api_responses_used, car_lists, reason_actions, proposed_cars, generated_texts
 
 
-def rollout_batch(agent_api_call_template: Template, agent_prompt_template: Template, agent: Agent, batched_env, car_inventories: dict, batch_buyer_infos: List[dict], histories: List[List[dict]], traj_list: List[List[dict]], prev_dones: List[bool], num_alt_responses: int, past_N: int = 3):
+def rollout_batch(agent_api_call_template: Template, 
+                  agent_prompt_template: Template, 
+                  agent: Agent, 
+                  batched_env, 
+                  car_inventories: dict, 
+                  batch_buyer_infos: List[dict], 
+                  histories: List[List[dict]], 
+                  traj_list: List[List[dict]], 
+                  prev_dones: List[bool], 
+                  num_alt_responses: int, 
+                  past_N: int = 3,
+                  all_prev_api_calls_in: List[List[dict]] = [],
+                  all_prev_api_calls_have_responses_in: List[List[bool]] = [],
+                  num_negotiations_in: List[int] = [],
+                  num_car_proposed_in: List[int] = [],
+                  prev_api_calls_in: List[dict] = [],
+                  prev_api_responses_in: List[List[dict]] = [],
+                  prev_proposed_cars_in: List[dict] = [],
+                  ):
     """
     Rollout a batch of games.
 
@@ -272,21 +301,21 @@ def rollout_batch(agent_api_call_template: Template, agent_prompt_template: Temp
         past_N: int
             The number of previous API calls to include in the prompt.
     """
-    all_prev_api_calls = [[] for _ in range(len(histories))] # List[List[dict]]
-    all_prev_api_calls_have_responses = [[] for _ in range(len(histories))] # List[List[bool]]
-    prev_api_calls = [{} for _ in range(len(histories))] # List[dict]
-    prev_api_responses = [[] for _ in range(len(histories))] # List[List[dict]]
-    num_negotiations = [0 for _ in range(len(histories))] # List[int]
-    prev_proposed_cars = [{} for _ in range(len(histories))] # List[dict]
-    num_car_proposed = [0 for _ in range(len(histories))] # List[int]
-    
+    all_prev_api_calls = [[] for _ in range(len(histories))] if all_prev_api_calls_in == [] else all_prev_api_calls_in # List[List[dict]]
+    all_prev_api_calls_have_responses = [[] for _ in range(len(histories))] if all_prev_api_calls_have_responses_in == [] else all_prev_api_calls_have_responses_in # List[List[bool]]
+    prev_api_calls = [{} for _ in range(len(histories))] if prev_api_calls_in == [] else prev_api_calls_in # List[dict]
+    prev_api_responses = [[] for _ in range(len(histories))] if prev_api_responses_in == [] else prev_api_responses_in # List[List[dict]]
+    num_negotiations = [0 for _ in range(len(histories))] if num_negotiations_in == [] else num_negotiations_in # List[int]
+    prev_proposed_cars = [{} for _ in range(len(histories))] if prev_proposed_cars_in == [] else prev_proposed_cars_in # List[dict]
+    num_car_proposed = [0 for _ in range(len(histories))] if num_car_proposed_in == [] else num_car_proposed_in # List[int]
+
     while not all(prev_dones):
         # Batched way
         start_time = time.time()
         # Initialize main data structures
         data = {
             'api_reasons': [], 'api_calls': [], 'api_responses': [], 'api_scores': [],
-            'api_raw_texts': [], 'api_calls_used': [], 'api_responses_used': [],
+            'api_raw_texts': [], 'api_calls_used': [], 'api_responses_used': [], 'car_lists': [],
             'reasons': [], 'actions': [], 'proposed_cars': [], 'proposed_cars_copied_in_response': [], 'scores': [], 'raw_texts': []
         }
 
@@ -301,7 +330,7 @@ def rollout_batch(agent_api_call_template: Template, agent_prompt_template: Temp
             data.update(alt_data)
 
         # Query the agent
-        api_reasons_actions_dict, generated_api_texts, api_responses_raw, api_calls_used_raw, api_responses_used_raw, reasons_actions_dict, proposed_cars_raw, generated_raw_texts = query_agent_batch(agent_api_call_template, agent_prompt_template, agent, histories, all_prev_api_calls, all_prev_api_calls_have_responses, prev_api_calls, prev_api_responses, num_alt_responses, batch_buyer_infos, car_inventories, past_N)
+        api_reasons_actions_dict, generated_api_texts, api_responses_raw, api_calls_used_raw, api_responses_used_raw, car_lists, reasons_actions_dict, proposed_cars_raw, generated_raw_texts = query_agent_batch(agent_api_call_template, agent_prompt_template, agent, histories, all_prev_api_calls, all_prev_api_calls_have_responses, prev_api_calls, prev_api_responses, num_alt_responses, batch_buyer_infos, car_inventories, past_N)
 
         # Update the trajectories (Only if the game is not done)
         for i in range(len(histories)):
@@ -314,6 +343,7 @@ def rollout_batch(agent_api_call_template: Template, agent_prompt_template: Temp
                 data['api_raw_texts'].append("")
                 data['api_calls_used'].append("")
                 data['api_responses_used'].append("")
+                data['car_lists'].append([])
                 data['reasons'].append("")
                 data['actions'].append("")
                 data['proposed_cars'].append({})
@@ -327,7 +357,7 @@ def rollout_batch(agent_api_call_template: Template, agent_prompt_template: Temp
 
                 # Previous API call gets set to the API call used
                 prev_api_calls[i] = api_calls_used_raw[i]
-                prev_api_responses[i] = api_responses_used_raw[i]
+                prev_api_responses[i] = car_lists[i] # Because api responses might be truncated
 
                 # Adding the first instance to be the taken action
                 data['api_reasons'].append(api_reasons_actions_dict[i][0]["reason"])
@@ -338,7 +368,8 @@ def rollout_batch(agent_api_call_template: Template, agent_prompt_template: Temp
 
                 data['api_calls_used'].append(api_calls_used_raw[i]) # Because api_call_used is List[dict]
                 data['api_responses_used'].append(api_responses_used_raw[i]) # Because api_responses_used is List[dict]
-                
+                data['car_lists'].append(car_lists[i])
+
                 data['reasons'].append(reasons_actions_dict[i][0]["reason"])
                 data['actions'].append(reasons_actions_dict[i][0]["action"]["response"])
                 data['proposed_cars'].append(proposed_cars_raw[i])
@@ -362,13 +393,6 @@ def rollout_batch(agent_api_call_template: Template, agent_prompt_template: Temp
                         data[f'alt_raw_texts'][i].append(generated_raw_texts[i*(1+num_alt_responses) + j + 1])
                         
         print(f"[AGENT] time taken for batch_size={len(histories)}: {time.time() - start_time}")
-
-        # print(json.dumps(all_prev_api_calls, indent=4))
-        # print(json.dumps(all_prev_api_calls_have_responses, indent=4))
-        # input("Check all_prev_api_calls and all_prev_api_calls_have_responses")
-        # print(json.dumps(data, indent=4))
-        # print(f"========= data {i} =========")
-        # input("Check data")
 
         # Step the environment
         histories, buyer_reasons, buyer_responses, buyer_decisions, rewards, successes, failure_reasons, dones, num_negotiations, prev_proposed_cars, num_car_proposed = batched_env.step(batch_buyer_infos, histories, data['actions'], data['proposed_cars'], data['proposed_cars_copied_in_response'], num_negotiations, prev_proposed_cars, num_car_proposed, car_inventories, prev_dones)
