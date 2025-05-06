@@ -4,7 +4,7 @@ from transformers import AutoTokenizer, AutoConfig
 from typing import Callable, List, Tuple, Dict, Any, Optional
 import requests
 from tqdm import tqdm
-
+import json
 class SGLangServerCritic(Critic):
     def __init__(self, 
                  model_id: str, 
@@ -14,6 +14,7 @@ class SGLangServerCritic(Critic):
                  verbose: int = 0, 
                  debug: bool = False, 
                  parse_reason_action_fn: Callable[[str], Tuple[str, str]] = None,
+                 format_reason_action_fn: Callable[[str], str] = None,
                  batch_limit = None) -> None:
         self.server_url = server_url.rstrip('/') + '/classify'
         self.model_id = model_id
@@ -21,30 +22,43 @@ class SGLangServerCritic(Critic):
         self.debug = debug
         self.parse_reason_action_fn = parse_reason_action_fn
         self.include_reason = include_reason
-        with open(prompt_template_file, "r") as file:
-            self.prompt_template = Template(file.read())
+        self.set_prompt_template(prompt_file_path=prompt_template_file)
 
         tokenizer = AutoTokenizer.from_pretrained(model_id, padding_side="right")
         self.tokenizer = tokenizer
         self.batch_limit = batch_limit
-
+        self.format_reason_action_fn = format_reason_action_fn
+    
     def name(self) -> str:
         return self.model_id
+
+    def set_prompt_template(self, prompt_file_path: str = "", prompt_template: Template = None):
+        if prompt_file_path != "" and prompt_template is None:
+            with open(prompt_file_path, "r") as file:
+                self.prompt_template = Template(file.read())
+        elif prompt_file_path != "" and prompt_template is not None:
+            raise ValueError("Cannot provide both prompt_file_path and prompt_template")
+        else:
+            self.prompt_template = prompt_template
 
     def score_reason_action_batch(self, queries: List[Dict]) -> List[float]:
         conversations = []
         
+        i = 0
         for query in queries:
             # We assume that the query already has the mode
-            input_prompt = self.prompt_template.render(**query)
+            input_prompt = self.prompt_template.render(**query).strip()
 
-            output_data = {
-                **query,
-                "mode": "output" if self.include_reason else "output_no_reason",  # Overwrite the mode
-            }    
-            output_prompt = self.prompt_template.render(**output_data)
+            if self.format_reason_action_fn is not None:
+                output_data = self.format_reason_action_fn(query)
+            else:
+                output_data = query
+            
+            output_data["mode"] = "output" if self.include_reason else "output_no_reason"
+            output_prompt = self.prompt_template.render(**output_data).strip()
 
             conversations.append([{"role": "user", "content": input_prompt}, {"role": "assistant", "content": output_prompt}])      
+            i += 1
 
         batch_limit = self.batch_limit if self.batch_limit is not None else len(conversations)
         scores = []

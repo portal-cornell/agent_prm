@@ -14,7 +14,9 @@ def initialize_agent(
     agent_config: Dict[str, Any],
     parse_reason_action_fn: Callable,
     verbose: int = 0,
-    debug: bool = False):
+    debug: bool = False,
+    format_reason_action_fn: Callable = None,
+    ):
     """
     Initialize and return an agent based on the provided configuration.
 
@@ -76,7 +78,7 @@ def initialize_agent(
                                  temperature=agent_config["temperature"],
                                  batch_limit=agent_config["batch_limit"])
     elif agent_type == "sglang_server_with_critic":
-        critic = initialize_critic(critic_config=agent_config["critic"], verbose=verbose, debug=debug)
+        critic = initialize_critic(critic_config=agent_config["critic"], verbose=verbose, debug=debug, format_reason_action_fn=format_reason_action_fn)
         return SGLangServerAgentWithCritic(model_id=agent_config["model_id"],
                                           server_url=agent_config["server_url"],
                                           prompt_template_file=agent_config["prompt_template_file"],
@@ -95,7 +97,7 @@ def initialize_agent(
                                       debug=debug)
     elif agent_type == "best_of_n":
         generator = initialize_agent(agent_config=agent_config["generator"], parse_reason_action_fn=parse_reason_action_fn, verbose=verbose, debug=debug)        
-        critic = initialize_critic(critic_config=agent_config["critic"], verbose=verbose, debug=debug)
+        critic = initialize_critic(critic_config=agent_config["critic"], verbose=verbose, debug=debug, format_reason_action_fn=format_reason_action_fn)
         return BestofNAgent(generator=generator, 
                             critic=critic, 
                             num_generations=agent_config["num_generations"], 
@@ -119,7 +121,7 @@ def initialize_agent(
     
     
 def initialize_critic(
-    critic_config: Dict[str, Any], verbose: int = 0, debug: bool = False
+    critic_config: Dict[str, Any], verbose: int = 0, debug: bool = False, format_reason_action_fn: Callable = None
 ):
     """
     Initialize and return a critic based on the provided configuration.
@@ -128,7 +130,7 @@ def initialize_critic(
         critic_config (Dict[str, Any]): Configuration dictionary specifying the critic type and parameters.
         verbose (int, optional): Verbosity level. Defaults to 0.
         debug (bool, optional): Debugging flag. Defaults to False.
-
+        format_reason_action_fn (Callable, optional): Function to format reason-action output. Defaults to None.
     Returns:
         Union[SGLangServerCritic, RandomCritic]: The initialized critic instance.
 
@@ -143,7 +145,8 @@ def initialize_critic(
                                   include_reason=critic_config["include_reason"] if "include_reason" in critic_config else True,
                                   verbose=verbose,
                                   debug=debug,
-                                  batch_limit=critic_config["batch_limit"])
+                                  batch_limit=critic_config["batch_limit"],
+                                  format_reason_action_fn=format_reason_action_fn)
     elif critic_type == "random":
         return RandomCritic()      
     else:

@@ -107,7 +107,7 @@ class SGLangServerAgent(Agent):
         Return: a list of generated texts of len(input_datas) * num_responses
         """
         input_prompts = [self.prompt_template.render(**input_datas[i]).strip() for i in range(len(input_datas)) for _ in range(num_responses)]
-        
+
         conversations = [[{"role": "user", "content": input_prompt}] for input_prompt in input_prompts] # list of lists
 
         batch_limit = self.batch_limit if self.batch_limit is not None else len(conversations)

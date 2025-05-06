@@ -1,4 +1,4 @@
-domain: twenty_questions # alfworld, twenty_questions, car_dealer
+domain: none # alfworld, twenty_questions, car_dealer
 rolloutdirs: 
   ############################################################################################################
   #
@@ -32,7 +32,10 @@ rolloutdirs:
   # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/best-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
   ############################################################### explorative-pi
   ########### iter 0
-  - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
+  ############################################################### explorative-pi
+  ########### iter 0
+  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
   ############################################################################################################
   #
   # Car Dealer
@@ -40,7 +43,20 @@ rolloutdirs:
   ############################################################################################################
   ############################################ PRM + RL #######################################################
   # - /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-83pct_250430_180817_iter0_pi0_vanilla_epochs=3
+  ### Using max-car-8
+  # - /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/original_pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3
+  ############################################ Hindsight #######################################################
 
+# # path: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-83pct_250430_180817_iter0_pi0_vanilla_epochs=3
+# # Min reward: -1.2448979591836735
+# # Max reward: 1.8588387096774193
+# reward_min: -1.2448979591836735
+# reward_max: 1.8588387096774193
+# path: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/original_pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3
+# Min reward: -1.2448979591836735
+# Max reward: 1.8588387096774193
+reward_min: -1.2448979591836735
+reward_max: 1.8588387096774193
 
 output_folder: null # So that we don't accidentally overwrite the existing data
 
@@ -55,24 +71,38 @@ max_files_per_dir: null
 max_rollout_per_task_per_dir_list: null
 
 hindsight:
+  # Range for car dealer
   onpolicy_idx_range: # The start and end of the on-policy rollouts
     - 0
     - 4
-    - 20
-    - 24
-    - 40
-    - 44
+    - 30
+    - 34
     - 60
-    - 64
-    - 80
-    - 84
-    - 100
-    - 104
+    - 90
   offpolicy_idx_range: 
     - 4
     - 12
     - 24
     - 32
+  # Range for 20 questions
+  # onpolicy_idx_range: # The start and end of the on-policy rollouts
+  #   - 0
+  #   - 4
+  #   - 20
+  #   - 24
+  #   - 40
+  #   - 44
+  #   - 60
+  #   - 64
+  #   - 80
+  #   - 84
+  #   - 100
+  #   - 104
+  # offpolicy_idx_range: 
+  #   - 4
+  #   - 12
+  #   - 24
+  #   - 32
   onpolicy_pct_for_success: null # Within the successful on-policy rollouts, only X pct of files are from on-policy rollouts
   num_failed_expert_rollouts_to_include: 10 # Only used in hindsight cases. Include X number of failed expert rollouts
   track_offpolicy: true # Whether to track the off-policy rollouts

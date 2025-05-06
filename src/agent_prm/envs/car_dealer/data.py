@@ -87,7 +87,7 @@ B4 = {
         "You MUST terminate the negotiation now. You are an extremely impatient buyer. The seller has taken too long to give you a price that is under your budget. You MUST reject the car now."
 }
 
-NUM_CAR_NEEDED_TO_START_NEGOTIATION_BUYER_5 = 3
+NUM_CAR_NEEDED_TO_START_NEGOTIATION_BUYER_5 = 2
 B5 = {
     "id": 5,
     "name": "At least two features. Distrustful so never accept first proposal. Must be under budget.",
@@ -483,14 +483,40 @@ def format_most_recent_buyer_message(history: List[Dict]) -> str:
         history_str = "No most recent buyer message yet."
     return history_str
 
-def format_car_options(car_options: List[Dict]) -> str:
-    car_options_str = ""
-    for i in range(len(car_options)):
-        car_options_str += f"{i+1}. brand={car_options[i]['brand']}, type={car_options[i]['type']}, features={car_options[i]['features']}, market price (msrp)=${car_options[i]['msrp']}, 2% discount price=${int(car_options[i]['msrp'] * 0.98)}, 5% discount price=${int(car_options[i]['msrp'] * 0.95)}, 8% discount price=${int(car_options[i]['msrp'] * 0.92)}, 10% discount price=${int(car_options[i]['msrp'] * 0.9)}\n"
+def format_car_options(car_options: List[Dict], max_car: int = -1) -> str:
+    if max_car != -1:
+        car_options_to_show = []
+
+        if len(car_options) < max_car:
+            car_options_to_show = car_options
+            car_options_str = ""
+        else:
+            car_dict = {} # We will group cars by brand and type
+            for car in car_options:
+                key = f"{car['brand']}_{car['type']}"
+                if key not in car_dict:
+                    car_dict[key] = []
+                car_dict[key].append(car)
+            
+            # Num car per brand and type allowed
+            num_car_per_brand_and_type = max(1, max_car // len(car_dict))
+
+            for key in car_dict:
+                random.shuffle(car_dict[key])
+                car_options_to_show.extend(car_dict[key][:num_car_per_brand_and_type])
+
+            car_options_str = f"Your API search might be too broad! We limit the number of cars to show to you to the first {len(car_options_to_show)} cars. Here are the cars we found:\n"
+    else:
+        car_options_to_show = car_options
+        car_options_str = ""
+
+    
+    for i in range(len(car_options_to_show)):
+        car_options_str += f"{i+1}. brand={car_options_to_show[i]['brand']}, type={car_options_to_show[i]['type']}, features={car_options_to_show[i]['features']}, market price (msrp)=${car_options_to_show[i]['msrp']}, 2% discount price=${int(car_options_to_show[i]['msrp'] * 0.98)}, 5% discount price=${int(car_options_to_show[i]['msrp'] * 0.95)}, 8% discount price=${int(car_options_to_show[i]['msrp'] * 0.92)}, 10% discount price=${int(car_options_to_show[i]['msrp'] * 0.9)}\n"
 
     if car_options_str == "":
         car_options_str = "No cars found. YOU MUST NOT MAKE UP A CAR THAT IS NOT IN THE DATABASE."
-    return car_options_str
+    return car_options_str, car_options_to_show
 
 def format_car_suggestion(seller_proposed_car: Dict) -> str:
     if seller_proposed_car != {}:

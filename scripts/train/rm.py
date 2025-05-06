@@ -490,7 +490,7 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
             tokenizer,
             save_dir,
         )
-    elogger.activate(True)
+    elogger.set_activate(True)
     elogger.log(f"RM Training finished.")
 
 if __name__ == "__main__":

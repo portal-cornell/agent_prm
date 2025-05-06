@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from datasets import Dataset, DatasetDict
 from open_instruct.dataset_processor import DatasetProcessor, get_num_proc
 from jinja2 import Template
+import json
 
 logging.basicConfig(level=logging.INFO)
 
@@ -259,8 +260,43 @@ class SFTPromptDatasetProcessor(DatasetProcessor):
                                 'mode': 'input_final' if len(row['state']['history']) == 19 else 'input',
                                 'all_obj_list': [wv[0] for wv in get_default_word_list("all")],
                                 'observation_action_history': formatted_history}
+            elif domain == "car_dealer":
+                # TODO: This is a hack to get the all car brands and types and features
+                from agent_prm.envs.car_dealer.data import DEFAULT_BRANDS, DEFAULT_TYPES, DEFAULT_FEATURES
+
+                if row['state']['type'] == "api":
+                    with open("prompts/car_dealer/car_dealer_api_template.j2", "r") as file:
+                        prompt_template = Template(file.read())
+
+                    past_N = 3 # TODO: hardcoded
+                    input_data = {
+                        'mode': 'input',
+                        'all_car_brands': DEFAULT_BRANDS,
+                        'all_car_types': DEFAULT_TYPES,
+                        'all_car_features': DEFAULT_FEATURES,
+                        'observation_action_history': row['state']['observation_action_history'],
+                        'past_N': past_N,
+                        'prev_api_call_history': row['state']['prev_api_call_history'],
+                        'previous_api_call': row['state']['previous_api_call'],
+                        'previous_api_response': row['state']['previous_api_response'],
+                    }
+                else:
+                    with open("prompts/car_dealer/car_dealer_template.j2", "r") as file:
+                        prompt_template = Template(file.read())    
+
+                    input_data = {
+                        "mode": "input",
+                        "all_car_brands": DEFAULT_BRANDS,
+                        "all_car_types": DEFAULT_TYPES,
+                        "observation_action_history": row['state']['observation_action_history'],
+                        "api_call": row['state']['api_call'],
+                        "api_response": row['state']['api_response'],
+                        "buyer_response": row['state']['buyer_response']
+                    }
+            else:
+                raise ValueError(f"Domain {domain} not supported")
             
-            row[PROMPT_KEY] = prompt_template.render(**input_data)
+            row[PROMPT_KEY] = prompt_template.render(**input_data).strip()
 
             messages = [{"role": "user", "content": row[PROMPT_KEY]}]
             row[INPUT_IDS_KEY] = self.tokenizer.apply_chat_template(messages)
@@ -531,14 +567,54 @@ class BinaryPromptDatasetProcessor(DatasetProcessor):
                           'mode': 'input_final' if len(row['state']['history']) == 19 else 'input',
                           'all_obj_list': [wv[0] for wv in get_default_word_list("all")],
                           'observation_action_history': formatted_history}
+            elif domain == "car_dealer":
+                # TODO: This is a hack to get the all car brands and types and features
+                from agent_prm.envs.car_dealer.data import DEFAULT_BRANDS, DEFAULT_TYPES, DEFAULT_FEATURES
+
+                if row['state']['type'] == "api":
+                    with open("prompts/car_dealer/car_dealer_api_template.j2", "r") as file:
+                        prompt_template = Template(file.read())
+
+                    past_N = 3 # TODO: hardcoded
+                    input_data = {
+                        'mode': 'input',
+                        'all_car_brands': DEFAULT_BRANDS,
+                        'all_car_types': DEFAULT_TYPES,
+                        'all_car_features': DEFAULT_FEATURES,
+                        'observation_action_history': row['state']['observation_action_history'],
+                        'past_N': past_N,
+                        'prev_api_call_history': row['state']['prev_api_call_history'],
+                        'previous_api_call': row['state']['previous_api_call'],
+                        'previous_api_response': row['state']['previous_api_response'],  # We don't need to worry about max-car cutting the response short. It's already handled in compute_prm_target.py
+                    }
+                else:
+                    with open("prompts/car_dealer/car_dealer_template.j2", "r") as file:
+                        prompt_template = Template(file.read())    
+
+                    input_data = {
+                        "mode": "input",
+                        "all_car_brands": DEFAULT_BRANDS,
+                        "all_car_types": DEFAULT_TYPES,
+                        "observation_action_history": row['state']['observation_action_history'],
+                        "api_call": row['state']['api_call'],
+                        "api_response": row['state']['api_response'],
+                        "buyer_response": row['state']['buyer_response']
+                    }
             else:
                 raise ValueError(f"Domain {domain} not supported")
 
-            row[PROMPT_KEY] = prompt_template.render(**input_data)
+            row[PROMPT_KEY] = prompt_template.render(**input_data).strip()
 
-            output_data = {'mode': 'output' if include_reason else 'output_no_reason', 'reason': row['reason_action']['reason'] if include_reason else "", 'action': row['reason_action']['action']}
-            row[COMPLETION_KEY] = prompt_template.render(**output_data)
+            if domain == "car_dealer":
+                output_data = copy.deepcopy(row['reason_action'])
+                output_data['mode'] = 'output'
 
+                for key in output_data['action']:
+                    output_data[key] = output_data['action'][key]
+            else:
+                output_data = {'mode': 'output' if include_reason else 'output_no_reason', 'reason': row['reason_action']['reason'] if include_reason else "", 'action': row['reason_action']['action']}
+            row[COMPLETION_KEY] = prompt_template.render(**output_data).strip()
+            
             messages = [{"role": "user", "content": row[PROMPT_KEY]},
                         {"role": "assistant", "content": row[COMPLETION_KEY]}]
             

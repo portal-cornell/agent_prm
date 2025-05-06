@@ -7,8 +7,9 @@
 # - Verify MODEL_LOG_NAME
 ########################################################################################
 
-DOMAIN=twenty_questions # alfworld, twenty_questions
-# DATA_DIR=iter1_hindsight-biased-on-70 # add '_no-reason' if you want to train on the no-reason dataset
+# DOMAIN=twenty_questions # alfworld, twenty_questions
+# SAVE_FREQ=250
+# MAX_SEQ_LEN=2048
 
 ################ iter1
 # MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
@@ -117,9 +118,37 @@ DOMAIN=twenty_questions # alfworld, twenty_questions
 # MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
 # MODEL_LOG_NAME="pi0_best-pi-on-60"
 ######### with explorative pi0
-DATA_DIR=iter1_explorative-pi-on-60
-MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
-MODEL_LOG_NAME="pi0_explorative-pi-on-60"
+# DATA_DIR=iter1_explorative-pi-on-60
+# MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# MODEL_LOG_NAME="pi0_explorative-pi-on-60"
+######## with high-temp pi0
+# DATA_DIR=iter1_high-temp-on-60
+# MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# MODEL_LOG_NAME="pi0_high-temp-pi-on-60"
+
+#=====================================================================================================
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#+ CAR DEALER
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#=====================================================================================================
+DOMAIN=car_dealer
+SAVE_FREQ=500
+MAX_SEQ_LEN=3500
+
+# #################################### PRM + RL
+# # iter1
+# DATA_DIR=iter1
+# # pi0-83pct
+# MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250430_180817_iter0_pi0_vanilla_epochs=3/checkpoint-124"
+# MODEL_LOG_NAME="pi0-83pct"
+
+# iter1 max-car-8 (to reduce max seq len)
+DATA_DIR=iter1_max-car-8
+# pi0-62pct_max-car-8
+MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+MODEL_LOG_NAME="pi0-62pct_max-car-8"
+
+
 
 TRAIN_SPLITS=train
 TEST_SPLITS=val
@@ -160,7 +189,7 @@ echo "Eval directory: $EVAL_DIR"
 
 # Default learning rate was 5e-5
 
-accelerate launch  --num-processes 2 \
+accelerate launch  --num-processes 4 \
     --config_file configs/ds_configs/deepspeed_zero3.yaml scripts/train/rm.py \
     --dataset_train_splits ${TRAIN_SPLITS} \
     --dataset_eval_splits ${TEST_SPLITS} \
@@ -172,11 +201,11 @@ accelerate launch  --num-processes 2 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 4 \
     --gradient_accumulation_steps 16 \
-    --max_token_length 2048 \
-    --max_prompt_token_length 2048 \
+    --max_token_length ${MAX_SEQ_LEN} \
+    --max_prompt_token_length ${MAX_SEQ_LEN} \
     --num_train_epochs ${TRAIN_EPOCHS} \
     --num_evals 20 \
-    --save_freq 250 \
+    --save_freq ${SAVE_FREQ} \
     --output_dir ${SAVE_DIR} \
     --eval_dir ${EVAL_DIR} \
     --gradient_checkpointing \

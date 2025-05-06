@@ -70,7 +70,6 @@ et_xmlfile==2.0.0
 evaluate==0.4.3
 exceptiongroup==1.2.2
 executing==2.2.0
-fast_downward_textworld==20.6.2
 fastapi==0.115.6
 ffmpy==0.5.0
 filelock==3.13.1

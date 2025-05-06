@@ -15,7 +15,15 @@ def are_same_cars(car1: Dict, car2: Dict) -> bool:
         return True
     elif car1 == {} or car2 == {}:
         return False
-
+    
+    if type(car1) == list or type(car2) == list:
+        print(f"car1: {car1}, car2: {car2}")
+    
+    if car1 == [] and car2 != []:
+        return False
+    elif car1 != [] and car2 == []:
+        return False
+    
     return car1["brand"] == car2["brand"] and car1["type"] == car2["type"] and sorted(car1["features"]) == sorted(car2["features"])
 
 class CarDealerEnvironment():

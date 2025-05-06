@@ -1,4 +1,10 @@
+"""
+python src/agent_prm/envs/car_dealer/test_cases.py
+"""
+
 from agent_prm.envs.car_dealer.data import *
+from agent_prm.envs.car_dealer.parser import parse_reason_and_action_car_dealer_api_call, parse_reason_and_action_car_dealer
+import json
 
 # ### Testing get_price_comparison
 # proposed_car = {}
@@ -406,23 +412,26 @@ from agent_prm.envs.car_dealer.data import *
 # print(f"action:\n{json.dumps(action, indent=4)}")
 # input("x3 (no new line)")
 
-# # x4 no space
-# x4 = """REASON:I want to search for a car with a navigation system and a backup camera.
-# API NAME:search_car_by_brand_type
-# API BRAND:Volkswagen
-# API TYPE:van"""
-# reason, action = parse_reason_and_action_car_dealer_api_call(x4)
-# print(f"reason: {reason}")
-# print(f"action:\n{json.dumps(action, indent=4)}")
-# input("x4 (no space)")
+# x4 no space
+x4 = """REASON:I want to search for a car with a navigation system and a backup camera.
+API NAME:search_car_by_brand_type
+API BRAND:Volkswagen
+API TYPE:van
+API FEATURES:[]"""
+reason, action = parse_reason_and_action_car_dealer_api_call(x4)
+print(f"reason: {reason}")
+print(f"action:\n{json.dumps(action, indent=4)}")
+print(parse_reason_and_action_car_dealer(x4))
+input("x4 (no space)")
 
-# # x5 wrong api name
-# x5 = """REASON: I want to search for a car with a navigation system and a backup camera.
-# API NAME: search_car_by_brand_type_features
-# API BRAND: Volkswagen
-# API TYPE: van"""
-# reason, action = parse_reason_and_action_car_dealer_api_call(x5)
-# print(f"reason: {reason}")
-# print(f"action:\n{json.dumps(action, indent=4)}")
-# input("x5 (wrong api name) - Should fail")
-
+# x5 wrong api name
+x5 = """REASON: I want to search for a car with a navigation system and a backup camera.
+API NAME: search_car_by_brand_type_features
+API BRAND: Volkswagen
+API TYPE: van
+API FEATURES:[]"""
+reason, action = parse_reason_and_action_car_dealer_api_call(x5)
+print(f"reason: {reason}")
+print(f"action:\n{json.dumps(action, indent=4)}")
+print(parse_reason_and_action_car_dealer(x5))
+input("x5 (wrong api name) - Should fail")

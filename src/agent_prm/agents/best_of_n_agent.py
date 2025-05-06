@@ -33,7 +33,14 @@ class BestofNAgent(Agent):
 
     def name(self) -> str:
         return f"critic-{self.critic.name()}-generator-{self.generator.name()}-{self.num_generations}"
-    
+
+    def set_prompt_template(self, prompt_file_path: str = "", prompt_template: Template = None):
+        self.generator.set_prompt_template(prompt_file_path, prompt_template)
+        self.critic.set_prompt_template(prompt_file_path, prompt_template)
+
+    def set_parse_reason_action_fn(self, parse_reason_action_fn: Callable):
+        self.generator.set_parse_reason_action_fn(parse_reason_action_fn)
+
     def predict_reason_action_batch(self, queries: List[Dict], num_responses: int, alt_temperature_for_extra_responses: float = None) -> List[List[Dict]]:
         """
         Parameters:
