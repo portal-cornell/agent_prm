@@ -1,9 +1,9 @@
 """
 An example without hindsight:
-python scripts/dataproc/compute_prm_target.py split_name=train cpu_count=16 output_folder=iter2
+python scripts/dataproc/compute_prm_target.py split_name=train cpu_count=16 output_folder=iter2 domain=TODO
 
 An example with hindsight data
-python scripts/dataproc/compute_prm_target.py split_name=train cpu_count=16 output_folder=iter1_hindsight-biased-on-60 hindsight.num_failed_expert_rollouts_to_include=50 hindsight.onpolicy_pct_for_success=0.60
+python scripts/dataproc/compute_prm_target.py split_name=train cpu_count=16 output_folder=iter1_hindsight-biased-on-60 hindsight.num_failed_expert_rollouts_to_include=50 hindsight.onpolicy_pct_for_success=0.60 domain=TODO
 """
 
 import os
@@ -169,6 +169,97 @@ def twenty_questions_filter_condition_checker(rolloutdir, file_name):
     
 
 def twenty_questions_success_file_condition(file_name):
+    # Read the file and check the last reward is 0
+    with open(file_name, 'r') as file:
+        data = json.load(file)
+    return data[-1]['reward'] == 0
+
+"""================================================================================
+    Guess My City processing functions
+================================================================================"""
+def guess_my_city_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False, dataset_min_reward=-1, dataset_max_reward=1):
+    try:
+        with open(file_path, 'r') as file:
+            trajectory = json.load(file)
+
+        Q_target = {}
+        outcome_reward = guess_my_city_normalize_reward(trajectory[-1]['reward'])  # transform from [-1, 1]
+        for t in range(len(trajectory) - 1, -1, -1):
+            state, reason_action = guess_my_city_extract_state_reason_action(trajectory, t, exclude_reason=exclude_reason)
+            state_hash = sha256(json.dumps({'state': state, 'action': reason_action['action']}, sort_keys=True).encode()).hexdigest()
+            update_Q(state, reason_action, state_hash, Q_target, outcome_reward, gamma, k=t, T=len(trajectory), is_offpolicy=is_offpolicy)
+        return Q_target
+    except Exception as e:
+        print(f"Error processing {file_path}: {e}")
+        return {}
+
+def guess_my_city_extract_state_reason_action(trajectory, t, exclude_reason=False):
+    history = []
+    for i in range(t-1):
+        step = trajectory[i]
+        history.append({
+            'question': step['action'],
+            'answer': step['answer']
+        })
+    
+    state = {
+        'history': history,
+    }
+
+    if exclude_reason:
+        reason_action = {
+            'action': trajectory[t]['action'],
+        }
+    else:
+        reason_action = {
+            'reason': trajectory[t]['reason'],
+            'action': trajectory[t]['action'],
+        }
+
+    return state, reason_action
+    
+def guess_my_city_normalize_reward(reward):
+    # The most negative a reward can be is -10, the most positive is 0. 
+    #   But anything not 0 is a failure. So I think we should scale 0 to 10. 
+    # normalize outcome reward from [-10, 10] to [-1, 1]
+    #   We normalize the outcome reward to -1 and 1 so that we can proprogate the negative effect of failed trajectories
+    #   We assume that the reward before the last step is still 0
+    if reward == 0:
+        reward = 10
+
+    return reward / 10.0
+
+def guess_my_city_skip_file_condition(rolloutdir, file_name, max_rollout_per_task_per_dir=None):
+    return (not file_name.endswith(".json")) or ('_summary_dict' in file_name) or ('original' in file_name) or (max_rollout_per_task_per_dir is not None and int(file_name.split("_")[-1].split(".")[0]) >= max_rollout_per_task_per_dir)
+
+def guess_my_city_filter_condition_checker(rolloutdir, file_name):
+    """
+    Return
+        - True if the file failed
+        - True if the file is an expert rollout that led to success
+    """
+    rollout = load_json(os.path.join(rolloutdir, file_name))
+
+    is_expert_rollout = False
+    idx_of_expert_action = 0
+    for t in range(len(rollout)):
+        if rollout[t]['raw_text'] == "":
+            is_expert_rollout = True
+            idx_of_expert_action = t
+
+    failed = rollout[-1]['reward'] != 0
+    if is_expert_rollout:
+        # Filtering out the following cases:
+        # 1. The expert rollout failed
+        # 2. The expert action led to success
+        expert_action_led_to_success = rollout[idx_of_expert_action]['reward'] == 0
+
+        return failed, expert_action_led_to_success
+    else:
+        return failed, False
+    
+
+def guess_my_city_success_file_condition(file_name):
     # Read the file and check the last reward is 0
     with open(file_name, 'r') as file:
         data = json.load(file)
@@ -504,6 +595,8 @@ def compute_prm_target(files, files_breakdown, domain, outputdir, gamma, cpu_cou
         process_file = alfworld_process_file
     elif domain == "twenty_questions":
         process_file = twenty_questions_process_file
+    elif domain == "guess_my_city":
+        process_file = guess_my_city_process_file
     elif domain == "car_dealer":
         process_file = car_dealer_process_file
     else:
@@ -672,6 +765,8 @@ def reduce_and_save_data_for_split(Q_target, outputdir, split_name, balance_data
             input("Press any key to continue...")
 
             data_to_save = low_data_subsampled + high_data_subsampled
+
+            data_table_10k = pa.Table.from_pylist(data_to_save)
             
             if save_to_local:
                 pq.write_table(data_table_10k, os.path.join(outputdir, f"{split_name}_10k.parquet"))
@@ -804,6 +899,8 @@ def compute_file_list(rolloutdirs, domain, max_files_per_dir=None, max_rollout_p
         skip_condition = alfworld_skip_file_condition
     elif domain == "twenty_questions":
         skip_condition = twenty_questions_skip_file_condition
+    elif domain == "guess_my_city":
+        skip_condition = guess_my_city_skip_file_condition
     elif domain == "car_dealer":
         skip_condition = car_dealer_skip_file_condition
     else:
@@ -960,6 +1057,10 @@ def main(cfg: DictConfig):
         rolloutdirs = cfg.rolloutdirs
 
     is_hindsight_data = all(["hindsight" in rolloutdir for rolloutdir in rolloutdirs]) or all(['best-pi-relabel' in rolloutdir for rolloutdir in rolloutdirs]) or all(['explorative-pi-relabel' in rolloutdir for rolloutdir in rolloutdirs]) or all(['high-temp-pi-relabel' in rolloutdir for rolloutdir in rolloutdirs])
+
+    if cfg.force_not_hindsight:
+        print("Force not hindsight data")
+        is_hindsight_data = False
 
     print(f"Confirm the following\n- rolloutdirs: {rolloutdirs}\n- domain: {cfg.domain}\n- outputdir: {cfg.outputdir}\n- is_hindsight_data: {is_hindsight_data}\n{cfg.hindsight if is_hindsight_data else ''}")
     input("Press any key to continue...")

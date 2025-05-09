@@ -1,8 +1,8 @@
 prompt_template_file: prompts/guess_my_city/guess_my_city_template.j2
-logs_dir: data/guess_my_city/eval/baseline/gpt4o/iter0
+logs_dir: data/guess_my_city/eval/baseline/gpt4o
 data_dir: data/guess_my_city/sft
 expert_template: prompts/guess_my_city/guess_my_city_gpt_agent_template.j2
-rollout_per_obj: 2
+rollout_per_obj: 3
 train_split: 0.85
 input_fields:
   reason: reason
@@ -10,4 +10,30 @@ input_fields:
 output_fields:
   reason: reason
   action: action
-
+# For the LEAP baseline where we relabel the rollouts with expertactions
+leap:
+  expert_correction_prompt: prompts/twenty_questions/twenty_question_expert_gen_prefered_action.j2
+  summary_prompt: prompts/twenty_questions/twenty_question_summary.j2
+  rollout_per_task_range_min: 0
+  rollout_per_task_range_max: 3
+  # iter0:
+  #   # iter0 (to train pi1): pi0-all-data-3epoches
+  #   rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
+  # # iter1:
+  # #   # iter1 (to train pi2): pi1-44pct_leap_from-base-3B_1epoch
+  # #   rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-44pct_leap_from-base-3B_1epoch_250427_163704_iter1_leap_pi1_leap_from-base_epochs=1
+  # iter2:
+  #   # iter2 (to train pi3): pi2-67pct_leap_from-base-3B_1epoch
+  #   rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-67pct_leap_from-base-3B_1epoch_250428_014017_iter2_leap_pi2_leap_from-base_epochs=1
+# For the multi-star baseline, we only do SFT on successful rollouts
+multi-star:
+  rollout_per_task: 30 # To ensure fairness, we will ensure that each game has {rollout_per_task} rollouts
+  note: '10k'
+  use_past_rollouts: true
+  pct_of_past_rollouts: 0.5
+  iter0:
+    # iter0 (to train pi1): pi0-82pct
+    rollout_dir: /share/portal/hw575/agent_prm/data/guess_my_city/eval/iter0/pi0-82pct_250506_225348_iter0_pi0_vanilla_epochs=3
+  iter1:
+    # iter1 (to train pi2): pi1-82pct_multi-star
+    rollout_dir: /share/portal/hw575/agent_prm/data/guess_my_city/eval/iter1/pi1-82pct_multi-star_250507_114222_iter1_multi-star_10k_pi1_multi-star_from-base_10k-data_lr=3e-6_epochs=1

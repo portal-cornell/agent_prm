@@ -37,6 +37,7 @@ def query_agent_batch(agent: Agent, histories: List[List[Dict[str, str]]], all_c
     return reason_actions, generated_texts
 
 def rollout_batch(agent: Agent, batched_env: BatchedGuessMyCityEnvironment, all_city_list: List[WordVariants], words_to_guess: List[WordVariants], city_categories: List[str], histories: List[List[Dict]], traj_list: List[List[Dict]], prev_dones: List[bool], num_alt_responses: int):
+    total_rewards = [0 for _ in range(len(histories))]
     while not all(prev_dones):
         # Batched way
         start_time = time.time()
@@ -77,7 +78,12 @@ def rollout_batch(agent: Agent, batched_env: BatchedGuessMyCityEnvironment, all_
         print(f"[AGENT] time taken for batch_size={len(histories)}: {time.time() - start_time}")
 
         # Step the environment
-        histories, answer_reasons, answers, rewards, dones = batched_env.step(words_to_guess, city_categories, histories, actions, prev_dones)
+        histories, answer_reasons, answers, rewards, dones = batched_env.step(words_to_guess, histories, actions, prev_dones, total_rewards)
+
+        # Update the total rewards
+        for i in range(len(histories)):
+            if not prev_dones[i]:
+                total_rewards[i] += rewards[i]
 
         # Log the trajectories
         for i in range(len(histories)):
@@ -91,6 +97,7 @@ def rollout_batch(agent: Agent, batched_env: BatchedGuessMyCityEnvironment, all_
                     "answer": answers[i],
                     "reward": rewards[i],
                     "score": scores[i],
+                    'total_reward': total_rewards[i],
                     'alternatives': [
                         {
                             "reason": alt_reasons[i][j],

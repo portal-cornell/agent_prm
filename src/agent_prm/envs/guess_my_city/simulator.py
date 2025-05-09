@@ -229,7 +229,7 @@ class GuessMyCitySimulator(object):
 
         messages = [
             [
-                {"role": "user", "content": self.prompt_template.render(**input_data)}
+                {"role": "user", "content": self.prompt_template.render(**input_data).strip()}
             ]
             for input_data in input_datas
         ]
@@ -311,7 +311,7 @@ class SGLangServerGuessMyCitySimulator(object):
 
         messages = [
             [
-                {"role": "user", "content": self.prompt_template.render(**input_data)}
+                {"role": "user", "content": self.prompt_template.render(**input_data).strip()}
             ]
             for input_data in input_datas
         ]

@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 import random
 import time
 import re
-from agent_prm.envs.guess_my_city.data import WordVariants, get_default_word_list
+from agent_prm.envs.guess_my_city.data import WordVariants, get_default_city_list
 from agent_prm.envs.guess_my_city.simulator import GuessMyCitySimulator, SGLangServerGuessMyCitySimulator
 from agent_prm.envs.guess_my_city.data import is_done
 
@@ -136,7 +136,7 @@ class BatchedGuessMyCityEnvironment(object):
         self.max_conversation_length = max_conversation_length
 
     
-    def step(self, cities_to_guess: List[WordVariants], histories: List[Dict], actions: List[str], prev_dones: List[bool]):
+    def step(self, cities_to_guess: List[WordVariants], histories: List[Dict], actions: List[str], prev_dones: List[bool], total_rewards: List[float]):
         """
         Parameters:
             cities_to_guess (List[WordVariants]): The secret cities that the agent is trying to guess.
@@ -189,15 +189,38 @@ class BatchedGuessMyCityEnvironment(object):
                     # Edit the response of the env just in case the env is wrong
                     histories[i][-1]["answer"] = "yes"
                 else:
-                    reward = -1.0
-                    done = False
+                    question_cleaned = actions[i].rstrip("?.!").lower().strip()
+
+                    # Check if it is a guessing-type question
+                    guess_patterns = [
+                        r"^is it (.+)",
+                        r"^is the city (.+)",
+                        r"^is it the city of (.+)",
+                        r"^is the city called (.+)",
+                        r"^is the place (.+)",
+                        r"^is the place called (.+)",
+                        r"^are you from (.+)",
+                    ]
+
+                    # If the remaining part of the guess is too short (probably making a guess), then we should stop the game
+                    # We are counting the words following the patterns above
+                    GUESSING_LEN_THRESHOLD = 2
+                    matched_patterns = [re.match(pattern, question_cleaned) for pattern in guess_patterns]
+                    matched_patterns = [mp for mp in matched_patterns if mp is not None]
+                    if any(len(mp.group(1).split()) <= GUESSING_LEN_THRESHOLD for mp in matched_patterns):
+                        histories[i][-1]["answer"] = "no"
+                        reward = -(10.0 - abs(total_rewards[i]))
+                        done = True
+                    else:
+                        reward = -1.0
+                        done = False
 
                 rewards.append(reward)
                 dones.append(done)
 
-            # Check if the agents have exhausted all their guesses
-            if len(histories[i]) == self.max_conversation_length:
-                dones[i] = True
+                # Check if the agents have exhausted all their guesses
+                if len(histories[i]) == self.max_conversation_length:
+                    dones[i] = True
 
         return histories, answer_reasons, answers, rewards, dones
 
@@ -229,17 +252,17 @@ def setup_guess_my_city_env(data_split: str='all') -> GuessMyCityEnvironment:
             prompt_template_file="prompts/guess_my_city/guess_my_city_simulator_template_with_reasoning.j2",
             verbose=1
         ),
-        city_list=get_default_word_list(data_split),
+        city_list=get_default_city_list(data_split),
         max_conversation_length=10,
     )
     return env
 
 
-def setup_batched_guess_my_city_env(data_split: str='all', use_sglang_server: bool = True, port: int = 40042) -> BatchedGuessMyCityEnvironment:
+def setup_batched_guess_my_city_env(data_split: str='all', use_sglang_server: bool = True, host: str = 'localhost', port: int = 40042) -> BatchedGuessMyCityEnvironment:
     if use_sglang_server:
         sim = SGLangServerGuessMyCitySimulator(
             model_id="meta-llama/Llama-3.2-3B-Instruct",
-            server_url=f"http://localhost:{port}",
+            server_url=f"http://{host}:{port}",
             prompt_template_file="prompts/guess_my_city/guess_my_city_simulator_template_with_reasoning.j2",
             verbose=0
         )
@@ -252,7 +275,7 @@ def setup_batched_guess_my_city_env(data_split: str='all', use_sglang_server: bo
 
     env = BatchedGuessMyCityEnvironment(
         answerer=sim,
-        city_list=get_default_word_list(data_split),
+        city_list=get_default_city_list(data_split),
         max_conversation_length=10,
     )
     return env

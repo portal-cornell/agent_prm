@@ -2,10 +2,11 @@
 Typical usage:
 
 # Online eval
-python scripts/eval/eval_guess_my_city.py mode=online host_sglang=true data_types=[val,test] online.rollout_per_task=1 online.num_alt_responses=5 online.batch_size=32 elogger=true
+python scripts/eval/eval_guess_my_city.py mode=online host_sglang=true data_types=[train] online.rollout_per_task_range_min=0 online.rollout_per_task_range_max=1 online.num_alt_responses=0 online.batch_size=32 elogger=true sim_host=TODO sim_port=TODO local_sglang=true
+
 
 # Consolidate online eval
-python scripts/eval/eval_guess_my_city.py mode=consolidate_online consolidate_online.use_existing_table=true consolidate_online.overwrite_existing_entry=true consolidate_online.table_notes='pi0_early_ckpts' consolidate_online.main_table_notes=''
+python scripts/eval/eval_guess_my_city.py mode=consolidate_online consolidate_online.use_existing_table=true consolidate_online.overwrite_existing_entry=true consolidate_online.table_notes='TODO' consolidate_online.main_table_notes=''
     where
         - consolidate_online.use_existing_table=true means that the table will build off from what's stored in data/guess_my_city/eval/
         - consolidate_online.overwrite_existing_entry=true means that
@@ -36,7 +37,7 @@ from agent_prm.agents.agent import Agent
 from agent_prm.utils.parser import parse_reason_and_action_guess_my_city
 from agent_prm.utils.cfg_utils import get_output_folder_name
 from agent_prm.utils.general_utils import load_json, save_json
-from agent_prm.envs.guess_my_city.data import TRAIN_CITY_DICT, VALIDATION_CITY_DICT, TEST_CITY_DICT, WordVariants, get_default_word_list
+from agent_prm.envs.guess_my_city.data import TRAIN_CITY_DICT, VALIDATION_CITY_DICT, TEST_CITY_DICT, WordVariants, get_default_city_list
 from agent_prm.envs.guess_my_city.env import setup_guess_my_city_env, setup_batched_guess_my_city_env
 from agent_prm.envs.guess_my_city.interface import rollout_batch
 from agent_prm.utils.logger_email import elogger
@@ -48,7 +49,7 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
     Evaluate the model by interacting with the environment
     """
     batched_env = setup_batched_guess_my_city_env(host=cfg.sim_host, port=cfg.sim_port)
-    all_obj_list = [wv[0] for wv in get_default_word_list("all")]
+    all_obj_list = [wv[0] for wv in get_default_city_list("all")]
     bs = cfg.online.batch_size
 
     # Collect the entire list of all the objects that we are evaluating on. This helps more efficiently use the batch size
@@ -92,7 +93,7 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
 
         print(f"=========== Batch {batch} has {len(batch_objects_tuples)} objects: {batch_objects_tuples} ===========")
         
-        histories, words_to_guess = batched_env.reset(num_envs=len(batch_objects), words_to_guess=[WordVariants.from_str(obj) for obj in batch_objects])
+        histories, words_to_guess = batched_env.reset(num_envs=len(batch_objects), cities_to_guess=[WordVariants.from_str(obj) for obj in batch_objects])
 
         # Initialize prev_dones as a list of False with the same length as batch_objects
         prev_dones = [False for _ in range(len(batch_objects))]
@@ -106,6 +107,9 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
         for i in range(len(batch_objects)):
             obj, obj_data_type, obj_rollout_idx, _ = batch_objects_tuples[i]
             obj_rollout_idx_str = str(obj_rollout_idx)
+            
+            # Save the trajectory
+            save_json(os.path.join(logdir, obj_data_type, f"{obj}_{obj_rollout_idx_str}.json"), traj_list[i])
 
             # Open up the correct summary dict
             summary_dict_fp = os.path.join(logdir, obj_data_type, "_summary_dict.json")
@@ -117,9 +121,6 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
 
             summary_dict[obj_rollout_idx_str].append(obj)
             save_json(summary_dict_fp, summary_dict)
-            
-            # Save the trajectory
-            save_json(os.path.join(logdir, obj_data_type, f"{obj}_{obj_rollout_idx_str}.json"), traj_list[i])
 
 
 def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, agent_name: str, rollout_per_task_dict: Dict[str, int], use_existing_table: bool = False, overwrite_existing_entry: bool = False):
@@ -332,7 +333,7 @@ def main(cfg: DictConfig):
 
     if cfg.mode == "online":
         # Because this takes a long time, we notify when the online eval is done
-        elogger.log(f"Online eval results saved for Agents: {[agent_config.log_name for agent_config in cfg.agents]}")
+        elogger.log(f"[Guess My City] Online eval results saved for Agents: {[agent_config.log_name for agent_config in cfg.agents]}, data_types: {cfg.data_types}, rollout range[{cfg.online.rollout_per_task_range_min}, {cfg.online.rollout_per_task_range_max})")
     
 
 if __name__ == "__main__":

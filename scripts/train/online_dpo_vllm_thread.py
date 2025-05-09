@@ -292,13 +292,14 @@ def calculate_runtime_args_and_accelerator(args: Args, model_config: ModelConfig
 import re
 import json
 
-from agent_prm.utils.parser import parse_reason_and_action_alfworld, parse_reason_and_action_twenty_questions
+from agent_prm.utils.parser import parse_reason_and_action_alfworld, parse_reason_and_action_twenty_questions, parse_reason_and_action_guess_my_city
 from agent_prm.envs.car_dealer.parser import format_reason_action_car_dealer_online_dpo
 
 # Map domain to parser
 PARSER_DICT = {
     "alfworld": parse_reason_and_action_alfworld,
     "twenty_questions": parse_reason_and_action_twenty_questions,
+    "guess_my_city": parse_reason_and_action_guess_my_city,
 }
 
 def clean_up_generation(tokenizer, response_ids, domain:str):

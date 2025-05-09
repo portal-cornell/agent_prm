@@ -260,6 +260,20 @@ class SFTPromptDatasetProcessor(DatasetProcessor):
                                 'mode': 'input_final' if len(row['state']['history']) == 19 else 'input',
                                 'all_obj_list': [wv[0] for wv in get_default_word_list("all")],
                                 'observation_action_history': formatted_history}
+            elif domain == "guess_my_city":
+                with open("prompts/guess_my_city/guess_my_city_template.j2", "r") as file:
+                    prompt_template = Template(file.read())
+
+                # TODO: This is a hack to get the all_obj_list and input_final
+                from agent_prm.envs.guess_my_city.data import get_default_city_list
+
+                # Make sure question appears before answer
+                formatted_history = [{"question": item["question"], "answer": item["answer"]} for item in row['state']['history']]
+                input_data = {
+                    'mode': 'input_final' if len(row['state']['history']) == 9 else 'input',  # TODO: hardcoded
+                    'all_city_list': [wv[0] for wv in get_default_city_list("all")],
+                    'observation_action_history': formatted_history
+                }
             elif domain == "car_dealer":
                 # TODO: This is a hack to get the all car brands and types and features
                 from agent_prm.envs.car_dealer.data import DEFAULT_BRANDS, DEFAULT_TYPES, DEFAULT_FEATURES
@@ -567,6 +581,20 @@ class BinaryPromptDatasetProcessor(DatasetProcessor):
                           'mode': 'input_final' if len(row['state']['history']) == 19 else 'input',
                           'all_obj_list': [wv[0] for wv in get_default_word_list("all")],
                           'observation_action_history': formatted_history}
+            elif domain == "guess_my_city":
+                with open("prompts/guess_my_city/guess_my_city_template.j2", "r") as file:
+                    prompt_template = Template(file.read())
+
+                # TODO: This is a hack to get the all_obj_list and input_final
+                from agent_prm.envs.guess_my_city.data import get_default_city_list
+
+                # Make sure question appears before answer
+                formatted_history = [{"question": item["question"], "answer": item["answer"]} for item in row['state']['history']]
+                input_data = {
+                    'mode': 'input_final' if len(row['state']['history']) == 9 else 'input', # TODO: hardcoded
+                    'all_city_list': [wv[0] for wv in get_default_city_list("all")],
+                    'observation_action_history': formatted_history
+                }
             elif domain == "car_dealer":
                 # TODO: This is a hack to get the all car brands and types and features
                 from agent_prm.envs.car_dealer.data import DEFAULT_BRANDS, DEFAULT_TYPES, DEFAULT_FEATURES

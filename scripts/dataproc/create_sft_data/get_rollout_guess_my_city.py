@@ -15,7 +15,7 @@ from typing import List, Dict
 from jinja2 import Template
 
 from agent_prm.envs.guess_my_city.env import setup_guess_my_city_env
-from agent_prm.envs.guess_my_city.data import TRAIN_CITY_DICT, VALIDATION_CITY_DICT, TEST_CITY_DICT, WordVariants, get_default_word_list 
+from agent_prm.envs.guess_my_city.data import TRAIN_CITY_DICT, VALIDATION_CITY_DICT, TEST_CITY_DICT, WordVariants, get_default_city_list 
 from agent_prm.utils.openai import generate_from_openai_completion
 from agent_prm.utils.parser import parse_json
 from agent_prm.utils.logger_email import elogger
@@ -64,7 +64,7 @@ def main():
     args, cfg = preprocess_args()
     elogger.set_activate(args.activate_email)
     env = setup_guess_my_city_env()
-    all_city_list = [wv[0] for wv in get_default_word_list("all")]
+    all_city_list = [wv[0] for wv in get_default_city_list("all")]
 
     rollout_per_city = cfg["rollout_per_obj"]
 

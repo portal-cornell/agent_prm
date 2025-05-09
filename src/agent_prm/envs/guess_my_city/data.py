@@ -442,7 +442,7 @@ TEST_CITY_DICT = {
     ]
 }
 
-def get_default_word_list(data_split: str = "all") -> List[WordVariants]:
+def get_default_city_list(data_split: str = "all") -> List[WordVariants]:
     if data_split == "all":
         dict_to_use = DEFAULT_CITY_DICT
     elif data_split == "train":
