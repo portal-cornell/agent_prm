@@ -12,7 +12,7 @@ When getting export's alternative actions:
 
 When completing the rollouts:
     Without specifying the object range:
-        python scripts/dataproc/hindsight/rollout_expert_alt_actions_car_dealer.py -e -m r -i 0 -d train -min 4 -max 12 --sim_host TODO --sim_port TODO
+        python scripts/dataproc/hindsight/rollout_expert_alt_actions_car_dealer.py -e -m r -i 0 -d train -min 4 -max 20 --sim_host TODO --sim_port TODO
 
         where
             -e indicates that we are using elogger
@@ -59,7 +59,9 @@ from agent_prm.agents.agent import Agent
 
 iter_to_rollout_dir = {
     # pi0 3 epochs
-    0: "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3"
+    0: "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3", 
+    # pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50
+    1: "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50_250506_185257_iter1_hindsight-biased-on-50_pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50"
 }
 
 
@@ -70,7 +72,20 @@ iter_to_agent_config = {
         "model_id": "/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93",
         "api_prompt_template_file": "prompts/car_dealer/car_dealer_api_template.j2",
         "prompt_template_file": "prompts/car_dealer/car_dealer_template.j2",
-        "server_url": "http://localhost:30123/",
+        "server_url": "http://localhost:TODO/",
+        "dist_url_port": None,
+        "temperature": 0.3,
+        "batch_limit": 32,
+        "verbose": 0,
+        "debug": False,
+    },
+    1: {
+        "type": "sglang_server",
+        "log_name": "pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50",
+        "model_id": "/share/portal/hw575/agent_prm/save/car_dealer/online_dpo/250506_185257_iter1_hindsight-biased-on-50_pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50",
+        "api_prompt_template_file": "prompts/car_dealer/car_dealer_api_template.j2",
+        "prompt_template_file": "prompts/car_dealer/car_dealer_template.j2",
+        "server_url": "http://localhost:TODO/",
         "dist_url_port": None,
         "temperature": 0.3,
         "batch_limit": 32,
