@@ -19,9 +19,9 @@ leap:
   iter0:
     # iter0 (to train pi1): pi0-all-data-3epoches
     rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
-  # iter1:
-  #   # iter1 (to train pi2): pi1-44pct_leap_from-base-3B_1epoch
-  #   rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-44pct_leap_from-base-3B_1epoch_250427_163704_iter1_leap_pi1_leap_from-base_epochs=1
+  iter1:
+    # iter1 (to train pi2): pi1-44pct_leap_from-base-3B_1epoch
+    rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-44pct_leap_from-base-3B_1epoch_250427_163704_iter1_leap_pi1_leap_from-base_epochs=1
   iter2:
     # iter2 (to train pi3): pi2-67pct_leap_from-base-3B_1epoch
     rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-67pct_leap_from-base-3B_1epoch_250428_014017_iter2_leap_pi2_leap_from-base_epochs=1
@@ -47,3 +47,12 @@ multi-star:
   iter2:
     # iter2 (to train pi3): pi2-21pct_multi-star_from-base-3B_1epoch_10k-data
     rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-21pct_multi-star_from-base-3B_1epoch_10k-data_250429_132535_iter2_multi-star_10k_pi2_multi-star_from-base_10k-data_epochs=1
+hindsight:
+  prompt_template_file_hindsight: prompts/twenty_questions/twenty_question_gen_prefered_action.j2
+  offpolicy_idx_range: 
+    - 4
+    - 12
+    - 24
+    - 32
+  iter0:
+    rollout_dir: /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/with-summary-hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all

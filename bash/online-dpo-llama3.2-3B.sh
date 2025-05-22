@@ -5,7 +5,11 @@ TEST_SPLITS=val
 TRAIN_EPOCHS=1
 
 # Default values
+TRAIN_BATCH_SIZE=2
 GRAD_ACC=6 # When we use 4 GPUs (3 to train, 1 to generate responses)
+NUM_PROCESSES=3 # When we use 4 GPUs
+VLLM_DEVICE="cuda:3"
+
 
 ########################################################################################
 # Checklist
@@ -119,6 +123,50 @@ GRAD_ACC=6 # When we use 4 GPUs (3 to train, 1 to generate responses)
 # REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250411_012114_iter1_hindsight-biased-on-60_pi0_hindsight-biased-on-60_peft=false/model/checkpoint-1250"
 # MODEL_LOG_NAME="pi1_Q0-lr=5e-6_hindsight-biased-on-60"
 
+##### 50% on-policy, 50% hindsight
+# DATA_DIR=iter1_hindsight-biased-on-50
+# # pi0-all-data-3epoches
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# # BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-50
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250409_011522_iter1_hindsight-biased-on-50_pi0_hindsight-biased-on-50_peft=false/model/checkpoint-1250"
+# MODEL_LOG_NAME="pi1_Q0-lr=5e-6_hindsight-biased-on-50"
+
+# # ##### 20% on-policy, 80% hindsight
+# DATA_DIR=iter1_hindsight-biased-on-20
+# # pi0-all-data-3epoches
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# # BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-20
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250511_121420_iter1_hindsight-biased-on-20_pi0_hindsight-biased-on-20_peft=false/model/checkpoint-1250"
+# MODEL_LOG_NAME="pi1_Q0-lr=5e-6_hindsight-biased-on-20"
+# GRAD_ACC=4
+# # 10000 / 3 / 2 / 4 = 416.6666666667
+# # 417 / 5 = 83.4
+# SAVE_FREQ=84
+
+# # ##### 80% on-policy, 20% hindsight
+# DATA_DIR=iter1_hindsight-biased-on-80
+# # pi0-all-data-3epoches
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# # BoN_pi0_Q0-40pct-lr=5e-6_hindsight-biased-on-80
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250511_121439_iter1_hindsight-biased-on-80_pi0_hindsight-biased-on-80_peft=false/model/checkpoint-500"
+# MODEL_LOG_NAME="pi1_Q0-lr=5e-6_hindsight-biased-on-80"
+
+# # # ##### 30% on-policy, 70% hindsight
+# DATA_DIR=iter1_hindsight-biased-on-30
+# # pi0-all-data-3epoches
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# # BoN_pi0_Q0-40pct-lr=5e-6_hindsight-biased-on-30_redo
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250514_163127_iter1_hindsight-biased-on-30_pi0_hindsight-biased-on-30_peft=false/model/checkpoint-500"
+# MODEL_LOG_NAME="pi1_Q0-40pct-lr=5e-6_hindsight-biased-on-30"
+
+# # ##### 70% on-policy, 30% hindsight
+# DATA_DIR=iter1_hindsight-biased-on-70
+# # pi0-all-data-3epoches
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# # BoN_pi0_Q0-20pct-lr=5e-6_hindsight-biased-on-70_redo
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250514_163249_iter1_hindsight-biased-on-70_pi0_hindsight-biased-on-70_peft=false/model/checkpoint-250"
+# MODEL_LOG_NAME="pi1_Q0-20pct-lr=5e-6_hindsight-biased-on-70"
+
 ############## iter1 (with PRM trained with the new hindsight data)
 # ###### 100% on-policy pi0, 0% off-policy pi0 data
 # DATA_DIR=iter2_new-env
@@ -226,11 +274,50 @@ GRAD_ACC=6 # When we use 4 GPUs (3 to train, 1 to generate responses)
 # MODEL_LOG_NAME="pi1_Q0-20pct-lr=5e-6_high-temp-pi-on-60"
 
 ############################################################################################################################################
+#                          RL Exploration Baselines
+############################################################################################################################################
+# DATA_DIR="iter1_hindsight-biased-on-60"
+# # pi0-all-data-3epoches
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# # BoN_pi0_Q0-lr=5e-6_hindsight-biased-on-60
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250411_012114_iter1_hindsight-biased-on-60_pi0_hindsight-biased-on-60_peft=false/model/checkpoint-1250"
+# MODEL_LOG_NAME="pi1_Q0-lr=5e-6_hindsight-biased-on-60_replicate"
+# # To match other approaches, we are using 5 gpus
+# GRAD_ACC=1
+# SAVE_FREQ=125  # 10000 / 4 / 2 / 2 = 625 --> 625 / 5 = 125
+# NUM_PROCESSES=4 # When we use 4 GPUs
+# VLLM_DEVICE="cuda:4"
+
+############ Replicate with summary
+# DATA_DIR="iter1_hindsight-biased-on-60_with-summary"
+# # pi0-all-data-3epoches
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# # BoN_pi0_Q0-80pct-lr=5e-6_hindsight-biased-on-60_with-summary
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250511_172545_iter1_hindsight-biased-on-60_with-summary_pi0_hindsight-biased-on-60_with-summary_peft=false/model/checkpoint-1000"
+# MODEL_LOG_NAME="pi1_Q0-lr=5e-6-with-summary_hindsight-biased-on-60_with-summary_replicate"
+# # To match other approaches, we are using 5 gpus
+# GRAD_ACC=1
+# SAVE_FREQ=167  # 10000 / 3 / 2 / 1 = 1666.6666666667 --> 1667/10=166.7 --> 167
+
+############ Replicate when PRM is 
+# DATA_DIR="iter1_pi0-new-env"
+# # pi0-all-data-3epoches
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120"
+# # BoN_pi0_Q0-60pct-lr=5e-6_pi0-new-env
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/rm/250403_003704_iter1_pi0-new-env_pi0_pi0-new-env_peft=false_pi0-new-env/model/checkpoint-750"
+# MODEL_LOG_NAME="pi1_Q0-60pct-lr=5e-6_iter1_pi0-new-env_replicate"
+# # To match other approaches, we are using 5 gpus
+# GRAD_ACC=1
+# SAVE_FREQ=125  # 10000 / 4 / 2 / 2 = 625 --> 625 / 5 = 125
+# NUM_PROCESSES=3 # When we use 4 GPUs
+# VLLM_DEVICE="cuda:3"
+
+############################################################################################################################################
 #                          Car Dealer
 ############################################################################################################################################
-DOMAIN=car_dealer
+# DOMAIN=car_dealer
 
-###################### Vanilla RL
+########################################## Vanilla RL
 ######### Iter 1
 # DATA_DIR=iter1
 # # pi0-83pct
@@ -247,20 +334,302 @@ DOMAIN=car_dealer
 # TRAIN_BATCH_SIZE=2, GRAD_ACC=1
 
 ######### Iter 1
-DATA_DIR=iter1_max-car-8
-# pi0-62pct_max-car-8
-POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
-# BoN_pi0_Q0-42pct-lr=5e-6_max-car-8
-REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250504_223511_iter1_max-car-8_pi0-62pct_max-car-8_peft=false/model/checkpoint-500"
-MODEL_LOG_NAME="pi1_Q0-42pct-lr=5e-6_max-car-8"
-# Manullay changing it
-# 20000 / 3 / 2 / 1 = 3333
-# 3333 / 5 = 555.5 --> 556
-SAVE_FREQ=556
-MAX_SEQ_LENGTH=3500
-OUTPUT_LENGTH=400
-GRAD_ACC=1
+# DATA_DIR=iter1_max-car-8
+# # pi0-62pct_max-car-8
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# # BoN_pi0_Q0-42pct-lr=5e-6_max-car-8
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250504_223511_iter1_max-car-8_pi0-62pct_max-car-8_peft=false/model/checkpoint-500"
+# MODEL_LOG_NAME="pi1_Q0-42pct-lr=5e-6_max-car-8"
+# # Manullay changing it
+# # 20000 / 3 / 2 / 1 = 3333
+# # 3333 / 5 = 555.5 --> 556
+# SAVE_FREQ=556
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# GRAD_ACC=1
 # TRAIN_BATCH_SIZE=2, GRAD_ACC=1
+
+######### Iter 2
+# DATA_DIR=iter2_max-car-8
+# # pi0-62pct_max-car-8
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# # BoN_pi1_Q1-60pct-lr=5e-6
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250507_111155_iter2_max-car-8_pi1_Q0-42pct-lr=5e-6_max-car-8_peft=false/model/checkpoint-708"
+# MODEL_LOG_NAME="pi2_Q1-60pct-lr=5e-6_max-car-8"
+# # # 20000 / 5 / 2 / 2 = 1000
+# # # 1000 / 5 = 200
+# SAVE_FREQ=200
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# TRAIN_BATCH_SIZE=2
+# GRAD_ACC=1
+# # Training with 6 GPUs for speed
+# NUM_PROCESSES=5
+# VLLM_DEVICE="cuda:5"
+
+######### Iter 3
+# DATA_DIR=iter3_max-car-8
+# # pi0-62pct_max-car-8
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# # BoN_pi2_Q2-80pct-lr=5e-6
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250510_235742_iter3_max-car-8_pi2_Q1-60pct-lr=5e-6_max-car-8_peft=false/model/checkpoint-944"
+# MODEL_LOG_NAME="pi3_Q2-80pct-lr=5e-6_max-car-8"
+# # # 20000 / 5 / 2 / 2 = 1000
+# # # 1000 / 5 = 200
+# SAVE_FREQ=200
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# TRAIN_BATCH_SIZE=2
+# GRAD_ACC=1
+# # Training with 6 GPUs for speed
+# NUM_PROCESSES=5
+# VLLM_DEVICE="cuda:5"
+
+########################################## Hindsight PRM + RL
+# ######### Iter 1 50% on-policy, 50% off-policy (train with 6 gpus for speed)
+# DATA_DIR=iter1_hindsight-biased-on-50
+# # pi0-62pct_max-car-8
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# # BoN_pi0_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250505_232121_iter1_hindsight-biased-on-50_pi0-62pct_max-car-8_hindsight-biased-on-50_peft=false/model/checkpoint-2000"
+# MODEL_LOG_NAME="pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50"
+# # 20000 / 5 / 2 / 2 = 1000
+# # 1000 / 5 = 200
+# SAVE_FREQ=200
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# TRAIN_BATCH_SIZE=2
+# GRAD_ACC=1
+# # Training with 6 GPUs for speed
+# NUM_PROCESSES=5
+# VLLM_DEVICE="cuda:5"
+
+# ######### Iter 1 40% on-policy, 60% off-policy (train with 6 gpus for speed)
+# DATA_DIR=iter1_hindsight-biased-on-40
+# # pi0-62pct_max-car-8
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# # BoN_pi0_Q0-64pct-lr=5e-6_max-car-8_hindsight-biased-on-40
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250505_231353_iter1_hindsight-biased-on-40_pi0-62pct_max-car-8_hindsight-biased-on-40_peft=false/model/checkpoint-1500"
+# MODEL_LOG_NAME="pi1_Q0-64pct-lr=5e-6_max-car-8_hindsight-biased-on-40"
+# # 20000 / 5 / 2 / 2 = 1000
+# # 1000 / 5 = 200
+# SAVE_FREQ=200
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# TRAIN_BATCH_SIZE=2
+# GRAD_ACC=1
+# # Training with 6 GPUs for speed
+# NUM_PROCESSES=5
+# VLLM_DEVICE="cuda:5"
+
+# ######### Iter 1 60% on-policy, 40% off-policy (train with 6 gpus for speed)
+# DATA_DIR=iter1_hindsight-biased-on-60
+# # pi0-62pct_max-car-8
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# # BoN_pi0_Q0-64pct-lr=5e-6_max-car-8_hindsight-biased-on-60
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250505_232159_iter1_hindsight-biased-on-60_pi0-62pct_max-car-8_hindsight-biased-on-60_peft=false/model/checkpoint-1500"
+# MODEL_LOG_NAME="pi1_Q0-64pct-lr=5e-6_max-car-8_hindsight-biased-on-60"
+# # 20000 / 5 / 2 / 2 = 1000
+# # 1000 / 5 = 200
+# SAVE_FREQ=200
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# TRAIN_BATCH_SIZE=2
+# GRAD_ACC=1
+# # Training with 6 GPUs for speed
+# NUM_PROCESSES=5
+# VLLM_DEVICE="cuda:5"
+
+# # ######### Iter 2 50% on-policy, 50% off-policy (train with 6 gpus for speed)
+# DATA_DIR=iter2_hindsight-biased-on-50
+# # pi0-62pct_max-car-8
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# # BoN_pi1_Q1-21pct-lr=5e-6_max-car-8_hindsight-biased-on-50
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250508_000202_iter2_hindsight-biased-on-50_pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50_peft=false/model/checkpoint-250"
+# MODEL_LOG_NAME="pi2_Q1-21pct-lr=5e-6_max-car-8_hindsight-biased-on-50"
+# # 20000 / 5 / 2 / 2 = 1000
+# # 1000 / 5 = 200
+# SAVE_FREQ=200
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# TRAIN_BATCH_SIZE=2
+# GRAD_ACC=1
+# # Training with 6 GPUs for speed
+# NUM_PROCESSES=5
+# VLLM_DEVICE="cuda:5"
+
+# ######### Iter 2 60% on-policy, 40% off-policy (train with 6 gpus for speed)
+# DATA_DIR=iter2_hindsight-biased-on-60
+# # pi0-62pct_max-car-8
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# # BoN_pi1_Q1-21pct-lr=5e-6_max-car-8_hindsight-biased-on-60
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250508_005808_iter2_hindsight-biased-on-60_pi1-hd-50_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-60_peft=false/model/checkpoint-250"
+# MODEL_LOG_NAME="pi2_Q1-21pct-lr=5e-6_max-car-8_hindsight-biased-on-60"
+# # 20000 / 5 / 2 / 2 = 1000
+# # 1000 / 5 = 200
+# SAVE_FREQ=200
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# TRAIN_BATCH_SIZE=2
+# GRAD_ACC=1
+# # Training with 6 GPUs for speed
+# NUM_PROCESSES=5
+# VLLM_DEVICE="cuda:5"
+
+# # ######### Iter 2 50% on-policy, 50% off-policy [Before we trained PRM with past data] (train with 6 gpus for speed)
+# DATA_DIR=iter2_hindsight-biased-on-50_no-past-rollout
+# # pi0-62pct_max-car-8
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# # BoN_pi1_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250509_213834_iter2_hindsight-biased-on-50_no-past-rollout_pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50_no-past-rollout_peft=false/model/checkpoint-1000"
+# MODEL_LOG_NAME="pi2_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50"
+# # 20000 / 5 / 2 / 2 = 1000
+# # 1000 / 5 = 200
+# SAVE_FREQ=200
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# TRAIN_BATCH_SIZE=2
+# GRAD_ACC=1
+# # Training with 6 GPUs for speed
+# NUM_PROCESSES=5
+# VLLM_DEVICE="cuda:5"
+
+# ######### Iter 2 60% on-policy, 40% off-policy (train with 6 gpus for speed)
+# DATA_DIR=iter2_hindsight-biased-on-60_no-past-rollout
+# # pi0-62pct_max-car-8
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# # BoN_pi1_Q1-64pct-lr=5e-6_no-past_hindsight-biased-on-60
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250509_221223_iter2_hindsight-biased-on-60_no-past-rollout_pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-60_no-past-rollout_peft=false/model/checkpoint-750"
+# MODEL_LOG_NAME="pi2_Q1-64pct-lr=5e-6_no-past_hindsight-biased-on-60"
+# # 20000 / 5 / 2 / 2 = 1000
+# # 1000 / 5 = 200
+# SAVE_FREQ=200
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# TRAIN_BATCH_SIZE=2
+# GRAD_ACC=1
+# # Training with 6 GPUs for speed
+# NUM_PROCESSES=5
+# VLLM_DEVICE="cuda:5"
+
+# # ######### Iter 3 50% on-policy, 50% off-policy (train with 6 gpus for speed)
+# DATA_DIR=iter3_hindsight-biased-on-60_past-scale
+# # pi0-62pct_max-car-8
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# # BoN_pi2_Q2-21pct-lr=5e-6_hindsight-biased-on-50
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250511_153307_iter3_hindsight-biased-on-50_past-scale_pi2-80pct_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50_past-scale_peft=false/model/checkpoint-250"
+# MODEL_LOG_NAME="pi3_Q2-21pct-lr=5e-6_hindsight-biased-on-60"
+# # 20000 / 5 / 2 / 2 = 1000
+# # 1000 / 5 = 200
+# SAVE_FREQ=200
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# TRAIN_BATCH_SIZE=2
+# GRAD_ACC=1
+# # Training with 6 GPUs for speed
+# NUM_PROCESSES=5
+# VLLM_DEVICE="cuda:5"
+
+# # ######### Iter 3 50% on-policy, 50% off-policy (train with 6 gpus for speed) Previously, we used the wrong dataset
+# DATA_DIR=iter3_hindsight-biased-on-50_past-scale
+# # pi0-62pct_max-car-8
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/sft/250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3/checkpoint-93"
+# # BoN_pi2_Q2-21pct-lr=5e-6_hindsight-biased-on-50
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/car_dealer/rm/250511_153307_iter3_hindsight-biased-on-50_past-scale_pi2-80pct_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50_past-scale_peft=false/model/checkpoint-250"
+# MODEL_LOG_NAME="pi3_Q2-21pct-lr=5e-6_hindsight-biased-on-50"
+# # 20000 / 5 / 2 / 2 = 1000
+# # 1000 / 5 = 200
+# SAVE_FREQ=200
+# MAX_SEQ_LENGTH=3500
+# OUTPUT_LENGTH=400
+# TRAIN_BATCH_SIZE=2
+# GRAD_ACC=1
+# # Training with 6 GPUs for speed
+# NUM_PROCESSES=5
+# VLLM_DEVICE="cuda:5"
+
+
+############################################################################################################################################
+#                          Guess My City
+############################################################################################################################################
+DOMAIN=guess_my_city
+
+# ########################################## Vanilla RL
+# ######### Iter 1
+# DATA_DIR=iter1
+# # pi0-41pct
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/guess_my_city/sft/250506_225348_iter0_pi0_vanilla_epochs=3/checkpoint-28"
+# # BoN_pi0_Q0-60pct-lr=5e-6
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/guess_my_city/rm/250508_163537_iter1_pi0-82pct_peft=false/model/checkpoint-750"
+# MODEL_LOG_NAME="pi1_Q0-60pct-lr=5e-6"
+# # Manullay changing it
+# # 10000 / 3 / 2 / 2 = 833
+# # 833 / 5 = 166
+# SAVE_FREQ=166
+# MAX_SEQ_LENGTH=3000
+# OUTPUT_LENGTH=256
+# GRAD_ACC=2
+
+# # ######### Iter 2
+# DATA_DIR=iter2
+# # pi0-41pct
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/guess_my_city/sft/250506_225348_iter0_pi0_vanilla_epochs=3/checkpoint-28"
+# # BoN_pi1_Q1-lr=5e-6
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/guess_my_city/rm/250511_195217_iter2_pi1-41pct_Q0-60pct-lr=5e-6_peft=false/model/checkpoint-1250"
+# MODEL_LOG_NAME="pi1_Q1-lr=5e-6"
+# # Manullay changing it
+# # 10000 / 3 / 2 / 2 = 833
+# # 833 / 5 = 166
+# SAVE_FREQ=166
+# MAX_SEQ_LENGTH=3000
+# OUTPUT_LENGTH=256
+# GRAD_ACC=2
+
+# ########################################## Hindsight PRM + RL
+# ######### Iter 1
+# DATA_DIR=iter1_hindsight-biased-on-50_from-sparse-r
+# # pi0-41pct
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/guess_my_city/sft/250506_225348_iter0_pi0_vanilla_epochs=3/checkpoint-28"
+# # BoN_pi0_Q0-60pct-lr=5e-6_hindsight-biased-on-50-from-sparse-r
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/guess_my_city/rm/250512_222953_iter1_hindsight-biased-on-50_from-sparse-r_pi0-82pct_hindsight-biased-on-50-from-sparse-r_peft=false/model/checkpoint-750"
+# MODEL_LOG_NAME="pi1_Q0-60pct-lr=5e-6_hindsight-biased-on-50-from-sparse-r"
+# # Manullay changing it
+# # 10000 / 3 / 2 / 2 = 833
+# # 833 / 5 = 166
+# SAVE_FREQ=166
+# MAX_SEQ_LENGTH=3000
+# OUTPUT_LENGTH=256
+# GRAD_ACC=1
+
+# # ######### Iter 1 50% on-policy, 50% off-policy
+# DATA_DIR=iter2_hindsight-biased-on-50_from-sparse-r
+# # pi0-41pct
+# POLICY_MODEL="/share/portal/hw575/agent_prm/save/guess_my_city/sft/250506_225348_iter0_pi0_vanilla_epochs=3/checkpoint-28"
+# # BoN_pi1_Q1-60pct-lr=5e-6_hindsight-biased-on-50-from-sparse-r
+# REWARD_MODEL="/share/portal/hw575/agent_prm/save/guess_my_city/rm/250514_185527_iter2_hindsight-biased-on-50_from-sparse-r_pi1-41pct_Q0-60pct-lr=5e-6_hindsight-biased-on-50-from-sparse-r_peft=false/model/checkpoint-750"
+# MODEL_LOG_NAME="pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-50-from-sparse-r"
+# # Manullay changing it
+# # 10000 / 3 / 2 / 2 = 1666.6666666667
+# # 1667 / 5 = 333.4 (save_steps=334)
+# SAVE_FREQ=334
+# MAX_SEQ_LENGTH=3000
+# OUTPUT_LENGTH=256
+# GRAD_ACC=1
+
+# ######### Iter 1 60% on-policy, 40% off-policy
+DATA_DIR=iter2_hindsight-biased-on-60_from-sparse-r
+# pi0-41pct
+POLICY_MODEL="/share/portal/hw575/agent_prm/save/guess_my_city/sft/250506_225348_iter0_pi0_vanilla_epochs=3/checkpoint-28"
+# BoN_pi1_Q1-60pct-lr=5e-6_hindsight-biased-on-60-from-sparse-r
+REWARD_MODEL="/share/portal/hw575/agent_prm/save/guess_my_city/rm/250514_190606_iter2_hindsight-biased-on-60_from-sparse-r_pi1-41pct_Q0-60pct-lr=5e-6_hindsight-biased-on-60-from-sparse-r_peft=false/model/checkpoint-750"
+MODEL_LOG_NAME="pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60-from-sparse-r"
+# Manullay changing it
+# 10000 / 3 / 2 / 2 = 1666.6666666667
+# 1667 / 5 = 333.4 (save_steps=334)
+SAVE_FREQ=334
+MAX_SEQ_LENGTH=3000
+OUTPUT_LENGTH=256
+GRAD_ACC=1
 
 
 current_date=$(date +"%y%m%d_%H%M%S")
@@ -289,7 +658,7 @@ SAVE_DIR=save/${DOMAIN}/online_dpo/${current_date}_${DATA_DIR}_${MODEL_LOG_NAME}
 
 echo "Save directory: $SAVE_DIR"
 
-accelerate launch  --num-processes 3 \
+accelerate launch  --num-processes ${NUM_PROCESSES} \
     --config_file configs/ds_configs/deepspeed_zero2.yaml scripts/train/online_dpo_vllm_thread.py \
     --dataset_mixer "{\"${DATASET}\": 1.0}" \
     --dataset_train_splits ${TRAIN_SPLITS} \
@@ -318,7 +687,7 @@ accelerate launch  --num-processes 3 \
     --output_dir ${SAVE_DIR} \
     --checkpoint_output_dir tmp/chkpts/ \
     --save_freq ${SAVE_FREQ} \
-    --vllm_device cuda:3 \
+    --vllm_device ${VLLM_DEVICE} \
     --vllm_gpu_memory_utilization 0.9 \
     --hf_metadata_dataset "" \
     --no_try_launch_beaker_eval_jobs \
