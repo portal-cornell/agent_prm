@@ -6,7 +6,7 @@ for each failed rollout,
     - generate a correction for each state and action (given state and the summary)
 
 Usage:
-    python scripts/dataproc/expert_relabel/correct_rollouts_twenty_questions.py -d train -i 1 -e
+    python scripts/dataproc/expert_relabel/correct_rollouts_guess_my_city.py -d train -i 1 -e
 
     -i iteration, the iteration for the pi that you are training for (e.g., pi3 would be iteration=2)
 """
@@ -22,23 +22,25 @@ from agent_prm.utils.logger_email import elogger
 from agent_prm.utils.general_utils import load_json, save_json
 from agent_prm.utils.openai import generate_from_openai_completion
 from agent_prm.utils.parser import parse_json
-from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, VALIDATION_OBJECT_DICT, get_default_word_list
 
-ALL_OBJ_LIST = [wv[0] for wv in get_default_word_list("all")]
+from agent_prm.envs.guess_my_city.data import TRAIN_CITY_DICT, VALIDATION_CITY_DICT, get_default_city_list
+
+ALL_CITY_LIST = [wv[0] for wv in get_default_city_list("all")]
 MAX_QUERY_ATTEMPTS = 3
 
-def relabel_one_rollout(rollout_path: str, expert_correction_prompt: Template, expert_summary_prompt: Template, obj: str, category: str):
+def relabel_one_rollout(rollout_path: str, expert_correction_prompt: Template, expert_summary_prompt: Template, city: str, category: str):
     """
     Effect:
         - Generate a summary of the rollout
         - Generate a correction for each state and action (given state and the summary)
     """
+    file_name = os.path.basename(rollout_path)
     rollout = load_json(rollout_path)
     total_cost = 0
 
     # Generate a summary
     if "summary" not in rollout[0]:
-        summary, cost = gen_summary_from_rollout(expert_summary_prompt, rollout, obj, category)
+        summary, cost = gen_summary_from_rollout(expert_summary_prompt, file_name, rollout)
         rollout[0]["summary"] = summary
         save_json(rollout_path, rollout)
         total_cost += cost
@@ -55,7 +57,7 @@ def relabel_one_rollout(rollout_path: str, expert_correction_prompt: Template, e
         if "expert_alternatives" not in rollout[t]:
             rollout[t]["expert_alternatives"] = []  # Edit the rollout file to save the alt actions
 
-            alt_reason_actions_list, cost = gen_alt_actions(expert_correction_prompt, obj, category, summary, rollout, t, num_alt_actions_to_gen=1)
+            alt_reason_actions_list, cost = gen_alt_actions(expert_correction_prompt, file_name, city, summary, rollout, t, num_alt_actions_to_gen=1)
 
             print(f"t={t}: Alt reason actions (cost: ${cost:.2f}):\n{json.dumps(alt_reason_actions_list, indent=4)}")
 
@@ -72,29 +74,39 @@ def relabel_one_rollout(rollout_path: str, expert_correction_prompt: Template, e
 
     return total_cost
 
-def format_chat_history_and_goal(rollout: List[Dict], t: int, secret_word:str, category: str="") -> Tuple[str, str]:
+def format_chat_history_and_goal(rollout: List[Dict], t: int, file_name: str="", include_reason: bool=False) -> Tuple[str, str]:
     """
     Return
         - chat_history: str (until t)
         - goal: str (optional, if file_name is provided)
     """
-    answer_str = f"The secret word is '{secret_word}'. It's in the general category '{category}'."
+    # Get the answer from the path name
+    if file_name != "":
+        # Example filename: Santiago de Cuba, Cuba;Santiago, Cuba_2.json
+        answer = file_name.split("_")[0]
+        if ";" in answer:
+            # Sometimes there are multiple spelling for the same city
+            answer = answer.split(";")[0]
+        answer_str = f"The secret city is '{answer}'."
+    else:
+        answer_str = ""
 
     history_str = ""
     for i in range(t):
-        history_str += f"Question #{i+1}: {rollout[i]['action']}\nAnswer #{i+1}: {rollout[i]['answer']}\n"
+        if include_reason:
+            history_str += f"Player Reasoning #{i+1}: {rollout[i]['reason']}\nQuestion #{i+1}: {rollout[i]['action']}\nAnswer #{i+1}: {rollout[i]['answer']}\n\n"
+        else:
+            history_str += f"Question #{i+1}: {rollout[i]['action']}\nAnswer #{i+1}: {rollout[i]['answer']}\n\n"
 
     if history_str == "":
-        history_str = "No chat history yet. Just start with the question."
-
-    return history_str, answer_str
+        history_str = "No history so far."
+    return history_str.strip(), answer_str.strip()
 
 def gen_alt_actions(
         expert_correction_prompt: Template,
         # Used to verify the feasibility of the reasoning
-        secret_word: str,
-        category: str,
-        # Used to generate alternative action
+        file_name: str,
+        city: str,
         summary: str, 
         rollout: List[Dict], 
         t: int, 
@@ -102,10 +114,10 @@ def gen_alt_actions(
     """
     Generate the alternative actions for the given timestep
     """
-    chat_history, _ = format_chat_history_and_goal(rollout, t, secret_word, category)
-    chat_history = chat_history.strip()
+    chat_history, _ = format_chat_history_and_goal(rollout, t, file_name)
 
-    system_prompt = expert_correction_prompt.render(system=True, all_obj_list=ALL_OBJ_LIST, summary=summary, num_responses=num_alt_actions_to_gen).strip()
+    system_prompt = expert_correction_prompt.render(system=True, all_city_list=ALL_CITY_LIST, summary=summary, num_responses=num_alt_actions_to_gen).strip()
+
     input_prompt = expert_correction_prompt.render(system=False, mode="input", observation_action_history=chat_history, num_responses=num_alt_actions_to_gen).strip()
 
     messages = [
@@ -113,31 +125,18 @@ def gen_alt_actions(
         {"role": "user", "content": input_prompt}
     ]
 
-    terminate = False
-    query_attempts = 0
-    query_cost = 0
+    response, cost = generate_from_openai_completion(
+        messages=messages, model="gpt-4o", temperature=0.7
+    )
 
-    while not terminate and query_attempts < MAX_QUERY_ATTEMPTS:
-        response, cost = generate_from_openai_completion(
-            messages=messages, model="gpt-4o", temperature=0.7
-        )
-
-        reason_action_list = parse_json(response)
-        try:
-            assert reason_action_list is not None, f"Failed to parse response: {response}"
-            for reason_action in reason_action_list:
-                assert "teacher_reason" in reason_action and "player_reason" in reason_action and "question" in reason_action, f"Invalid response: {reason_action}. Must contain 'teacher_reason', 'player_reason' and 'question'"
-            terminate = True
-        except Exception as e:
-            print(f"Error parsing response: {response}")
-            raise e
-        
-        query_attempts += 1
-        query_cost += cost
-
-    if not terminate:
-        elogger.log(f"Failed to get a valid response after {MAX_QUERY_ATTEMPTS} attempts")
-        raise Exception(f"Failed to get a valid response after {MAX_QUERY_ATTEMPTS} attempts")
+    reason_action_list = parse_json(response)
+    try:
+        assert reason_action_list is not None, f"Failed to parse response: {response}"
+        for reason_action in reason_action_list:
+            assert "teacher_reason" in reason_action and "player_reason" in reason_action and "question" in reason_action, f"Invalid response: {reason_action}. Must contain 'teacher_reason', 'player_reason' and 'question'"
+    except Exception as e:
+        print(f"Error parsing response: {response}")
+        raise e
     
     # Post-process to rename "question" to "action" and "player_reason" to "reason"
     for reason_action in reason_action_list:
@@ -146,7 +145,7 @@ def gen_alt_actions(
 
     # Set a flag that the reasoning has potentially secret information
     for reason_action in reason_action_list:
-        reason_action["feasibility"] = check_reasoning_feasibility(reason_action["reason"], secret_word, category)
+        reason_action["feasibility"] = check_reasoning_feasibility(reason_action["reason"], city)
 
         if reason_action["feasibility"] == "low":
             print(f"=======================")
@@ -156,12 +155,12 @@ def gen_alt_actions(
             print(f"Player Reasoning:\n{reason_action['reason']}")
             print(f"Feasibility: {reason_action['feasibility']}")
             print(f"=======================")
-            elogger.log(f"Please verify the reasoning of the following rollout: {reason_action}")
             input("Press Enter to continue...")
 
-    return reason_action_list, query_cost
+    return reason_action_list, cost
+    
 
-def check_reasoning_feasibility(reason: str, secret_word: str, category: str) -> Tuple[str, str]:
+def check_reasoning_feasibility(reason: str, city: str) -> Tuple[str, str]:
     """
     Check if the reasoning is infeasible
 
@@ -171,26 +170,27 @@ def check_reasoning_feasibility(reason: str, secret_word: str, category: str) ->
         'low': The reasoning is infeasible
     """
     reason_lower = reason.lower()
-    secret_word_lower = secret_word.lower()
-    category_lower = category.lower()
+    city_full_str_lower = city.lower()
+    city_only_lower = city.split(",")[0].lower().strip()
+    country_lower = city.split(",")[1].lower().strip()
 
-    if (secret_word_lower in reason_lower) or (category_lower in reason_lower):
+    if (city_full_str_lower in reason_lower) or (city_only_lower in reason_lower) or (country_lower in reason_lower):
         return 'medium'
-    elif ("summary" in reason_lower) or (f"the secret word is {secret_word_lower}" in reason_lower) or (f"the secret word is '{secret_word_lower}'" in reason_lower) or (f'the secret word is "{secret_word_lower}"' in reason_lower):
+    elif ("summary" in reason_lower) or (f"the secret city is {city_full_str_lower}" in reason_lower) or (f"the secret city is '{city_full_str_lower}'" in reason_lower) or (f'the secret city is "{city_full_str_lower}"' in reason_lower) or (f"the secret city is {city_only_lower}" in reason_lower) or (f"the secret city is '{city_only_lower}'" in reason_lower) or (f'the secret city is "{city_only_lower}"' in reason_lower):
         return 'low'
     else:
         return 'high'
     
 
-def gen_summary_from_rollout(summary_prompt: Template, rollout: List[Dict], secret_word: str, category: str) -> Tuple[str, float]:
+def gen_summary_from_rollout(summary_prompt: Template, file_name: str, rollout: List[Dict]) -> str:
     """
     Generate a summary from the rollout
     """
-    chat_history, answer_str = format_chat_history_and_goal(rollout, len(rollout), secret_word, category)
+    chat_history, answer_str = format_chat_history_and_goal(rollout, len(rollout), file_name, include_reason=True)
 
-    system_prompt = summary_prompt.render(system=True, all_obj_list=ALL_OBJ_LIST).strip()
+    system_prompt = summary_prompt.render(system=True, all_city_list=ALL_CITY_LIST).strip()
     input_prompt = summary_prompt.render(system=False, mode="input", observation_action_history=chat_history, goal=answer_str).strip()
-
+    
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": input_prompt}
@@ -199,6 +199,7 @@ def gen_summary_from_rollout(summary_prompt: Template, rollout: List[Dict], secr
     response, cost = generate_from_openai_completion(messages=messages, model="gpt-4o", temperature=0.3)
 
     return response, cost
+
 
 def get_failed_rollouts(config: DictConfig, data_types: List[str], iteration: int):
     """
@@ -212,16 +213,16 @@ def get_failed_rollouts(config: DictConfig, data_types: List[str], iteration: in
     for data_type in data_types:
         for data_type in data_types:
             if data_type == "train":
-                object_dict_to_use = TRAIN_OBJECT_DICT
+                city_dict_to_use = TRAIN_CITY_DICT
             elif data_type == "val":
-                object_dict_to_use = VALIDATION_OBJECT_DICT
+                city_dict_to_use = VALIDATION_CITY_DICT
 
-        objects_to_eval_on = [(obj, category, data_type, rollout_idx) for category in object_dict_to_use.keys() for obj in object_dict_to_use[category] for rollout_idx in range(config.leap.rollout_per_task_range_min, config.leap.rollout_per_task_range_max)]
+        cities_to_eval_on = [(city, category, data_type, rollout_idx) for category in city_dict_to_use.keys() for city in city_dict_to_use[category] for rollout_idx in range(config.leap.rollout_per_task_range_min, config.leap.rollout_per_task_range_max)]
 
-        for obj, category, _, rollout_idx in tqdm(objects_to_eval_on, desc="Processing objects"):
-            rollout_path = os.path.join(rollout_dir, data_type, f"{obj}_{rollout_idx}.json")
+        for city, category, _, rollout_idx in tqdm(cities_to_eval_on, desc="Processing cities"):
+            rollout_path = os.path.join(rollout_dir, data_type, f"{city}_{rollout_idx}.json")
             if is_failed_rollout(rollout_path):
-                failed_rollout_paths.append((rollout_path, obj, category))
+                failed_rollout_paths.append((rollout_path, city, category))
 
     return failed_rollout_paths
 
@@ -237,7 +238,7 @@ def is_failed_rollout(rollout_path: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", type=str, default="configs/create_sft_training_data/twenty_questions.yaml")
+    parser.add_argument("-c", "--config", type=str, default="configs/create_sft_training_data/guess_my_city.yaml")
     parser.add_argument("-d", "--data_types", help="List of data types to process", nargs="+", choices=["train", "val"])
     parser.add_argument("-i", "--iteration", type=int, default=0, help="The iteration number")
     parser.add_argument("-e", "--elogger", action="store_true", default=False, help="Whether to send email alerts")
@@ -261,9 +262,9 @@ if __name__ == "__main__":
 
     total_cost = 0
     # Correct the rollouts
-    for failed_rollout_path, obj, category in tqdm(failed_rollout_paths, desc="Correcting rollouts"):
+    for failed_rollout_path, city, category in tqdm(failed_rollout_paths, desc="Correcting rollouts"):
         print(f"\nCorrecting {failed_rollout_path}")
-        total_cost += relabel_one_rollout(failed_rollout_path, expert_correction_prompt, expert_summary_prompt, obj, category)
+        total_cost += relabel_one_rollout(failed_rollout_path, expert_correction_prompt, expert_summary_prompt, city, category)
         print(f"====== Total cost so far: ${total_cost:.2f} ======")
 
     elogger.log(f"Successfully corrected {len(failed_rollout_paths)} failed rollouts (total cost: ${total_cost:.2f})")

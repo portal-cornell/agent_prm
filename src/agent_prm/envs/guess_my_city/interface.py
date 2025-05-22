@@ -36,8 +36,17 @@ def query_agent_batch(agent: Agent, histories: List[List[Dict[str, str]]], all_c
 
     return reason_actions, generated_texts
 
-def rollout_batch(agent: Agent, batched_env: BatchedGuessMyCityEnvironment, all_city_list: List[WordVariants], words_to_guess: List[WordVariants], city_categories: List[str], histories: List[List[Dict]], traj_list: List[List[Dict]], prev_dones: List[bool], num_alt_responses: int):
-    total_rewards = [0 for _ in range(len(histories))]
+def rollout_batch(agent: Agent, 
+                  batched_env: BatchedGuessMyCityEnvironment, 
+                  all_city_list: List[WordVariants],
+                  words_to_guess: List[WordVariants], 
+                  histories: List[List[Dict]], 
+                  traj_list: List[List[Dict]], 
+                  prev_dones: List[bool], 
+                  num_alt_responses: int, 
+                  total_rewards_in: List[int] = [],
+                  ):
+    total_rewards = [0 for _ in range(len(histories))] if total_rewards_in == [] else total_rewards_in
     while not all(prev_dones):
         # Batched way
         start_time = time.time()

@@ -113,7 +113,6 @@ def process_data(data_type: str, cfg: dict, i: int, mode: str):
         iter_str += f"_multi-star{'_' + cfg['multi-star']['note'] if cfg['multi-star']['note'] != '' else ''}"
         iter_str += f"_mix-{int(100*cfg['multi-star']['pct_of_past_rollouts'])}pct-past" if cfg["multi-star"]["use_past_rollouts"] and i != 1 else ""
     elif mode == "leap":
-        raise NotImplementedError("LEAP mode is not implemented for Guess My City")
         rollout_iter_str = f"iter{i-1}"
         raw_rollout_dir = os.path.join(cfg["leap"][rollout_iter_str]["rollout_dir"], data_type)  # input
         iter_str += "_leap"
@@ -153,7 +152,6 @@ def process_data(data_type: str, cfg: dict, i: int, mode: str):
         # Multi-Star only train on successful rollouts (so we need to filter out the failed rollouts)
         json_files.extend(get_successful_rollouts(successful_json_files, curr_rollout_per_task))
     elif mode == "leap":
-        raise NotImplementedError("LEAP mode is not implemented for Guess My City")
         json_files = [f for f in json_files if int(f.split("_")[-1].split(".")[0]) in list(range(cfg["leap"]["rollout_per_task_range_min"], cfg["leap"]["rollout_per_task_range_max"]))]
 
     # Load the template
@@ -195,7 +193,7 @@ def process_data(data_type: str, cfg: dict, i: int, mode: str):
                 "observation_action_history": observation_action_history,
             }
 
-            prompt = prompt_template.render(**input_data)
+            prompt = prompt_template.render(**input_data).strip()
 
             if mode == "leap" and "expert_alternatives" in data[i]:
                 # This is a failed rollout with expert relabeled actions
@@ -215,7 +213,11 @@ def process_data(data_type: str, cfg: dict, i: int, mode: str):
                 if mode == "leap":
                     num_successful_datapoints += 1
 
-            response = prompt_template.render(**output_data)
+            response = prompt_template.render(**output_data).strip()
+
+            # if mode == "leap" and "expert_alternatives" in data[i]:
+            #     print(response)
+            #     input("Press Enter to continue...")
 
             datapoint = {
                 "prompt": [{"role": "user", "content": prompt}],

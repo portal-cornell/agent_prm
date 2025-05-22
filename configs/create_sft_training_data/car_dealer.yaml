@@ -16,13 +16,16 @@ output_fields:
   action: action
 # For the LEAP baseline where we relabel the rollouts with expertactions
 leap:
-  expert_correction_prompt: prompts/twenty_questions/twenty_question_expert_gen_prefered_action.j2
-  summary_prompt: prompts/twenty_questions/twenty_question_summary.j2
   rollout_per_task_range_min: 0
   rollout_per_task_range_max: 3
+  iter0:
+    rollout_dir: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/leap_pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3
+  iter1:
+    # pi1-62pct_leap
+    rollout_dir: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1-62pct_leap_250506_154225_iter1-max-car-8_leap_pi1_leap_from-base_max-car-8_epochs=1
 # For the multi-star baseline, we only do SFT on successful rollouts
 multi-star:
-  rollout_per_task: 56 # To ensure fairness, we will ensure that each game has {rollout_per_task} rollouts
+  rollout_per_task: 50 # To ensure fairness, we will ensure that each game has {rollout_per_task} rollouts
   note: '10k'
   use_past_rollouts: true
   pct_of_past_rollouts: 0.5
@@ -33,3 +36,6 @@ multi-star:
   iter1:
     # pi1-41pct_multi-star
     rollout_dir: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1-41pct_multi-star_250502_015227_iter1_multi-star_10k_pi0_multi-star_from-base_10k-data_lr=3e-6_epochs=1
+  iter2:
+    # iter2 (to train pi3): pi2-41pct_multi-star
+    rollout_dir: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter2/pi2-41pct_multi-star_250502_215649_iter2_multi-star_10k_mix-50pct-past_pi0_multi-star_from-base_10k-data-mix-50pct-past_lr=3e-6_epochs=1

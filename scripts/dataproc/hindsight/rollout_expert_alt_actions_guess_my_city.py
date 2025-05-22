@@ -2,7 +2,7 @@
 Example usage:
 
 When getting export's alternative actions:
-    python scripts/dataproc/hindsight/rollout_expert_alt_actions_twenty_questions.py -e -m g -i 0 -d val -min 0 -max 4 -et gpt4o
+    python scripts/dataproc/hindsight/rollout_expert_alt_actions_guess_my_city.py -e -m g -i 0 -d train -min 0 -max 4 -et gpt4o
 
     where
         -e indicates that we are using elogger
@@ -12,7 +12,7 @@ When getting export's alternative actions:
 
 When completing the rollouts:
     Without specifying the object range:
-        python scripts/dataproc/hindsight/rollout_expert_alt_actions_twenty_questions.py -e -m r -i 0 -d train -min 4 -max 12 -et gpt4o --sim_host TODO --sim_port TODO
+        python scripts/dataproc/hindsight/rollout_expert_alt_actions_guess_my_city.py -e -m r -i 0 -d train -min 4 -max 12 -et gpt4o --sim_host TODO --sim_port TODO
 
         where
             -e indicates that we are using elogger
@@ -22,14 +22,14 @@ When completing the rollouts:
             --min 4 --max 12 indicates that we are completing the rollouts from idx 4 to 12
             -s indicates that we are serving the model
 
-    python scripts/dataproc/hindsight/rollout_expert_alt_actions_twenty_questions.py -e -m r -i 1 -d train -min 4 -max 12 -si 0 -ei 27 -et gpt4o --sim_host TODO --sim_port TODO
+    python scripts/dataproc/hindsight/rollout_expert_alt_actions_guess_my_city.py -e -m r -i 0 -d train -min 4 -max 12 -si 0 -ei 27 -et gpt4o --sim_host TODO --sim_port TODO
         where
             -si 0 -ei 27 indicates that we are starting from object 0 and ending at object 27 (not inclusive)
 
 When merging the summary dicts:
-    python scripts/dataproc/hindsight/rollout_expert_alt_actions_twenty_questions.py -m merge_gen -i 0 -d train -et gpt4o
+    python scripts/dataproc/hindsight/rollout_expert_alt_actions_guess_my_city.py -m merge_gen -i 0 -d train -et gpt4o
 
-    python scripts/dataproc/hindsight/rollout_expert_alt_actions_twenty_questions.py -m merge_rollout -i 0 -d val
+    python scripts/dataproc/hindsight/rollout_expert_alt_actions_guess_my_city.py -m merge_rollout -i 0 -d val
 """
 import argparse
 import os
@@ -43,9 +43,10 @@ from tqdm import tqdm
 from typing import List, Dict, Tuple
 from jinja2 import Template
 
-from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, VALIDATION_OBJECT_DICT, ALL_OBJECT_TO_CATEGORY, get_default_word_list, WordVariants
-from agent_prm.envs.twenty_questions.interface import rollout_batch
-from agent_prm.envs.twenty_questions.env import BatchedTwentyQuestionsEnvironment, setup_batched_twenty_questions_env
+from agent_prm.envs.guess_my_city.data import TRAIN_CITY_DICT, VALIDATION_CITY_DICT, get_default_city_list, WordVariants
+from agent_prm.envs.guess_my_city.env import BatchedGuessMyCityEnvironment, setup_batched_guess_my_city_env
+from agent_prm.envs.guess_my_city.interface import rollout_batch
+
 from agent_prm.agents.agent_registry import initialize_agent
 from agent_prm.utils.general_utils import load_json, save_json
 from agent_prm.utils.openai import generate_from_openai_completion
@@ -54,33 +55,25 @@ from agent_prm.utils.logger_email import elogger
 from agent_prm.utils.general_utils import start_sglang_server
 from agent_prm.agents.agent import Agent
 
-ALL_OBJ_LIST = [wv[0] for wv in get_default_word_list("all")]
+ALL_CITY_LIST = [wv[0] for wv in get_default_city_list("all")]
 
 iter_to_rollout_dir = {
     # pi0 3 epochs
-    # 0: "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight_pi0-all-data-3epoches_250307_212417_peft=false_epoch3+all",
-    0 : {
-        "gpt4o": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
-        "pi*": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/best-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
-        "explorative-pi": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
-        "high-temp-pi": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/high-temp-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
+    0: {
+        "gpt4o": "/share/portal/hw575/agent_prm/data/guess_my_city/eval/iter0/hindsight_pi0-82pct_250506_225348_iter0_pi0_vanilla_epochs=3",
     },
-    # pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60 # Best val model
+    # pi1-60pct_Q0-60pct-lr=5e-6_highsight-biased-on-50-from-sparse-r_retry2
     1: {
-        "gpt4o": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60_250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60",
-    },
-    # pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0 # Best val model
-    2: {
-        "gpt4o": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0_250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0"
+        "gpt4o": "/share/portal/hw575/agent_prm/data/guess_my_city/eval/iter1/pi1-60pct_Q0-60pct-lr=5e-6_highsight-biased-on-50-from-sparse-r_retry2_250513_124139_iter1_hindsight-biased-on-50_from-sparse-r_pi1_Q0-60pct-lr=5e-6_hindsight-biased-on-50-from-sparse-r",
     }
 }
 
 iter_to_agent_config = {
     0: {
         "type": "sglang_server",
-        "log_name": "pi0-all-data-3epoches",
-        "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120",
-        "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
+        "log_name": "pi0-82pct",
+        "model_id": "/share/portal/hw575/agent_prm/save/guess_my_city/sft/250506_225348_iter0_pi0_vanilla_epochs=3/checkpoint-56",
+        "prompt_template_file": "prompts/guess_my_city/guess_my_city_template.j2",
         "server_url": "http://localhost:TODO/",
         "dist_url_port": None,
         "temperature": 0.3,
@@ -90,21 +83,9 @@ iter_to_agent_config = {
     },
     1: {
         "type": "sglang_server",
-        "log_name": "pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60",
-        "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/online_dpo/250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60/checkpoint-165",
-        "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
-        "server_url": "http://localhost:TODO/",
-        "dist_url_port": None,
-        "temperature": 0.3,
-        "batch_limit": 32,
-        "verbose": 0,
-        "debug": False,
-    },
-    2: {
-        "type": "sglang_server",
-        "log_name": "pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
-        "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/online_dpo/250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
-        "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
+        "log_name": "pi1-60pct_Q0-60pct-lr=5e-6_highsight-biased-on-50-from-sparse-r_retry2",
+        "model_id": "/share/portal/hw575/agent_prm/save/guess_my_city/online_dpo/250513_124139_iter1_hindsight-biased-on-50_from-sparse-r_pi1_Q0-60pct-lr=5e-6_hindsight-biased-on-50-from-sparse-r/checkpoint-996",
+        "prompt_template_file": "prompts/guess_my_city/guess_my_city_template.j2",
         "server_url": "http://localhost:TODO/",
         "dist_url_port": None,
         "temperature": 0.3,
@@ -141,18 +122,15 @@ best_agent_config = {
     "debug": False,
 }
 
-NUM_ALT_RESPONSES = 5
+NUM_ALT_RESPONSES = 0
 
-with open("prompts/twenty_questions/twenty_question_summary.j2", "r") as f:
+with open("prompts/guess_my_city/guess_my_city_summary.j2", "r") as f:
     SUMMARY_PROMPT_TEMPLATE = Template(f.read())
 
-with open("prompts/twenty_questions/twenty_question_expert_gen_prefered_action.j2", "r") as f:
+with open("prompts/guess_my_city/guess_my_city_expert_gen_prefered_action.j2", "r") as f:
     GEN_ACTION_PROMPT_TEMPLATE = Template(f.read())
 
-with open("prompts/twenty_questions/twenty_questions_exploration_template.j2", "r") as f:
-    EXPLORE_ACTION_PROMPT_TEMPLATE = Template(f.read())
-
-with open("prompts/twenty_questions/twenty_questions_template.j2", "r") as f:
+with open("prompts/guess_my_city/guess_my_city_template.j2", "r") as f:
     OG_ACTION_PROMPT_TEMPLATE = Template(f.read())
 
 def is_valid_rollout(f: str) -> bool:
@@ -181,7 +159,7 @@ def need_to_complete(file_name: str, summary_dict: Dict) -> bool:
 
     return rollout_idx not in summary_dict or obj not in summary_dict[rollout_idx]
 
-def format_chat_history_and_goal(rollout: List[Dict], t: int, file_name: str="", category: str="") -> Tuple[str, str]:
+def format_chat_history_and_goal(rollout: List[Dict], t: int, file_name: str="", include_reason: bool=False) -> Tuple[str, str]:
     """
     Return
         - chat_history: str (until t)
@@ -189,26 +167,33 @@ def format_chat_history_and_goal(rollout: List[Dict], t: int, file_name: str="",
     """
     # Get the answer from the path name
     if file_name != "":
-        answer = file_name.split("_")[0].lower()
-        answer_str = f"The secret word is '{answer}'. It's in the general category '{category}'."
+        # Example filename: Santiago de Cuba, Cuba;Santiago, Cuba_2.json
+        answer = file_name.split("_")[0]
+        if ";" in answer:
+            # Sometimes there are multiple spelling for the same city
+            answer = answer.split(";")[0]
+        answer_str = f"The secret city is '{answer}'."
     else:
         answer_str = ""
 
     history_str = ""
     for i in range(t):
-        history_str += f"Question #{i+1}: {rollout[i]['action']}\nAnswer #{i+1}: {rollout[i]['answer']}\n"
+        if include_reason:
+            history_str += f"Player Reasoning #{i+1}: {rollout[i]['reason']}\nQuestion #{i+1}: {rollout[i]['action']}\nAnswer #{i+1}: {rollout[i]['answer']}\n\n"
+        else:
+            history_str += f"Question #{i+1}: {rollout[i]['action']}\nAnswer #{i+1}: {rollout[i]['answer']}\n\n"
 
-    return history_str, answer_str
+    return history_str.strip(), answer_str.strip()
 
-def gen_summary_from_rollout(file_name: str, rollout: List[Dict], category: str) -> str:
+def gen_summary_from_rollout(file_name: str, rollout: List[Dict]) -> str:
     """
     Generate a summary from the rollout
     """
-    chat_history, answer_str = format_chat_history_and_goal(rollout, len(rollout), file_name, category)
+    chat_history, answer_str = format_chat_history_and_goal(rollout, len(rollout), file_name, include_reason=True)
 
-    system_prompt = SUMMARY_PROMPT_TEMPLATE.render(system=True, all_obj_list=ALL_OBJ_LIST)
-    input_prompt = SUMMARY_PROMPT_TEMPLATE.render(system=False, mode="input", observation_action_history=chat_history, goal=answer_str)
-
+    system_prompt = SUMMARY_PROMPT_TEMPLATE.render(system=True, all_city_list=ALL_CITY_LIST).strip()
+    input_prompt = SUMMARY_PROMPT_TEMPLATE.render(system=False, mode="input", observation_action_history=chat_history, goal=answer_str).strip()
+    
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": input_prompt}
@@ -218,7 +203,7 @@ def gen_summary_from_rollout(file_name: str, rollout: List[Dict], category: str)
 
     return response, cost
 
-def check_reasoning_feasibility(reason: str, secret_word: str, category: str) -> Tuple[str, str]:
+def check_reasoning_feasibility(reason: str, city: str) -> Tuple[str, str]:
     """
     Check if the reasoning is infeasible
 
@@ -228,21 +213,20 @@ def check_reasoning_feasibility(reason: str, secret_word: str, category: str) ->
         'low': The reasoning is infeasible
     """
     reason_lower = reason.lower()
-    secret_word_lower = secret_word.lower()
-    category_lower = category.lower()
+    city_full_str_lower = city.lower()
+    city_only_lower = city.split(",")[0].lower().strip()
+    country_lower = city.split(",")[1].lower().strip()
 
-    if (secret_word_lower in reason_lower) or (category_lower in reason_lower):
+    if (city_full_str_lower in reason_lower) or (city_only_lower in reason_lower) or (country_lower in reason_lower):
         return 'medium'
-    elif ("summary" in reason_lower) or (f"the secret word is {secret_word_lower}" in reason_lower) or (f"the secret word is '{secret_word_lower}'" in reason_lower) or (f'the secret word is "{secret_word_lower}"' in reason_lower):
+    elif ("summary" in reason_lower) or (f"the secret city is {city_full_str_lower}" in reason_lower) or (f"the secret city is '{city_full_str_lower}'" in reason_lower) or (f'the secret city is "{city_full_str_lower}"' in reason_lower) or (f"the secret city is {city_only_lower}" in reason_lower) or (f"the secret city is '{city_only_lower}'" in reason_lower) or (f'the secret city is "{city_only_lower}"' in reason_lower):
         return 'low'
     else:
         return 'high'
 
 def hindsight_gen_alt_actions(
         # Used to verify the feasibility of the reasoning
-        secret_word: str,
-        category: str,
-        # Used to generate alternative action
+        city: str,
         summary: str, 
         rollout: List[Dict], 
         t: int, 
@@ -252,9 +236,9 @@ def hindsight_gen_alt_actions(
     """
     chat_history, _ = format_chat_history_and_goal(rollout, t)
 
-    system_prompt = GEN_ACTION_PROMPT_TEMPLATE.render(system=True, all_obj_list=ALL_OBJ_LIST, summary=summary, num_responses=num_alt_actions_to_gen)
+    system_prompt = GEN_ACTION_PROMPT_TEMPLATE.render(system=True, all_city_list=ALL_CITY_LIST, summary=summary, num_responses=num_alt_actions_to_gen).strip()
 
-    input_prompt = GEN_ACTION_PROMPT_TEMPLATE.render(system=False, mode="input", observation_action_history=chat_history, num_responses=num_alt_actions_to_gen)
+    input_prompt = GEN_ACTION_PROMPT_TEMPLATE.render(system=False, mode="input", observation_action_history=chat_history, num_responses=num_alt_actions_to_gen).strip()
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -281,7 +265,7 @@ def hindsight_gen_alt_actions(
 
     # Set a flag that the reasoning has potentially secret information
     for reason_action in reason_action_list:
-        reason_action["feasibility"] = check_reasoning_feasibility(reason_action["reason"], secret_word, category)
+        reason_action["feasibility"] = check_reasoning_feasibility(reason_action["reason"], city)
 
         if reason_action["feasibility"] == "low":
             print(f"=======================")
@@ -459,11 +443,11 @@ def generate_rollouts_with_alt_actions(
 
     for data_type in data_types:
         if data_type == "train":
-            object_dict_to_use = TRAIN_OBJECT_DICT
+            city_dict_to_use = TRAIN_CITY_DICT
         elif data_type == "val":
-            object_dict_to_use = VALIDATION_OBJECT_DICT
+            city_dict_to_use = VALIDATION_CITY_DICT
 
-        objects_to_eval_on = [(obj, category, data_type) for category in object_dict_to_use.keys() for obj in object_dict_to_use[category]]
+        objects_to_eval_on = [(city, data_type) for country in city_dict_to_use.keys() for city in city_dict_to_use[country]]
         if start_obj_idx != -1:
             objects_to_eval_on = objects_to_eval_on[start_obj_idx:]
         if end_obj_idx != -1:
@@ -479,9 +463,9 @@ def generate_rollouts_with_alt_actions(
         json_files = [f for f in os.listdir(os.path.join(rollout_dir, data_type)) if is_valid_rollout(f)]
 
         # For each task, we sample N rollouts
-        for obj, category, _ in tqdm(objects_to_eval_on, desc="Processing objects"):
+        for city, _ in tqdm(objects_to_eval_on, desc="Processing objects"):
             # Get the task specific rollout files
-            task_rollout_files = [f for f in json_files if f"{obj}_" in f and is_within_valid_range(f, rollout_idx_min, rollout_idx_max)]
+            task_rollout_files = [f for f in json_files if f"{city}_" in f and is_within_valid_range(f, rollout_idx_min, rollout_idx_max)]
 
             # Randomly select N rollouts (no replacement)
             selected_rollouts = random.sample(task_rollout_files, n_rollouts_to_sample)
@@ -496,7 +480,7 @@ def generate_rollouts_with_alt_actions(
 
                 if expert_type == "gpt4o":
                     if "summary" not in rollout[0]:
-                        summary, cost = gen_summary_from_rollout(rollout_file, rollout, category)
+                        summary, cost = gen_summary_from_rollout(rollout_file, rollout)
                         rollout[0]["summary"] = summary
                         save_json(os.path.join(rollout_dir, data_type, rollout_file), rollout)
                         total_cost += cost
@@ -506,9 +490,9 @@ def generate_rollouts_with_alt_actions(
 
                     print(f"Summary for {rollout_file} (cost: {total_cost:.2f}):\n{summary}")
 
-                # Randomly sample M distinct timesteps (from 30% of the trajectory to 60% of the trajectory) to generate expert queries.
+                # Randomly sample M distinct timesteps (from 30% of the trajectory to 80% of the trajectory) to generate expert queries.
                 start_timestep = math.floor(0.3 * len(rollout))
-                end_timestep = math.ceil(0.6 * len(rollout))
+                end_timestep = math.ceil(0.8 * len(rollout))
                 timestep_to_gen_from = random.sample(range(start_timestep, end_timestep), m_timesteps_to_gen_from)
 
                 print(f"Rollout file: {rollout_file}, range: {range(start_timestep, end_timestep)}, Timesteps to generate from: {timestep_to_gen_from}")
@@ -516,19 +500,21 @@ def generate_rollouts_with_alt_actions(
                 for t in timestep_to_gen_from:
                     # Check if the rollout has already been generated
                     summary_dict = load_json(summary_dict_path)
-                    if str(rollout_idx) in summary_dict and obj in summary_dict[str(rollout_idx)]:
-                        print(f"Rollout {rollout_idx} for {obj} has already been generated. Skipping...")
+                    if str(rollout_idx) in summary_dict and city in summary_dict[str(rollout_idx)]:
+                        print(f"Rollout {rollout_idx} for {city} has already been generated. Skipping...")
                         rollout_idx += 2 # Skipping 2 because we save 2 files per timestep
                         continue
                     
                     if expert_type == "gpt4o":
-                        alt_reason_actions, cost = hindsight_gen_alt_actions(obj, category, summary, rollout, t, actions_to_gen_at_each_timestep)
-                    elif expert_type == "pi*":
-                        alt_reason_actions, cost = pi_gen_alt_actions(rollout, t, actions_to_gen_at_each_timestep, agent)
-                    elif expert_type == "explorative-pi":
-                        alt_reason_actions, cost = explorative_pi_gen_alt_actions(rollout, t, actions_to_gen_at_each_timestep, agent)
-                    elif expert_type == "high-temp-pi":
-                        alt_reason_actions, cost = high_temp_pi_gen_alt_actions(rollout, t, actions_to_gen_at_each_timestep, agent)
+                        alt_reason_actions, cost = hindsight_gen_alt_actions(city, summary, rollout, t, actions_to_gen_at_each_timestep)
+                    else:
+                        assert NotImplementedError("Alternative expert type is not implemented for Guess My City")
+                        if expert_type == "pi*":
+                            alt_reason_actions, cost = pi_gen_alt_actions(rollout, t, actions_to_gen_at_each_timestep, agent)
+                        elif expert_type == "explorative-pi":
+                            alt_reason_actions, cost = explorative_pi_gen_alt_actions(rollout, t, actions_to_gen_at_each_timestep, agent)
+                        elif expert_type == "high-temp-pi":
+                            alt_reason_actions, cost = high_temp_pi_gen_alt_actions(rollout, t, actions_to_gen_at_each_timestep, agent)
 
                     # Edit the rollout file to save the alt actions
                     if "expert_alternatives" not in rollout[t]:
@@ -541,7 +527,7 @@ def generate_rollouts_with_alt_actions(
                     # Make copy of the rollout file
                     for i in range(actions_to_gen_at_each_timestep):
                         new_partial_rollout = copy.deepcopy(rollout)
-                        new_partial_rollout[0].pop("summary", None)  # Safely remove the summary
+                        # new_partial_rollout[0].pop("summary", None)  # We actually want to keep the summary
 
                         # Edit the action at t
                         if expert_type == "gpt4o":
@@ -570,14 +556,15 @@ def generate_rollouts_with_alt_actions(
                         save_json(os.path.join(rollout_dir, data_type, f"{task_name}_{rollout_idx}.json"), new_partial_rollout)
 
                         if expert_type == "gpt4o" and alt_reason_actions[i]["feasibility"] == "low":
-                            input("Press Enter to continue...")
-
+                            elogger.log(f"Rollout {rollout_idx} for {rollout_file} has low feasibility. Please go check it.")
+                            input("Check feasibility of the action. Press Enter to continue...")
+                        
                         # Update the summary dict
                         summary_dict = load_json(summary_dict_path)
                         if str(rollout_idx) not in summary_dict:
                             summary_dict[str(rollout_idx)] = []
-                        if obj not in summary_dict[str(rollout_idx)]:
-                            summary_dict[str(rollout_idx)].append(obj)
+                        if city not in summary_dict[str(rollout_idx)]:
+                            summary_dict[str(rollout_idx)].append(city)
                         save_json(summary_dict_path, summary_dict)
 
                         rollout_idx += 1
@@ -587,7 +574,7 @@ def generate_rollouts_with_alt_actions(
 
 
 
-def prepare_batch(batch_json_files: List[Tuple[str, str, str]], batched_env: BatchedTwentyQuestionsEnvironment):
+def prepare_batch(batch_json_files: List[Tuple[str, str, str]], batched_env: BatchedGuessMyCityEnvironment):
     """
     Return:
         - histories: List[List[Dict]]
@@ -598,12 +585,11 @@ def prepare_batch(batch_json_files: List[Tuple[str, str, str]], batched_env: Bat
     histories = []
     actions = []
     traj_list = []
-    categories = []
-    for file, data_type, category in batch_json_files:
+    total_rewards = []
+    for file, data_type in batch_json_files:
         rollout = load_json(os.path.join(rollout_dir, data_type, file))
         traj_list.append(rollout)
         actions.append(rollout[-1]["action"])  # The last action is the expert's action
-        categories.append(category) # The secret word's category
 
         rollout_histories = [{
             "question": rollout[i]["action"],
@@ -612,11 +598,22 @@ def prepare_batch(batch_json_files: List[Tuple[str, str, str]], batched_env: Bat
 
         histories.append(rollout_histories)
 
-    words_to_guess = [WordVariants.from_str(file.split("_")[0]) for file, _, _ in batch_json_files]
+        if len(rollout) > 1:
+            total_rewards.append(rollout[-2]["total_reward"])
+        else:
+            total_rewards.append(0)
+
+    cities_to_guess = [WordVariants.from_str(file.split("_")[0]) for file, _ in batch_json_files]
 
     prev_dones = [False for _ in range(len(histories))]
+    
     # Take a step in the environment using expert's action
-    histories, answer_reasons, answers, rewards, dones = batched_env.step(words_to_guess, categories, histories, actions, prev_dones)
+    histories, answer_reasons, answers, rewards, dones = batched_env.step(cities_to_guess, histories, actions, prev_dones, total_rewards)
+
+    # Update the total rewards
+    for i in range(len(histories)):
+        if not prev_dones[i]:
+            total_rewards[i] += rewards[i]
 
     # Log the trajectories
     for i in range(len(batch_json_files)):
@@ -624,12 +621,13 @@ def prepare_batch(batch_json_files: List[Tuple[str, str, str]], batched_env: Bat
             traj_list[i][-1]["answerer_reason"] = answer_reasons[i]
             traj_list[i][-1]["answer"] = answers[i]
             traj_list[i][-1]["reward"] = rewards[i]
+            traj_list[i][-1]["total_reward"] = total_rewards[i]
             traj_list[i][-1]["score"] = None  # Critic is not used to score the expert's action
             traj_list[i][-1]["alternatives"] = None  # No alternative actions for the expert's action
 
     prev_dones = dones
 
-    return histories, words_to_guess, categories, traj_list, prev_dones
+    return histories, cities_to_guess, traj_list, prev_dones, total_rewards
 
 
 def complete_rollouts(sim_host: str, sim_port: int, rollout_dir: str, agent_config: Dict, bs: int, rollout_idx_min: int=-1, rollout_idx_max: int=-1, data_types: List[str]=["train", "val"], start_obj_idx: int=-1, end_obj_idx: int=-1):
@@ -642,7 +640,7 @@ def complete_rollouts(sim_host: str, sim_port: int, rollout_dir: str, agent_conf
                             parse_reason_action_fn=parse_reason_and_action_twenty_questions,
                             verbose=agent_config["verbose"],
                             debug=agent_config["debug"])
-    batched_env = setup_batched_twenty_questions_env(host=sim_host,
+    batched_env = setup_batched_guess_my_city_env(host=sim_host,
                                                      port=sim_port)
 
     # Collect all the rollouts that need to be completed
@@ -651,22 +649,22 @@ def complete_rollouts(sim_host: str, sim_port: int, rollout_dir: str, agent_conf
     for data_type in data_types:
         summary_dict = load_json(os.path.join(rollout_dir, data_type, "_rollout_complete_summary_dict.json"))
 
-        json_files = [(f, data_type, ALL_OBJECT_TO_CATEGORY[f.split("_")[0]]) for f in os.listdir(os.path.join(rollout_dir, data_type)) if is_valid_rollout(f) and need_to_complete(f, summary_dict) and is_within_valid_range(f, rollout_idx_min, rollout_idx_max)]
+        json_files = [(f, data_type) for f in os.listdir(os.path.join(rollout_dir, data_type)) if is_valid_rollout(f) and need_to_complete(f, summary_dict) and is_within_valid_range(f, rollout_idx_min, rollout_idx_max)]
 
         if start_obj_idx != -1 or end_obj_idx != -1:
             if data_type == "train":
-                object_dict_to_use = TRAIN_OBJECT_DICT
+                city_dict_to_use = TRAIN_CITY_DICT
             elif data_type == "val":
-                object_dict_to_use = VALIDATION_OBJECT_DICT
+                city_dict_to_use = VALIDATION_CITY_DICT
 
-            objects_to_eval_on = [obj for category in object_dict_to_use.keys() for obj in object_dict_to_use[category]]
+            cities_to_eval_on = [city for continent in city_dict_to_use.keys() for city in city_dict_to_use[continent]]
             if start_obj_idx != -1:
-                objects_to_eval_on = objects_to_eval_on[start_obj_idx:]
+                cities_to_eval_on = cities_to_eval_on[start_obj_idx:]
             if end_obj_idx != -1:
-                objects_to_eval_on = objects_to_eval_on[:end_obj_idx]
+                cities_to_eval_on = cities_to_eval_on[:end_obj_idx]
 
-            json_files = [(f, data_type, category) for f, data_type, category in json_files if f.split("_")[0] in objects_to_eval_on]
-            print(f"Filtering json files to {len(json_files)} rollouts range [{start_obj_idx},{end_obj_idx}): {objects_to_eval_on}")
+            json_files = [(f, data_type) for f, data_type in json_files if f.split("_")[0] in cities_to_eval_on]
+            print(f"Filtering json files to {len(json_files)} rollouts range [{start_obj_idx},{end_obj_idx}): {cities_to_eval_on}")
 
         json_files_to_complete.extend(json_files)
 
@@ -679,11 +677,11 @@ def complete_rollouts(sim_host: str, sim_port: int, rollout_dir: str, agent_conf
 
     # Filter out the rollouts that are already completed
     filtered_json_files_to_complete = []
-    for file, data_type, category in json_files_to_complete:
+    for file, data_type in json_files_to_complete:
         rollout_idx = file.split("_")[-1].split(".")[0]
-        obj = file.split("_")[0]
-        if rollout_idx not in summary_dict or obj not in summary_dict[rollout_idx]:
-            filtered_json_files_to_complete.append((file, data_type, category))
+        city = file.split("_")[0]
+        if rollout_idx not in summary_dict or city not in summary_dict[rollout_idx]:
+            filtered_json_files_to_complete.append((file, data_type))
     json_files_to_complete = filtered_json_files_to_complete
 
     print(f"Total number of rollouts to complete: {json_files_to_complete}\nlen: {len(json_files_to_complete)}")
@@ -695,10 +693,23 @@ def complete_rollouts(sim_host: str, sim_port: int, rollout_dir: str, agent_conf
         print(f"Batch {batch} has {len(batch_json_files)} rollouts: {batch_json_files}")
 
         # Prepare the batch
-        histories, words_to_guess, categories, traj_list, prev_dones = prepare_batch(batch_json_files, batched_env)
+        histories, cities_to_guess, traj_list, prev_dones, total_rewards = prepare_batch(batch_json_files, batched_env)
 
         # Rollout the batch
-        traj_list = rollout_batch(agent, batched_env, ALL_OBJ_LIST, words_to_guess, categories, histories, traj_list, prev_dones, NUM_ALT_RESPONSES)
+        traj_list = rollout_batch(agent, batched_env, ALL_CITY_LIST, 
+                                  cities_to_guess, histories, 
+                                  traj_list, prev_dones, NUM_ALT_RESPONSES,
+                                  total_rewards_in=total_rewards
+                                  )
+        
+        # for i in range(len(batch_json_files)):
+        #     for t in range(len(traj_list[i])):
+        #         print(json.dumps(traj_list[i][t], indent=4))
+        #         print(batch_json_files[i][0])
+        #         input(f"traj_list {i}: t={t}")
+        #     input(f"=========== traj_list {i} ===========")
+
+        # input("Finished checking all the rollouts")
 
         # Save the trajectories
         for i in range(len(batch_json_files)):
@@ -830,6 +841,7 @@ if __name__ == "__main__":
         print(f"Generating rollouts with alt actions for data_type={args.data_types} in {rollout_dir}")
 
         if args.expert_type == "pi*" or args.expert_type == "explorative-pi" or args.expert_type == "high-temp-pi":
+            assert NotImplementedError("Alternative expert type is not implemented for Guess My City")
             if args.expert_type == "high-temp-pi":
                 agent_config = high_temp_agent_config
             elif args.expert_type == "pi*":
@@ -850,6 +862,8 @@ if __name__ == "__main__":
                                     parse_reason_action_fn=parse_reason_and_action_twenty_questions,
                                     verbose=agent_config["verbose"],
                                     debug=agent_config["debug"])
+        else:
+            agent = None
 
         try:
             generate_rollouts_with_alt_actions(
