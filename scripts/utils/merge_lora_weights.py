@@ -7,8 +7,8 @@ mode = "critic"
 if mode == "generator":
     # Paths
     base_model_path = "meta-llama/Llama-3.2-3B-Instruct"
-    lora_model_path = "/share/portal/hw575/agent_prm/save/sft/250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/checkpoint-480"
-    merged_model_path = "/share/portal/hw575/agent_prm/save/sft/250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/merged_checkpoint-480"
+    lora_model_path = "REDACTED"
+    merged_model_path = "REDACTED"
 
     print(f"==== Mode: {mode} ====")
     print(f"Loading base model from {base_model_path}")
@@ -35,9 +35,9 @@ if mode == "generator":
     print(f"Merged model saved at: {merged_model_path}")
 elif mode == "critic":
     # Paths
-    base_model_path = "/share/portal/hw575/agent_prm/save/sft/250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/merged_checkpoint-480"
-    lora_model_path = "/share/portal/hw575/agent_prm/save/rm/250304_175736_iter1_-share-portal-hw575-agent_prm-save-sft-250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all-merged_checkpoint-480_peft=true_100-data/model"
-    merged_model_path = "/share/portal/hw575/agent_prm/save/rm/250304_175736_iter1_-share-portal-hw575-agent_prm-save-sft-250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all-merged_checkpoint-480_peft=true_100-data/model/merged"
+    base_model_path = "REDACTED"
+    lora_model_path = "REDACTED"
+    merged_model_path = "REDACTED"
 
     print(f"==== Mode: {mode} ====")
     print(f"Loading base model from {base_model_path}")

@@ -1204,27 +1204,3 @@ CAR_FEATURES_ADDED_VALUE = {
   "upgraded sound system": 6000
 }
 
-
-# # For each car brand and type, generate 3 cars with random sets of features (features 0-3)
-# import numpy as np
-# import json
-
-# car_inventory_dict = {brand: {car_type: [] for car_type in CAR_PRICES_BY_BRAND_AND_TYPE[brand]} for brand in CAR_PRICES_BY_BRAND_AND_TYPE}
-# for brand in CAR_PRICES_BY_BRAND_AND_TYPE:
-#     for car_type in CAR_PRICES_BY_BRAND_AND_TYPE[brand]:
-#         car_inventory_dict[brand][car_type].append({
-#                 "msrp": CAR_PRICES_BY_BRAND_AND_TYPE[brand][car_type]["msrp"],
-#                 "features": []
-#         })
-#         for i in range(3):
-#             features = list(np.random.choice(DEFAULT_FEATURES, size=np.random.randint(1, 4), replace=False))
-#             print(f"{brand} {car_type} {i}: {features}")
-#             msrp_with_features = CAR_PRICES_BY_BRAND_AND_TYPE[brand][car_type]["msrp"] + sum([CAR_FEATURES_ADDED_VALUE[feature] for feature in features])
-#             car_inventory_dict[brand][car_type].append({
-#                 "msrp": msrp_with_features,
-#                 "features": features
-#             })
-
-
-# with open("/share/portal/hw575/agent_prm/src/agent_prm/envs/car_dealer/car_inventory_dict.json", "w") as f:
-#     json.dump(car_inventory_dict, f, indent=4)

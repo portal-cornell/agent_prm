@@ -1,6 +1,4 @@
-# <img src="assets/icon.png" alt="Icon" width="50"/> Process Reward Models for LLM Agents: Practical Framework and Directions
-
-Paper link: [https://arxiv.org/pdf/2502.10325](https://arxiv.org/pdf/2502.10325)
+# This code base is based on the following paper: Process Reward Models for LLM Agents: Practical Framework and Directions [https://arxiv.org/pdf/2502.10325](https://arxiv.org/pdf/2502.10325)
 
 ## Installation
 
@@ -25,7 +23,7 @@ We build on [OpenInstruct](https://github.com/allenai/open-instruct) for trainin
 # You should make sure that you are NOT in the agent_prm directory (but you have agent_prm conda environment activated)
 cd ..
 # Clone and install Open-Instruct
-git clone --branch fix_vllm https://github.com/sanjibanc/open-instruct.git
+git clone --branch fix_vllm https://github.com/REDACTED/open-instruct.git
 cd open-instruct
 pip install -e .
 cd ..
@@ -37,7 +35,7 @@ Our eval scripts allow you to directly spawn SGLang servers in the background fo
 To install SGLang, 
 ```bash
 # Clone and install SGLang
-git clone --branch new_llama_model https://github.com/sanjibanc/sglang.git
+git clone --branch new_llama_model https://github.com/REDACTED/sglang.git
 cd sglang
 pip install flashinfer-python -i https://flashinfer.ai/whl/cu121/torch2.5/
 pip install -e "python[all]"
@@ -66,7 +64,7 @@ Stage 2 and 3 are similar to standard RLHF operations, with stage 1 being the ag
 
 ### Initialize policy with SFT
 
-We collect SFT training data from our prior work [LEAP](https://github.com/sanjibanc/leap_llm) and train a policy via SFT
+We collect SFT training data from our prior work [LEAP](https://github.com/REDACTED/leap_llm) and train a policy via SFT
 ```bash
 bash bash/train-sft-llama3.2-3B.sh
 ```
@@ -194,4 +192,4 @@ When doing inference for Best-of-N with a PRM, you might want to grab two such n
 
 ## Contact
 
-This project is is actively being developed. For any questions or issues, please contact us at sanjibanc@cornell.edu.
+This project is is actively being developed. For any questions or issues, please contact us at REDACTED

@@ -24,29 +24,9 @@ args = parser.parse_args()
 
 BASE_PATH = "playground/twenty_questions/hindsight"
 
-# FOLDER_NAME = "inspect_iter1_hindsight-redo_data"
-# data_iter = "iter0"
-# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
-
-# FOLDER_NAME = "inspect_iter2_hindsight-biased-on-60_data"
-# data_iter = "iter1"
-# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60_250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60"
-
-# FOLDER_NAME = "inspect_iter3_hindsight-biased-on-60_data"
-# data_iter = "iter2"
-# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0_250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0"
-
-# FOLDER_NAME = "inspect_iter1_best-pi-relabel_data"
-# data_iter = "iter0"
-# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/best-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
-
-# FOLDER_NAME = "inspect_iter1_explorative-pi-relabel_data"
-# data_iter = "iter0"
-# dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
-
-FOLDER_NAME = "inspect_iter0_high-temp-pi-relabel_data"
+FOLDER_NAME = "inspect_iter1_hindsight-redo_data"
 data_iter = "iter0"
-dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/high-temp-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+dir_path = "REDACTED"
 
 os.makedirs(os.path.join(BASE_PATH, FOLDER_NAME, f"{FOLDER_NAME}_{args.data_type}"), exist_ok=True)
 

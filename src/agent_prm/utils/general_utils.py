@@ -11,7 +11,7 @@ import random
 import shutil
 from sglang.utils import wait_for_server
 
-SGLANG_LOCAL_DIR = "/share/portal/hw575/agent_prm/_cached_models"
+SGLANG_LOCAL_DIR = "/REDACTED/agent_prm/_cached_models"
 
 def load_json(fp: str):
     with open(fp, "r") as f:

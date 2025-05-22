@@ -1,117 +1,11 @@
 domain: none # alfworld, twenty_questions, car_dealer
 rolloutdirs: 
-  ############################################################################################################
-  #
-  # Twenty Questions
-  #
-  ############################################################################################################
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all  # iter1
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-80pct_Q0-80pct-lr=5e-6_250312_091827_iter1_-share-portal-hw575-agent_prm-save-sft-250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all-checkpoint-120_pen=-10_Q0-80pct-lr=5e-6 # iter2
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-60pct_Q1-60pct-lr=5e-6_250316_230359_iter2_pi2_Q1-60pct-lr=5e-6_Q1-60pct # iter3
-  ################################################################# Investigate Hindsight
-  ########### iter 0
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight_pi0-all-data-3epoches_250307_212417_peft=false_epoch3+all
-  ## iter 0 (trained only on pi0 data rolling out in the new env)
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/pi0-new-env_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
-  # Redo hindsight
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
-  #### Hindsight with summary
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/with-summary-hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
-  ########### iter 1
-  # baseline: pi1_Q0-60pct-lr=5e-6_pi0-new-env
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1_Q0-60pct-lr=5e-6_pi0-new-env_250418_164049_iter1_pi0-new-env_pi1_Q0-60pct-lr=5e-6_pi0-new-env
-  # hindsight: pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60_250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60
-  ########### iter 2
-  # baseline: pi2-40pct_Q1-40pct-lr=5e-6_new-env
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2-40pct_Q1-40pct-lr=5e-6_new-env_250422_005316_iter2_new-env_pi2_Q1-40pct-lr=5e-6_new-env
-  # baseline: pi2_Q1-40pct-lr=5e-6_new-env_from-pi0
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2_Q1-40pct-lr=5e-6_new-env_from-pi0_250424_141029_iter2_new-env_pi2_Q1-40pct-lr=5e-6_new-env_from-pi0
-  # Hindsight: pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0_250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0
-  ############################################################### pi*
-  ########### iter 0
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/best-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
-  ############################################################### explorative-pi
-  ########### iter 0
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
-  ############################################################### explorative-pi
-  ########### iter 0
-  # - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
-  ##### High Temp
-  - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hightemp_pi0-new-env_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all
-  ############################################################################################################
-  #
-  # Guess My City
-  #
-  ############################################################################################################
-  ############################################ PRM + RL #######################################################
-  # pi0-82pct
-  # - /share/portal/hw575/agent_prm/data/guess_my_city/eval/iter0/pi0-82pct_250506_225348_iter0_pi0_vanilla_epochs=3
-  # pi1-41pct_Q0-60pct-lr=5e-6
-  # - /share/portal/hw575/agent_prm/data/guess_my_city/eval/iter1/pi1-41pct_Q0-60pct-lr=5e-6_250509_150054_iter1_pi1_Q0-60pct-lr=5e-6
-  # pi2_Q0-60pct-lr=5e-6
-  # - /share/portal/hw575/agent_prm/data/guess_my_city/eval/iter2/pi2_Q0-60pct-lr=5e-6_250512_195327_iter2_pi1_Q1-lr=5e-6
-  ############################################ Hindsight #######################################################
-  ########### iter 1
-  # - /share/portal/hw575/agent_prm/data/guess_my_city/eval/iter0/hindsight_pi0-82pct_250506_225348_iter0_pi0_vanilla_epochs=3
-  ########### iter 2
-  # - /share/portal/hw575/agent_prm/data/guess_my_city/eval/iter1/pi1-60pct_Q0-60pct-lr=5e-6_highsight-biased-on-50-from-sparse-r_retry2_250513_124139_iter1_hindsight-biased-on-50_from-sparse-r_pi1_Q0-60pct-lr=5e-6_hindsight-biased-on-50-from-sparse-r
-  ############################################################################################################
-  #
-  # Car Dealer
-  #
-  ############################################################################################################
-  ############################################ PRM + RL #######################################################
-  ########### iter 0
-  # - /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-83pct_250430_180817_iter0_pi0_vanilla_epochs=3
-  ### Using max-car-8
-  # - /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/original_pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3
-  ########### iter 1
-  # - /share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1_Q0-42pct-lr=5e-6_max-car-8_250505_222544_iter1_max-car-8_pi1_Q0-42pct-lr=5e-6_max-car-8
-  ########### iter 2
-  # - /share/portal/hw575/agent_prm/data/car_dealer/eval/iter2/pi2_250508_010928_iter2_max-car-8_pi2_Q1-60pct-lr=5e-6_max-car-8
-  ############################################ Hindsight #######################################################
-  # ########### iter 1
-  # - /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/hindsight_pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3
-  # ########### iter 2
-  # - /share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50_250506_185257_iter1_hindsight-biased-on-50_pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50
-  ########### iter 3
-  # - /share/portal/hw575/agent_prm/data/car_dealer/eval/iter2/pi2-80pct_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50_250510_115714_iter2_hindsight-biased-on-50_no-past-rollout_pi2_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50
+  - REDACTED
 
-
-
+# For Car-Dealer
 # RUN python scripts/dataproc/tools/analyze_rollout_dataset.py
-# # path: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-83pct_250430_180817_iter0_pi0_vanilla_epochs=3
-# # Min reward: -1.2448979591836735
-# # Max reward: 1.8588387096774193
-# reward_min: -1.2448979591836735
-# reward_max: 1.8588387096774193
-# # path: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/original_pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3
-# # Min reward: -1.2448979591836735
-# # Max reward: 1.8588387096774193
-# reward_min: -1.2448979591836735
-# reward_max: 1.8588387096774193
-# path: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/hindsight_pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3
-# Min reward: -1.2448979591836735
-# Max reward: 1.8588387096774193
-# reward_min: -1.2448979591836735
-# reward_max: 1.8588387096774193
-# # path: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1_Q0-42pct-lr=5e-6_max-car-8_250505_222544_iter1_max-car-8_pi1_Q0-42pct-lr=5e-6_max-car-8
-# # Min reward: -1.2448979591836735
-# # Max reward: 1.8588387096774193
 reward_min: -1.2448979591836735
 reward_max: 1.8588387096774193
-# # path: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50_250506_185257_iter1_hindsight-biased-on-50_pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50
-# # Min reward: -1.2448979591836735
-# # Max reward: 2.0
-# reward_min: -1.2448979591836735
-# reward_max: 2.0
-# path: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter2/pi2-80pct_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50_250510_115714_iter2_hindsight-biased-on-50_no-past-rollout_pi2_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50
-# Min reward: -1.2448979591836735
-# Max reward: 2.6538461538461537
-# reward_min: -1.2448979591836735
-# reward_max: 2.6538461538461537
 
 output_folder: null # So that we don't accidentally overwrite the existing data
 
@@ -177,13 +71,6 @@ hindsight:
   num_failed_expert_rollouts_to_include: 0 # Only used in hindsight cases. Include X number of failed expert rollouts
   track_offpolicy: true # Whether to track the off-policy rollouts
   track_summary: false # Whether to track the summary as part of the states
-  use_past_onpolicy_failed_rollouts: false # Whether to use the old on-policy failed rollouts
-  ############################################################### For car dealer
-  past_onpolicy_rolloutdirs:
-    - /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/hindsight_pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3
-  ############################################################### For 20 questions
-  # past_onpolicy_rolloutdirs:
-  #   - /share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60_250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60
 
 outputdir: data/${domain}/prm/${output_folder}
 gamma: 0.95

@@ -58,21 +58,19 @@ from agent_prm.agents.agent import Agent
 ALL_CITY_LIST = [wv[0] for wv in get_default_city_list("all")]
 
 iter_to_rollout_dir = {
-    # pi0 3 epochs
     0: {
-        "gpt4o": "/share/portal/hw575/agent_prm/data/guess_my_city/eval/iter0/hindsight_pi0-82pct_250506_225348_iter0_pi0_vanilla_epochs=3",
+        "gpt4o": "REDACTED",
     },
-    # pi1-60pct_Q0-60pct-lr=5e-6_highsight-biased-on-50-from-sparse-r_retry2
     1: {
-        "gpt4o": "/share/portal/hw575/agent_prm/data/guess_my_city/eval/iter1/pi1-60pct_Q0-60pct-lr=5e-6_highsight-biased-on-50-from-sparse-r_retry2_250513_124139_iter1_hindsight-biased-on-50_from-sparse-r_pi1_Q0-60pct-lr=5e-6_hindsight-biased-on-50-from-sparse-r",
+        "gpt4o": "REDACTED",
     }
 }
 
 iter_to_agent_config = {
     0: {
         "type": "sglang_server",
-        "log_name": "pi0-82pct",
-        "model_id": "/share/portal/hw575/agent_prm/save/guess_my_city/sft/250506_225348_iter0_pi0_vanilla_epochs=3/checkpoint-56",
+        "log_name": "pi0",
+        "model_id": "REDACTED",
         "prompt_template_file": "prompts/guess_my_city/guess_my_city_template.j2",
         "server_url": "http://localhost:TODO/",
         "dist_url_port": None,
@@ -83,8 +81,8 @@ iter_to_agent_config = {
     },
     1: {
         "type": "sglang_server",
-        "log_name": "pi1-60pct_Q0-60pct-lr=5e-6_highsight-biased-on-50-from-sparse-r_retry2",
-        "model_id": "/share/portal/hw575/agent_prm/save/guess_my_city/online_dpo/250513_124139_iter1_hindsight-biased-on-50_from-sparse-r_pi1_Q0-60pct-lr=5e-6_hindsight-biased-on-50-from-sparse-r/checkpoint-996",
+        "log_name": "pi1",
+        "model_id": "REDACTED",
         "prompt_template_file": "prompts/guess_my_city/guess_my_city_template.j2",
         "server_url": "http://localhost:TODO/",
         "dist_url_port": None,
@@ -98,9 +96,9 @@ iter_to_agent_config = {
 
 high_temp_agent_config = {
     "type": "sglang_server",
-    "log_name": "pi0-all-data-3epoches",
-    "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120",
-    "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
+    "log_name": "pi0",
+    "model_id": "REDACTED",
+    "prompt_template_file": "prompts/guess_my_city/guess_my_city_template.j2",
     "server_url": "http://localhost:TODO/",
     "dist_url_port": None,
     "temperature": 1.0,
@@ -111,9 +109,9 @@ high_temp_agent_config = {
 
 best_agent_config = {
     "type": "sglang_server",
-    "log_name": "pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
-    "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/online_dpo/250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
-    "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
+    "log_name": "pi2",
+    "model_id": "REDACTED",
+    "prompt_template_file": "prompts/guess_my_city/guess_my_city_template.j2",
     "server_url": "http://localhost:TODO/",
     "dist_url_port": None,
     "temperature": 0.7,

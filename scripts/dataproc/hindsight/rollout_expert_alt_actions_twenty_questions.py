@@ -57,29 +57,25 @@ from agent_prm.agents.agent import Agent
 ALL_OBJ_LIST = [wv[0] for wv in get_default_word_list("all")]
 
 iter_to_rollout_dir = {
-    # pi0 3 epochs
-    # 0: "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight_pi0-all-data-3epoches_250307_212417_peft=false_epoch3+all",
     0 : {
-        "gpt4o": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
-        "pi*": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/best-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
-        "explorative-pi": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/explorative-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
-        "high-temp-pi": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/high-temp-pi-relabel_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all",
+        "gpt4o": "REDACTED",
+        "pi*": "REDACTED",
+        "explorative-pi": "REDACTED",
+        "high-temp-pi": "REDACTED",
     },
-    # pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60 # Best val model
     1: {
-        "gpt4o": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter1/pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60_250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60",
+        "gpt4o": "REDACTED",
     },
-    # pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0 # Best val model
     2: {
-        "gpt4o": "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter2/pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0_250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0"
+        "gpt4o": "REDACTED",
     }
 }
 
 iter_to_agent_config = {
     0: {
         "type": "sglang_server",
-        "log_name": "pi0-all-data-3epoches",
-        "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120",
+        "log_name": "pi0",
+        "model_id": "REDACTED",
         "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
         "server_url": "http://localhost:TODO/",
         "dist_url_port": None,
@@ -90,8 +86,8 @@ iter_to_agent_config = {
     },
     1: {
         "type": "sglang_server",
-        "log_name": "pi1-60pct_Q0-lr=5e-6_hindsight-biased-on-60",
-        "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/online_dpo/250419_134330_iter1_hindsight-biased-on-60_pi1_Q0-lr=5e-6_hindsight-biased-on-60/checkpoint-165",
+        "log_name": "pi1",
+        "model_id": "REDACTED",
         "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
         "server_url": "http://localhost:TODO/",
         "dist_url_port": None,
@@ -102,8 +98,8 @@ iter_to_agent_config = {
     },
     2: {
         "type": "sglang_server",
-        "log_name": "pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
-        "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/online_dpo/250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
+        "log_name": "pi2",
+        "model_id": "REDACTED",
         "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
         "server_url": "http://localhost:TODO/",
         "dist_url_port": None,
@@ -117,8 +113,8 @@ iter_to_agent_config = {
 
 high_temp_agent_config = {
     "type": "sglang_server",
-    "log_name": "pi0-all-data-3epoches",
-    "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/sft/250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all/checkpoint-120",
+    "log_name": "pi0",
+    "model_id": "REDACTED",
     "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
     "server_url": "http://localhost:TODO/",
     "dist_url_port": None,
@@ -130,8 +126,8 @@ high_temp_agent_config = {
 
 best_agent_config = {
     "type": "sglang_server",
-    "log_name": "pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
-    "model_id": "/share/portal/hw575/agent_prm/save/twenty_questions/online_dpo/250423_205810_iter2_hindsight-biased-on-60_pi2_Q1-60pct-lr=5e-6_hindsight-biased-on-60_from-pi0",
+    "log_name": "pi2",
+    "model_id": "REDACTED",
     "prompt_template_file": "prompts/twenty_questions/twenty_questions_template.j2",
     "server_url": "http://localhost:TODO/",
     "dist_url_port": None,

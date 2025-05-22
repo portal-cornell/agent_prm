@@ -10,8 +10,8 @@ def read_requirements_file(filename):
 setup(
     name="agent_prm",
     version="0.0.1",
-    author="Sanjiban Choudhury",
-    author_email="sanjiban.choudhury@gmail.com",
+    author="REDACTED",
+    author_email="REDACTED",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     url="",

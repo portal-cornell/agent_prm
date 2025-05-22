@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from agent_prm.envs.twenty_questions.data import TRAIN_OBJECT_DICT, VALIDATION_OBJECT_DICT
 
-dir_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/with-summary-hindsight-redo_pi0-all-data-3epoches_250307_212417_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=false_epoch3+all"
+dir_path = "REDACTED"
 
 
 def check_for_original_policy_rollout(expert_rollout_data, policy_rollouts):

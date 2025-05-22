@@ -16,8 +16,8 @@ from agent_prm.envs.twenty_questions.data import get_default_word_list
 NUM_RESPONSES_FOR_ALT_ACTION = 3
 NUM_RESPONSES_FOR_PREF_ACTION = 3
 
-save_folder_path = "/share/portal/hw575/agent_prm/playground/hindsight"
-main_folder_path = "/share/portal/hw575/agent_prm/data/twenty_questions/eval/iter0/3B-PSFT-all-data-3epoches_250224_225421_iter0-all_meta-llama-Llama-3.2-3B-Instruct_peft=true_epoch3+all/train"
+save_folder_path = "REDACTED"
+main_folder_path = "REDACTED"
 files_to_test = [
     "Basketball_20.json",  # [Success] Repeated some of the same questions. Have some arbitrary questions
     "Whisk_20.json",  # [Failed] Ask specific objects too early. Object doesn't match previous descriptions

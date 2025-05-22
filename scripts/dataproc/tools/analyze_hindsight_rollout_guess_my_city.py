@@ -24,13 +24,9 @@ args = parser.parse_args()
 
 BASE_PATH = "playground/guess_my_city/hindsight"
 
-# FOLDER_NAME = "inspect_iter1_hindsight-redo_data"
-# data_iter = "iter0"
-# dir_path = "/share/portal/hw575/agent_prm/data/guess_my_city/eval/iter0/hindsight_pi0-82pct_250506_225348_iter0_pi0_vanilla_epochs=3"
-
-FOLDER_NAME = "inspect_iter2_hindsight-redo_data"
-data_iter = "iter1"
-dir_path = "/share/portal/hw575/agent_prm/data/guess_my_city/eval/iter1/pi1-60pct_Q0-60pct-lr=5e-6_highsight-biased-on-50-from-sparse-r_retry2_250513_124139_iter1_hindsight-biased-on-50_from-sparse-r_pi1_Q0-60pct-lr=5e-6_hindsight-biased-on-50-from-sparse-r"
+FOLDER_NAME = "inspect_iter1_hindsight-redo_data"
+data_iter = "iter0"
+dir_path = "REDACTED"
 
 os.makedirs(os.path.join(BASE_PATH, FOLDER_NAME, f"{FOLDER_NAME}_{args.data_type}"), exist_ok=True)
 

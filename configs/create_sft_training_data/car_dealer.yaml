@@ -19,10 +19,9 @@ leap:
   rollout_per_task_range_min: 0
   rollout_per_task_range_max: 3
   iter0:
-    rollout_dir: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/leap_pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3
+    rollout_dir: REDACTED
   iter1:
-    # pi1-62pct_leap
-    rollout_dir: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1-62pct_leap_250506_154225_iter1-max-car-8_leap_pi1_leap_from-base_max-car-8_epochs=1
+    rollout_dir: REDACTED
 # For the multi-star baseline, we only do SFT on successful rollouts
 multi-star:
   rollout_per_task: 50 # To ensure fairness, we will ensure that each game has {rollout_per_task} rollouts
@@ -31,11 +30,8 @@ multi-star:
   pct_of_past_rollouts: 0.5
   ############ 10k data ############
   iter0:
-    # pi0-83pct
-    rollout_dir: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-83pct_250430_180817_iter0_pi0_vanilla_epochs=3
+    rollout_dir: REDACTED
   iter1:
-    # pi1-41pct_multi-star
-    rollout_dir: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1-41pct_multi-star_250502_015227_iter1_multi-star_10k_pi0_multi-star_from-base_10k-data_lr=3e-6_epochs=1
+    rollout_dir: REDACTED
   iter2:
-    # iter2 (to train pi3): pi2-41pct_multi-star
-    rollout_dir: /share/portal/hw575/agent_prm/data/car_dealer/eval/iter2/pi2-41pct_multi-star_250502_215649_iter2_multi-star_10k_mix-50pct-past_pi0_multi-star_from-base_10k-data-mix-50pct-past_lr=3e-6_epochs=1
+    rollout_dir: REDACTED

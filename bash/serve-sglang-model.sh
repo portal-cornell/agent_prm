@@ -38,7 +38,7 @@ while [[ "$#" -gt 0 ]]; do
             HOST=$1
             ;;
         -d)
-            MODEL_DIR="/share/portal/hw575/agent_prm/_cached_models"
+            MODEL_DIR="/REDACTED/agent_prm/_cached_models"
             ;;
     esac
     shift

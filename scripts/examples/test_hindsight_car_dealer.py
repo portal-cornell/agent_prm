@@ -15,12 +15,7 @@ from agent_prm.utils.openai import generate_from_openai_completion
 from agent_prm.utils.parser import parse_json
 
 rollout_path_list = [
-    # Fail to search only one feature. Made up a car. 
-    # "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-83pct_250430_180817_iter0_pi0_vanilla_epochs=3/train/2_Audi_sedan_41000_3.json",
-    # "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-83pct_250430_180817_iter0_pi0_vanilla_epochs=3/val/1_Kia_truck_40000_0.json",
-    "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-83pct_250430_180817_iter0_pi0_vanilla_epochs=3/train/3_Volkswagen_van_50000_0.json",
-    # The user asked for another Volkswagen, but the seller kept searching for the feature.
-    # "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-83pct_250430_180817_iter0_pi0_vanilla_epochs=3/train/2_Toyota_SUV_55000_0.json",
+    "REDACTED"
 ]
 
 MAX_QUERY_ATTEMPTS = 3
