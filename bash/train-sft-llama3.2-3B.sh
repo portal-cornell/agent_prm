@@ -5,6 +5,8 @@ export WANDB_PROJECT=$WANDB_PROJECT_NAME
 DATA_DIRS=""
 
 LEARNING_RATE=3e-5
+EVAL_STEPS=20
+
 ######################## Twenty Questions #########################################
 # DOMAIN=twenty_questions
 # MAX_SEQ_LENGTH=4000
@@ -18,6 +20,67 @@ LEARNING_RATE=3e-5
 # MODEL=meta-llama/Llama-3.2-3B-Instruct
 # DATA_DIR=iter0-all
 # EPOCHS=3
+
+###################
+# Counterfactual Generator
+###################
+##### Only train on counterfactual datapoints that leads to success
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter1_hindsight
+# EPOCHS=3
+# # 1528 * 3 / 2 / 4 / 16 = 34.275
+# # 35 / 7 = 5
+# SAVE_STEPS=5
+
+# ##### Train on all counterfactual datapoints first
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter1_hindsight-all
+# EPOCHS=1
+# # 1760 * 1 / 2 / 4 / 16 = 13.75
+# # 14 / 5 = 2.8 (save_steps=3)
+# SAVE_STEPS=3
+# EVAL_STEPS=3
+
+# # ##### Continue training on counterfactual datapoints that leads to success
+# MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250512_005019_iter1_hindsight-all__epochs=1/checkpoint-13"
+# DATA_DIR=iter1_hindsight
+# EPOCHS=2
+# # 1528 * 2 / 2 / 4 / 16 = 23.875
+# # 24 / 5 = 4.8 (save_steps=5)
+# SAVE_STEPS=5
+# EVAL_STEPS=5
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi1_hindsight_trained-from-hindsight-all_lr=3e-6"
+
+##### Train on all LEAP hindsight datapoints first
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter1_hindsight-leap
+# EPOCHS=1
+# # 1760 * 1 / 2 / 4 / 16 = 13.75
+# # 14 / 5 = 2.8 (save_steps=3)
+# SAVE_STEPS=3
+# EVAL_STEPS=3
+
+##### Continue training on counterfactual datapoints that leads to success
+# MODEL="/share/portal/hw575/agent_prm/save/twenty_questions/sft/250512_005834_iter1_hindsight-leap__epochs=1/checkpoint-13"
+# DATA_DIR=iter1_hindsight
+# EPOCHS=2
+# # 1528 * 2 / 2 / 4 / 16 = 23.875
+# # 24 / 5 = 4.8 (save_steps=5)
+# SAVE_STEPS=5
+# EVAL_STEPS=5
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi1_hindsight_trained-from-hindsight-leap_lr=3e-6"
+
+##### Only train on counterfactual datapoints that leads to success (10 epoches)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter1_hindsight_with-all-as-val
+# EPOCHS=10
+# # 1528 * 10 / 2 / 4 / 16 = 119.375
+# # 120 / 6 = 20
+# SAVE_STEPS=20
+# EVAL_STEPS=10
+# MODEL_LOG_NAME="pi1_hindsight_with-all-as-val"
 
 ###################
 # Multi-STaR
@@ -236,12 +299,12 @@ LEARNING_RATE=3e-5
 # SAVE_STEPS=8
 # MODEL_LOG_NAME="pi3_leap_from-base"
 
-######################## Car Dealer #########################################
-DOMAIN=car_dealer  # car_dealer, twenty_questions
-MAX_SEQ_LENGTH=6500
-TRAIN_BATCH_SIZE=2
-GRAD_ACCUM_STEPS=12
-GPU_COUNT=4
+# ############################################## Car Dealer ##############################################
+# DOMAIN=car_dealer  # car_dealer, twenty_questions
+# MAX_SEQ_LENGTH=3500
+# TRAIN_BATCH_SIZE=2
+# GRAD_ACCUM_STEPS=12
+# GPU_COUNT=4
 
 # ###################
 # # Vanilla mode
@@ -250,20 +313,21 @@ GPU_COUNT=4
 # # 4858 * 3 / 4 / 2 / 12 = 151.8125
 # # 152 / 5 = 30.4
 # MODEL=meta-llama/Llama-3.2-3B-Instruct
+# MAX_SEQ_LENGTH=6500
 # DATA_DIR=iter0
 # EPOCHS=3
 # GPU_COUNT=4
 # SAVE_STEPS=31
 # MODEL_LOG_NAME="pi0_vanilla"
 
-#### Shorter Chat History
-MODEL=meta-llama/Llama-3.2-3B-Instruct
-DATA_DIR=iter0-max-car-8
-EPOCHS=3
-GPU_COUNT=4
-SAVE_STEPS=31
-MAX_SEQ_LENGTH=3500
-MODEL_LOG_NAME="pi0_vanilla_max-car-8"
+# #### Shorter Chat History
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter0-max-car-8
+# EPOCHS=3
+# GPU_COUNT=4
+# SAVE_STEPS=31
+# MAX_SEQ_LENGTH=3500
+# MODEL_LOG_NAME="pi0_vanilla_max-car-8"
 
 ###################
 # Multi-STaR
@@ -289,6 +353,124 @@ MODEL_LOG_NAME="pi0_vanilla_max-car-8"
 # SAVE_STEPS=42
 # LEARNING_RATE=3e-6
 # MODEL_LOG_NAME="pi0_multi-star_from-base_10k-data-mix-50pct-past_lr=3e-6"
+
+##### Iter2 (20k datapoints, 10k per response type) - lower learning rate
+# num datapoints * epoch / gpu / batch size / gradient accumulation steps
+# 20000 * 1 / 4 / 2 / 12 = 208.3333333333
+# 208 / 5 = 41.6 (save_steps=42)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter3-max-car-8_multi-star_10k_mix-50pct-past
+# EPOCHS=1
+# SAVE_STEPS=42
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi3_multi-star_from-base_10k-data-mix-50pct-past_lr=3e-6"
+
+
+###################
+# LEAP
+###################
+# ##### Iter1
+# # Option 1: Train from base model
+# # 5034 * 1 / 2 / 2 / 12 = 104.875
+# # 105 / 5 = 21 (save_steps=21)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter1-max-car-8_leap
+# EPOCHS=1
+# SAVE_STEPS=22
+# MODEL_LOG_NAME="pi1_leap_from-base_max-car-8"
+
+##### Iter1
+# Option 1: Train from base model
+# 4988 * 1 / 2 / 2 / 12 = 103.9166666667
+# 104 / 5 = 20.8 (save_steps=21)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter2-max-car-8_leap
+# EPOCHS=1
+# SAVE_STEPS=21
+# MODEL_LOG_NAME="pi2_leap_from-base_max-car-8"
+
+############################################## Guess My City ##############################################
+DOMAIN=guess_my_city  # car_dealer, twenty_questions
+MAX_SEQ_LENGTH=3000
+TRAIN_BATCH_SIZE=4
+GRAD_ACCUM_STEPS=16
+EVAL_STEPS=16
+GPU_COUNT=2
+
+###################
+# Vanilla mode
+###################
+# # num datapoints * epoch / gpu / batch size / gradient accumulation steps
+# # 2860 * 3 / 2 / 4 / 16 = 67.03125
+# # 68 / 5 = 13.6 (save_steps=14)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter0
+# EPOCHS=3
+# SAVE_STEPS=14
+# MODEL_LOG_NAME="pi0_vanilla"
+
+###################
+# Multi-STaR
+###################
+# ##### Iter1 - lower learning rate
+# # num datapoints * epoch / gpu / batch size / gradient accumulation steps
+# # # 10000 * 1 / 2 / 4 / 16 = 78.125
+# # # 79 / 5 = 15.8 (save_steps=16)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter1_multi-star_10k
+# EPOCHS=1
+# SAVE_STEPS=16
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi1_multi-star_from-base_10k-data_lr=3e-6"
+
+##### Iter1 - lower learning rate
+# num datapoints * epoch / gpu / batch size / gradient accumulation steps
+# # 10000 * 1 / 2 / 4 / 16 = 78.125
+# # 79 / 5 = 15.8 (save_steps=16)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter2_multi-star_10k_mix-50pct-past
+# EPOCHS=1
+# SAVE_STEPS=16
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi2_multi-star_from-base_10k-data_50pct-past_lr=3e-6"
+
+##### Iter1 - lower learning rate
+# num datapoints * epoch / gpu / batch size / gradient accumulation steps
+# # 10000 * 1 / 2 / 4 / 16 = 78.125
+# # 79 / 5 = 15.8 (save_steps=16)
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter3_multi-star_10k_mix-50pct-past
+# EPOCHS=1
+# SAVE_STEPS=16
+# LEARNING_RATE=3e-6
+# MODEL_LOG_NAME="pi3_multi-star_from-base_10k-data_50pct-past_lr=3e-6"
+
+###################
+# LEAP
+###################
+# ##### Iter1
+# # Option 1: Train from base model
+# # 3186 * 1 / 2 / 4 / 8 = 49.78125
+# # 50 / 5 = 10
+# MODEL=meta-llama/Llama-3.2-3B-Instruct
+# DATA_DIR=iter1_leap
+# EPOCHS=1
+# SAVE_STEPS=10
+# EVAL_STEPS=10
+# GRAD_ACCUM_STEPS=8
+# MODEL_LOG_NAME="pi1_leap_from-base"
+
+##### Iter1
+# Option 1: Train from base model
+# 3432 * 1 / 2 / 4 / 8 = 53.625
+# 50 / 5 = 10
+MODEL=meta-llama/Llama-3.2-3B-Instruct
+DATA_DIR=iter2_leap
+EPOCHS=1
+SAVE_STEPS=10
+EVAL_STEPS=10
+GRAD_ACCUM_STEPS=8
+MODEL_LOG_NAME="pi2_leap_from-base"
 
 ########################################################################################################################################
 
@@ -342,7 +524,7 @@ accelerate launch \
     --optim adamw_torch_fused \
     --learning_rate $LEARNING_RATE \
     --evaluation_strategy steps \
-    --eval_steps 20 \
+    --eval_steps $EVAL_STEPS \
     --save_strategy steps \
     --save_steps $SAVE_STEPS \
     --save_total_limit 5 \

@@ -41,6 +41,7 @@ INPUT_IDS_PROMPT_FUTURE_KEY = "input_ids_prompt_future"
 
 PROMPT_EXPLORATION_KEY = 'prompt_exploration'
 INPUT_IDS_PROMPT_EXPLORATION_KEY = "input_ids_prompt_exploration"
+HAS_EXPLORATION_KEY = "has_exploration"
 
 class SFTGroundTruthDatasetProcessor(DatasetProcessor):
     def tokenize(self, dataset: Dataset):
@@ -434,6 +435,139 @@ class SFTPromptExplorationDatasetProcessor(DatasetProcessor):
             save_path=save_path,
             bins=bins,
         )
+    
+class SFTHindsightExplorationDatasetProcessor(DatasetProcessor):
+    def tokenize(self, dataset: Dataset, domain: str):
+        def tokenize_fn(row):
+            if domain == "alfworld":
+                with open("prompts/alfworld/alfworld_template.j2", "r") as file:
+                    prompt_template = Template(file.read())
+                input_data = {'mode': 'input',
+                                'observation': row['state']['observation'],
+                                'candidate_actions': row['state']['candidate_actions'] if ('candidate_actions' in row['state']) else "",
+                                'task': row['state']['task'],
+                                'observation_action_history': row['state']['history']}          
+                # Exploratoon prompt
+                with open("prompts/alfworld/alfworld_exploration_template.j2", "r") as file:
+                    prompt_exploration_template = Template(file.read())
+                row[PROMPT_EXPLORATION_KEY] = prompt_exploration_template.render(**input_data).strip()
+                messages_exploration = [{"role": "user", "content": row[PROMPT_EXPLORATION_KEY]}]
+                row[INPUT_IDS_PROMPT_EXPLORATION_KEY] = self.tokenizer.apply_chat_template(messages_exploration, add_generation_prompt=True)
+                row[HAS_EXPLORATION_KEY] = True
+            elif domain == "twenty_questions":
+                with open("prompts/twenty_questions/twenty_questions_template.j2", "r") as file:
+                    prompt_template = Template(file.read())
+
+                # TODO: This is a hack to get the all_obj_list and input_final
+                from agent_prm.envs.twenty_questions.data import get_default_word_list
+
+                # Make sure question appears before answer
+                formatted_history = [{"question": item["question"], "answer": item["answer"]} for item in row['state']['history']]
+                input_data = {
+                                'mode': 'input_final' if len(row['state']['history']) == 19 else 'input',
+                                'all_obj_list': [wv[0] for wv in get_default_word_list("all")],
+                                'observation_action_history': formatted_history}
+                
+                # Hindsight Exploration prompt
+                if "summary" in row['state'] and row['state']['summary'] is not None:
+                    with open("prompts/twenty_questions/twenty_question_gen_prefered_action.j2", "r") as file:
+                        prompt_exploration_template = Template(file.read())
+
+                    input_data["summary"] = row['state']['summary']
+                    
+                    row[PROMPT_EXPLORATION_KEY] = prompt_exploration_template.render(**input_data).strip()
+                    messages_exploration = [{"role": "user", "content": row[PROMPT_EXPLORATION_KEY]}]
+                    row[INPUT_IDS_PROMPT_EXPLORATION_KEY] = self.tokenizer.apply_chat_template(messages_exploration, add_generation_prompt=True)
+                    row[HAS_EXPLORATION_KEY] = True
+                else:
+                    row[HAS_EXPLORATION_KEY] = False
+                    row[PROMPT_EXPLORATION_KEY] = prompt_template.render(**input_data).strip()
+                    messages_exploration = [{"role": "user", "content": row[PROMPT_EXPLORATION_KEY]}]
+                    row[INPUT_IDS_PROMPT_EXPLORATION_KEY] = self.tokenizer.apply_chat_template(messages_exploration, add_generation_prompt=True)
+
+            row[PROMPT_KEY] = prompt_template.render(**input_data).strip()
+
+            messages = [{"role": "user", "content": row[PROMPT_KEY]}]
+            row[INPUT_IDS_KEY] = self.tokenizer.apply_chat_template(messages)
+            row[INPUT_IDS_PROMPT_KEY] = self.tokenizer.apply_chat_template(messages, add_generation_prompt=True)
+            # row[ATTENTION_MASK_KEY] = [1] * len(row[INPUT_IDS_KEY])
+            
+            labels = copy.deepcopy(row[INPUT_IDS_KEY])
+            if self.config.train_only_on_prompt:
+                labels[: len(row[INPUT_IDS_KEY])] = [-100] * len(row[INPUT_IDS_KEY])
+            row[LABELS_KEY] = labels
+
+            return row
+
+        return dataset.map(
+            tokenize_fn,
+            num_proc=get_num_proc(len(dataset), self.config.num_proc, APPLY_CHAT_TEMPLATE_EXAMPLE_PER_SECOND_PER_CPU),
+            load_from_cache_file=self.config.load_from_cache_file,
+            desc="Tokenizing and reformatting SFT data",
+        )
+    
+    def filter(self, dataset: Dataset, need_contain_labels: bool = True):
+        def filter_fn(row):
+            max_prompt_token_length_ok = True
+            if self.config.max_prompt_token_length is not None:
+                max_prompt_token_length_ok = len(row[INPUT_IDS_PROMPT_KEY]) <= self.config.max_prompt_token_length
+
+            max_token_length_ok = True
+            if self.config.max_token_length is not None:
+                max_token_length_ok = len(row[INPUT_IDS_KEY]) <= self.config.max_token_length
+
+            contain_some_labels = any(x != -100 for x in row[LABELS_KEY])
+            return (
+                max_prompt_token_length_ok and max_token_length_ok and (contain_some_labels or not need_contain_labels)
+            )
+
+        return dataset.filter(
+            filter_fn,
+            num_proc=get_num_proc(len(dataset), self.config.num_proc, FILTER_EXAMPLE_PER_SECOND_PER_CPU),
+            load_from_cache_file=self.config.load_from_cache_file,
+            desc="Filtering SFT data",
+        )
+
+    def get_token_length_stats(self, dataset: Union[Dataset, DatasetDict]):
+        return super().get_token_length_stats(features=[INPUT_IDS_PROMPT_KEY, INPUT_IDS_KEY], dataset=dataset)
+
+    def get_token_length_visualization(self, dataset: DatasetDict, save_path: str = "tmp.png", bins: int = 30):
+        return super().get_token_length_visualization(
+            features=[INPUT_IDS_PROMPT_KEY, INPUT_IDS_KEY],
+            dataset=dataset,
+            save_path=save_path,
+            bins=bins,
+        )
+
+class SimpleGenerateWithHindsightExplorationCollator:
+    """Simple collator for generation task (always pad from the LEFT)"""
+
+    def __init__(self, pad_token_id: int):
+        self.pad_token_id = pad_token_id
+
+    def __call__(self, batch: list[dict]):
+        """The input will have input_ids_prompt"""
+
+        input_id_dict = {}
+        for prompt_key in [INPUT_IDS_PROMPT_KEY, INPUT_IDS_PROMPT_EXPLORATION_KEY]:            
+            max_length = -1
+            for i in range(len(batch)):
+                max_length = max(max_length, len(batch[i][prompt_key]))
+            assert max_length > 0, "the dataset is empty"
+
+            padded_sequences = []
+            for item in batch:
+                pad_length = max_length - len(item[prompt_key])
+                padded_sequence = [self.pad_token_id] * pad_length + item[prompt_key]
+                padded_sequences.append(padded_sequence)
+
+            input_id_dict[prompt_key] = torch.tensor(padded_sequences)
+
+        # Track HAS_EXPLORATION_KEY for each item in the batch
+        has_exploration_flags = [item.get(HAS_EXPLORATION_KEY, False) for item in batch]
+        input_id_dict[HAS_EXPLORATION_KEY] = torch.tensor(has_exploration_flags, dtype=torch.bool)
+
+        return input_id_dict
 
 class SimpleGenerateWithExplorationCollator:
     """Simple collator for generation task (always pad from the LEFT)"""

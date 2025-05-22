@@ -51,6 +51,31 @@ def parse_reason_and_action_twenty_questions(text: str) -> Tuple[str, str]:
     return reason, action
 
 
+def parse_hindsight_reason_and_action_twenty_questions(text: str) -> Tuple[str, str]:
+    """
+    Parses the reason and action given prediction from model for ALFWorld environment 
+
+    Args:
+        text: The text containing the reason and action.
+
+    Returns:
+        A tuple with the parsed reason and action. 
+    """
+    pattern = r"TEACHER_REASON\s*[\W]*\s*([\s\S]*?)\s*QUESTION\s*[\W]*\s*([\s\S]*?)\s*PLAYER_REASON\s*[\W]*\s*(.*)"  # Requires REASON to exist before QUESTION
+    match = re.search(pattern, text)
+
+    if match:
+        teacher_reason = match.group(1).strip()  # Remove extra spaces/newlines
+        question = match.group(2).strip()
+        player_reason = match.group(3).strip()
+    else:
+        teacher_reason = ""
+        question = ""
+        player_reason = ""
+
+    return player_reason, question
+
+
 def parse_reason_and_action_alfworld(text: str) -> Tuple[str, str]:
     """
     Parses the reason and action given prediction from model for ALFWorld environment 

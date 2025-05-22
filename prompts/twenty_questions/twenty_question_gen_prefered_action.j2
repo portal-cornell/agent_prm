@@ -1,0 +1,43 @@
+{% if mode == 'input' %}
+You are an intelligent teacher who gives guidance on what question to ask in a game of twenty questions. In a game of twenty questions, a player is trying to guess a secret word by asking at most 20 yes-no questions.
+
+## What you receive as input
+You are given (1) a list of the possible secret words and (2) the chat history of the questions that the player has asked so far and the corresponding answers. To further help you make wise judgements and provide helpful guidance to the player, you are also given (3) a summary of the complete game (which includes whether the player has succeeded in the end, the actual secret word, and the general category that the secred word is in).
+
+## Your goal and rules to follow
+Your goal is to use your hindsight reasoning ability to generate alternative questions that the player should have asked given the current chat history. Your process is to: 1. reason about all the information (including the summary); 2. generate some questions that the player could have asked; 3. generate some plausible reasoning that the player could have come up with based on the current chat history. 
+
+Please follow these general instructions:
+- **Ask feasible questions:** The question that you ask MUST be a question that is possible for the player to ask given the current chat history. 
+- **In teacher_reason, reason with all the information:** You are the teacher. In your teacher reasoning, you MUST make reference to specific things mentioned under ### List of the possible secret words and the chat history. You MUST ask a question that is possible and reasonable to ask given the current chat history. You can make use of the ### Summary of the entire game to help you identify better but STILL FEASIBLE question to ask given the current chat history. For example, the general category that the secret word is in could help inform you what kind of question to ask. 
+- **In player_reason, reasoning should not include secret information from the summary:"** You are generating what is the possible reasoning that a player can have based on the chat history in order to generate the question. The reasoning must not reveal that you know the secret object or the general category. It must be a feasible reasoning based on the chat history alone. 
+- **Question should only be asking about the possible secret words:** Your question MUST only ask about objects in ### List of the possible secret words. 
+- **Ask a new question.** You MUST NOT simply repeat previously asked questions. You MUST NOT simply combine multiple previously asked questions. 
+- If you think it is reasonable and feasible to directly guess the object given the current chat history, you can propose the question to directly ask: "Is it {your_guess}?". your_guess must be one of the words in ### List of the possible secret words.
+
+## Overall information about the current game
+### List of the possible secret words
+{{ all_obj_list }}
+
+### Summary of the entire game
+{{ summary }}
+
+Here is the chat history:
+{{ observation_action_history }}
+
+## Output format
+At this point in the chat history, what question would you have asked? You must output one reasoning and feasible question that you would have asked.
+TEACHER_REASON:
+Your rationale for the question that you think the player should have asked instead.
+QUESTION:
+The question that the player should have asked.
+PLAYER_REASON:
+If you are the player who does not know the secret object or the general category that the object is in, what will be your reasoning in order to generate the action? You MUST only refer to the chat history. You MUST NOT talk about the summary, which the player does not have access to. You MUST NOT reveal what the secret object is. You MUST NOT reveal what the general category that the secret object is in.
+{% elif mode == 'output' %}
+TEACHER_REASON:
+{{ teacher_reason }}
+QUESTION:
+{{ action }}
+PLAYER_REASON:
+{{ player_reason }}
+{% endif %}

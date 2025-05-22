@@ -316,7 +316,7 @@ def clean_up_generation(tokenizer, response_ids, domain:str):
     
             reason, action = parser(response)
 
-            action_header_name = "ACTION:" if domain != "twenty_questions" else "QUESTION:"
+            action_header_name = "ACTION:" if domain != "twenty_questions" and domain != "guess_my_city" else "QUESTION:"
 
             if reason == "" or action == "":
                 print(f"invalid response:\n{response}\nreason: {reason}\naction: {action}")

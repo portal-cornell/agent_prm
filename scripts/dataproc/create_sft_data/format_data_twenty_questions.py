@@ -21,6 +21,15 @@ python scripts/dataproc/create_sft_data/format_data_twenty_questions.py -m multi
 - LEAP mode (training from successful rollouts + rollouts with expert relabeled actions):
 
 python scripts/dataproc/create_sft_data/format_data_twenty_questions.py -m leap -i 1
+- Hindsight LEAP mode (imitate the expert relabeled actions):
+
+python scripts/dataproc/create_sft_data/format_data_twenty_questions.py -m hindsight-leap -i 1
+- Hindsight-all mode (training from counterfactual, both successful and unsuccessful):
+
+python scripts/dataproc/create_sft_data/format_data_twenty_questions.py -m hindsight-all -i 1
+- Hindsight mode (training from the successful rollouts + counterfactual rollouts):
+
+python scripts/dataproc/create_sft_data/format_data_twenty_questions.py -m hindsight -i 1
 """
 import math
 import json
@@ -37,7 +46,7 @@ from agent_prm.envs.twenty_questions.data import get_default_word_list
 def preprocess_args():
     parser = argparse.ArgumentParser(description='Generate raw 20questions logs')
     parser.add_argument('--config', type=str, default="configs/create_sft_training_data/twenty_questions.yaml", help='Path to 20 questions dataproc config file')
-    parser.add_argument('-m', "--mode", type=str, default="vanilla", choices=["vanilla", "leap", "multi-star"])
+    parser.add_argument('-m', "--mode", type=str, default="vanilla", choices=["vanilla", "leap", "multi-star", "hindsight", "hindsight-leap", "hindsight-all"])
     parser.add_argument('-i', type=int, required=True, help='The iteration number of the rollout')
     args = parser.parse_args()
 
@@ -116,6 +125,19 @@ def process_data(data_type: str, cfg: dict, i: int, mode: str):
         rollout_iter_str = f"iter{i-1}"
         raw_rollout_dir = os.path.join(cfg["leap"][rollout_iter_str]["rollout_dir"], data_type)  # input
         iter_str += "_leap"
+    elif mode == "hindsight-leap":
+        # Use the same data as leap
+        rollout_iter_str = f"iter{i-1}"
+        raw_rollout_dir = os.path.join(cfg["leap"][rollout_iter_str]["rollout_dir"], data_type)  # input
+        iter_str += "_hindsight-leap"
+    elif mode == "hindsight":
+        rollout_iter_str = f"iter{i-1}"
+        raw_rollout_dir = os.path.join(cfg["hindsight"][rollout_iter_str]["rollout_dir"], data_type)  # input
+        iter_str += "_hindsight"
+    elif mode == "hindsight-all":
+        rollout_iter_str = f"iter{i-1}"
+        raw_rollout_dir = os.path.join(cfg["hindsight"][rollout_iter_str]["rollout_dir"], data_type)  # input
+        iter_str += "_hindsight-all"
     else:
         raise ValueError(f"Invalid mode: {mode}")
     
@@ -151,31 +173,77 @@ def process_data(data_type: str, cfg: dict, i: int, mode: str):
 
         # Multi-Star only train on successful rollouts (so we need to filter out the failed rollouts)
         json_files.extend(get_successful_rollouts(successful_json_files, curr_rollout_per_task))
-    elif mode == "leap":
+    elif mode == "leap" or mode == "hindsight-leap":
         json_files = [f for f in json_files if int(f.split("_")[-1].split(".")[0]) in list(range(cfg["leap"]["rollout_per_task_range_min"], cfg["leap"]["rollout_per_task_range_max"]))]
+    elif mode == "hindsight" or mode == "hindsight-all":
+        # Find the off-policy rollouts
+        offpolicy_idx_range = []
+        for i in range(0, len(cfg["hindsight"]["offpolicy_idx_range"]), 2):
+            offpolicy_idx_range.extend(list(range(cfg["hindsight"]["offpolicy_idx_range"][i], cfg["hindsight"]["offpolicy_idx_range"][i+1])))
 
+        json_files = [f for f in json_files if int(f.split("_")[-1].split(".")[0]) in offpolicy_idx_range]
+            
     # Load the template
-    with open(cfg["prompt_template_file"], "r") as f:
-        prompt_template = Template(f.read())
+    if mode == "hindsight" or mode == "hindsight-leap" or mode == "hindsight-all":
+        with open(cfg["hindsight"]["prompt_template_file_hindsight"], "r") as f:
+            prompt_template = Template(f.read())
+    else:
+        with open(cfg["prompt_template_file"], "r") as f:
+            prompt_template = Template(f.read())
     # And necessary parameters needed to render the template
     all_obj_list = [wv[0] for wv in get_default_word_list("all")]
 
     dataset = []
 
-    if mode == "leap":
+    if mode == "leap" or mode == "hindsight-leap":
         num_successful_datapoints = 0
         num_relabeled_datapoints = 0 # failed rollouts with expert relabeled actions
+
+    if mode == "hindsight" or mode == "hindsight-all":
+        num_useful_counterfactual_datapoints = 0
+        num_useless_counterfactual_datapoints = 0
+        num_other_datapoints = 0
 
     # Add each rollout to the dataset
     for file_path in tqdm(json_files, desc="Processing rollouts"):
         data = load_json(file_path)
 
-        # Skip if the trajectory was not successful
-        # if data[-1]["reward"] != 0.0:
-        #     continue
+        if mode == "hindsight" or mode == "hindsight-all":
+            # Skip the trajectory does not have summary
+            if "summary" not in data[0]:
+                # print(f"Skipping trajectory {file_path} because it does not have summary")
+                num_useless_counterfactual_datapoints += 1
+                num_other_datapoints += len(data) - 1
+                continue
 
+            if data[-1]["reward"] != 0.0:
+                # print(f"Skipping trajectory {file_path} because it does not have successful rollout")
+                num_useless_counterfactual_datapoints += 1
+                num_other_datapoints += len(data) - 1
+
+                if mode == "hindsight":
+                    # Only consider the successful rollouts
+                    continue
+
+        if mode == "hindsight-leap":
+            # Skip the trajectory if it doesn't have summary
+            # print(f"Skipping trajectory {file_path} because it does not have summary")
+            if "summary" not in data[0]:
+                num_successful_datapoints += len(data)
+                continue
+
+        # print(f"+++++ Processing trajectory {file_path} +++++")
         # Iterate over each timestep
         for i in range(len(data)):
+            if mode == "hindsight" or mode == "hindsight-all":
+                if data[i]["raw_text"] != "":
+                    # Skip if this timestep is not the counterfactual timestep
+                    # print(f"Skipping timestep {i}")
+                    num_other_datapoints += 1
+                    continue
+
+                num_useful_counterfactual_datapoints += 1
+
             input_mode = "input" if i < 19 else "input_final"
 
             # Build the history
@@ -193,7 +261,13 @@ def process_data(data_type: str, cfg: dict, i: int, mode: str):
                 "observation_action_history": observation_action_history,
             }
 
-            prompt = prompt_template.render(**input_data)
+            if mode == "hindsight" or mode == "hindsight-leap" or mode == "hindsight-all":
+                input_data["summary"] = data[0]["summary"]
+
+            prompt = prompt_template.render(**input_data).strip()
+
+            # print(prompt)
+            # input("============== prompt")
 
             if mode == "leap" and "expert_alternatives" in data[i]:
                 # This is a failed rollout with expert relabeled actions
@@ -203,6 +277,22 @@ def process_data(data_type: str, cfg: dict, i: int, mode: str):
                     "action": data[i]["expert_alternatives"][0]["action"]
                 }
                 num_relabeled_datapoints += 1
+            elif mode == "hindsight-leap":
+                output_data = {
+                    "mode": "output",
+                    "teacher_reason": data[i]["expert_alternatives"][0]["teacher_reason"],
+                    "action": data[i]["expert_alternatives"][0]["action"],
+                    "player_reason": data[i]["expert_alternatives"][0]["reason"]
+                }
+
+                num_relabeled_datapoints += 1
+            elif mode == "hindsight" or mode == "hindsight-all":
+                output_data = {
+                    "mode": "output",
+                    "teacher_reason": data[i]["teacher_reason"],
+                    "action": data[i]["action"],
+                    "player_reason": data[i]["reason"]
+                }
             else:
                 output_data = {
                     "mode": "output",
@@ -213,7 +303,10 @@ def process_data(data_type: str, cfg: dict, i: int, mode: str):
                 if mode == "leap":
                     num_successful_datapoints += 1
 
-            response = prompt_template.render(**output_data)
+            response = prompt_template.render(**output_data).strip()
+
+            # print(response)
+            # input("============== response")
 
             datapoint = {
                 "prompt": [{"role": "user", "content": prompt}],
@@ -222,7 +315,7 @@ def process_data(data_type: str, cfg: dict, i: int, mode: str):
 
             dataset.append(datapoint)
 
-    print(f"Collected {len(dataset)} datapoints for {data_type}{f' (successful datapoints: {num_successful_datapoints}, relabeled datapoints: {num_relabeled_datapoints})' if mode == 'leap' else ''}")
+    print(f"Collected {len(dataset)} datapoints for {data_type}{f' (successful datapoints: {num_successful_datapoints}, relabeled datapoints: {num_relabeled_datapoints})' if mode == 'leap' or mode == 'hindsight-leap' else ''}{f' (useful counterfactual datapoints: {num_useful_counterfactual_datapoints}, useless counterfactual datapoints: {num_useless_counterfactual_datapoints}, other datapoints: {num_other_datapoints})' if mode == 'hindsight' or mode == 'hindsight-all' else ''}")
     print(f"Saving the dataset to {os.path.join(data_dir, f'{data_type}.json')}")
     input("Press Enter to continue...")
 

@@ -71,7 +71,10 @@ from open_instruct.vllm_utils import vllm_single_gpu_patch
 
 from utils import (
     INPUT_IDS_PROMPT_KEY,
-    SFTPromptDatasetProcessor,
+    INPUT_IDS_PROMPT_EXPLORATION_KEY,
+    HAS_EXPLORATION_KEY,
+    SFTHindsightExplorationDatasetProcessor,
+    SimpleGenerateWithHindsightExplorationCollator
 )
 
 from agent_prm.utils.open_instruct import (
@@ -190,10 +193,10 @@ class Args:
 
     exploration_prob: float = 0.5
     """the probability of exploration"""
-    hindsight_vllm_device: str = "cuda:2"
-    """the device placement of the hindsight vllm model"""
     hindsight_model_name_or_path: str = "meta-llama/Llama-3.2-3B-Instruct"
     """the name or path of the hindsight model"""
+    hindsight_type: Literal["leap", "counterfactual"] = "leap"
+    """the type of hindsight model"""
     
     # vLLM settings. NOTE: currently we need to place the vLLM model on a separate GPU
     # for generation to work properly because vLLM would pre-alocate the memory.
@@ -299,31 +302,47 @@ def calculate_runtime_args_and_accelerator(args: Args, model_config: ModelConfig
 import re
 import json
 
-from agent_prm.utils.parser import parse_reason_and_action_alfworld, parse_reason_and_action_twenty_questions, parse_reason_and_action_guess_my_city
+from agent_prm.utils.parser import parse_reason_and_action_alfworld, parse_reason_and_action_twenty_questions, parse_hindsight_reason_and_action_twenty_questions, parse_reason_and_action_guess_my_city
 from agent_prm.envs.car_dealer.parser import format_reason_action_car_dealer_online_dpo
 
 # Map domain to parser
 PARSER_DICT = {
-    "alfworld": parse_reason_and_action_alfworld,
-    "twenty_questions": parse_reason_and_action_twenty_questions,
-    "guess_my_city": parse_reason_and_action_guess_my_city,
+    "original": {
+        "alfworld": parse_reason_and_action_alfworld,
+        "twenty_questions": parse_reason_and_action_twenty_questions,
+        "guess_my_city": parse_reason_and_action_guess_my_city,
+    },
+    "hindsight": {
+        "leap": {
+            "twenty_questions": parse_reason_and_action_twenty_questions,
+        },
+        "counterfactual": {
+            "twenty_questions": parse_hindsight_reason_and_action_twenty_questions,
+        }
+    }
 }
 
 def clean_up_generation(tokenizer, response_ids, domain:str, mode:str):
     # detokenize
     responses = tokenizer.batch_decode(response_ids, skip_special_tokens=True)
     cleaned_responses = []
+
+    prompt_mode = mode.split("-")[0]
+    hindsight_type = mode.split("-")[1] if "hindsight" in mode else ""
     for response in responses:
         if domain == "car_dealer":
             # We have to do a special formatting for the car dealer domain (because there are 2 modes in the response)
             cleaned_responses.append(format_reason_action_car_dealer_online_dpo(response))
         else:
             # Get parser from domain name
-            parser = PARSER_DICT[domain]
+            if prompt_mode == "original":
+                parser = PARSER_DICT[prompt_mode][domain]
+            else:
+                parser = PARSER_DICT[prompt_mode][hindsight_type][domain]
     
             reason, action = parser(response)
 
-            action_header_name = "ACTION:" if domain != "twenty_questions" else "QUESTION:"
+            action_header_name = "ACTION:" if domain != "twenty_questions" and domain != "guess_my_city" else "QUESTION:"
 
             if reason == "" or action == "":
                 print(f"invalid response:\n{response}\nreason: {reason}\naction: {action}")
@@ -468,7 +487,7 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
 
     # create the dataset
     dataset_dict = DatasetDict()
-    dataset_processor = SFTPromptDatasetProcessor(tokenizer=tokenizer, config=dataset_config)
+    dataset_processor = SFTHindsightExplorationDatasetProcessor(tokenizer=tokenizer, config=dataset_config)
     if len(args.dataset_train_splits) != len(args.dataset_mixer_dict) and len(args.dataset_train_splits) == 1:
         args.dataset_train_splits = [args.dataset_train_splits[0]] * len(args.dataset_mixer_dict)
         print(f"Dataset splits not provided for all datasets. Using the same {args.dataset_train_splits[0]} split for all datasets.")
@@ -569,7 +588,7 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
         num_warmup_steps=args.warm_up_steps,
         num_training_steps=args.num_training_steps * args.num_train_epochs,
     )
-    data_collator = SimpleGenerateCollator(pad_token_id=tokenizer.pad_token_id)
+    data_collator = SimpleGenerateWithHindsightExplorationCollator(pad_token_id=tokenizer.pad_token_id)
     dataloader = DataLoader(
         train_dataset,
         batch_size=args.local_dataloader_batch_size,
@@ -761,11 +780,18 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
                     data = next(iter_dataloader)
                     queries_next = data[INPUT_IDS_PROMPT_KEY].to(device)
                     queries_next = queries_next.repeat(args.num_generation_per_prompt, 1)
-                random_value = torch.rand(1).item()
-                if random_value < args.exploration_prob:
-                    print(f"+=+=+=+=+=+=+=+=+=+=+=+= Sending queries to hindsight model")
-                    # We never need to update the hindsight policy, so we keep the unwrapped_model as None  
-                    send_queries(accelerator, hindsight_model, tokenizer, param_prompt_Q, queries_next, mode="hindsight")
+                    queries_next_exploration = data[INPUT_IDS_PROMPT_EXPLORATION_KEY].to(device)
+                    queries_next_exploration = queries_next_exploration.repeat(args.num_generation_per_prompt, 1)
+                print(f"args.async_mode. data[HAS_EXPLORATION_KEY].item(): {data[HAS_EXPLORATION_KEY].item()}")
+                if data[HAS_EXPLORATION_KEY].item():
+                    random_value = torch.rand(1).item()
+                    if random_value < args.exploration_prob:
+                        print(f"+=+=+=+=+=+=+=+=+=+=+=+= Sending queries to hindsight model")
+                        # We never need to update the hindsight policy, so we keep the unwrapped_model as None  
+                        send_queries(accelerator, hindsight_model, tokenizer, param_prompt_Q, queries_next_exploration, mode=f"hindsight-{args.hindsight_type}")
+                    else:
+                        print(f"---------------------- Sending queries to current model")
+                        send_queries(accelerator, generation_model, tokenizer, param_prompt_Q, queries_next, mode="original")
                 else:
                     print(f"---------------------- Sending queries to current model")
                     send_queries(accelerator, generation_model, tokenizer, param_prompt_Q, queries_next, mode="original")
@@ -776,11 +802,18 @@ def main(args: Args, dataset_config: DatasetConfig, model_config: ModelConfig):
                     data = next(iter_dataloader)
                     queries_next = data[INPUT_IDS_PROMPT_KEY].to(device)
                     queries_next = queries_next.repeat(args.num_generation_per_prompt, 1)
-                    random_value = torch.rand(1).item()
-                    if random_value < args.exploration_prob:
-                        print(f"+=+=+=+=+=+=+=+=+=+=+=+= Sending queries to hindsight model")
-                        # We never need to update the hindsight policy, so we keep the unwrapped_model as None
-                        send_queries(accelerator, hindsight_model, tokenizer, param_prompt_Q, queries_next, mode="hindsight")
+                    queries_next_exploration = data[INPUT_IDS_PROMPT_EXPLORATION_KEY].to(device)
+                    queries_next_exploration = queries_next_exploration.repeat(args.num_generation_per_prompt, 1)
+                    print(f"NOT args.async_mode. data[HAS_EXPLORATION_KEY].item(): {data[HAS_EXPLORATION_KEY].item()}")
+                    if data[HAS_EXPLORATION_KEY].item():
+                        random_value = torch.rand(1).item()
+                        if random_value < args.exploration_prob:
+                            print(f"+=+=+=+=+=+=+=+=+=+=+=+= Sending queries to hindsight model")
+                            # We never need to update the hindsight policy, so we keep the unwrapped_model as None
+                            send_queries(accelerator, hindsight_model, tokenizer, param_prompt_Q, queries_next_exploration, mode=f"hindsight-{args.hindsight_type}")
+                        else:
+                            print(f"---------------------- Sending queries to current model")
+                            send_queries(accelerator, generation_model, tokenizer, param_prompt_Q, queries_next, mode="original")
                     else:
                         print(f"---------------------- Sending queries to current model")
                         send_queries(accelerator, generation_model, tokenizer, param_prompt_Q, queries_next, mode="original")

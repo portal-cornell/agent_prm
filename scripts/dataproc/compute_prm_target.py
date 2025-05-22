@@ -27,71 +27,9 @@ from agent_prm.utils.general_utils import load_json
 from agent_prm.envs.car_dealer.interface import format_chat_history, format_api_call_history, format_car_options, format_most_recent_buyer_message
 
 """================================================================================
-    Alfworld processing functions
-================================================================================"""
-
-def alfworld_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False):
-    try:
-        with open(file_path, 'r') as file:
-            data = json.load(file)
-
-        if 'trajectory' not in data:
-            return {}
-
-        Q_target = {}
-        trajectory = data['trajectory']
-        outcome_reward = 2 * trajectory[-1]['score'] - 1  # transform from [-1, 1]
-        for t in range(len(trajectory) - 1, -1, -1):
-            state, reason_action = alfworld_extract_state_reason_action(trajectory, data['task'], t, exclude_reason=exclude_reason)
-            state_hash = sha256(json.dumps({'state': state, 'action': reason_action['action']}, sort_keys=True).encode()).hexdigest()
-            update_Q(state, reason_action, state_hash, Q_target, outcome_reward, gamma, t)
-        return Q_target
-    except Exception as e:
-        print(f"Error processing {file_path}: {e}")
-        return {}
-    
-def alfworld_extract_state_reason_action(trajectory, task, t, exclude_reason=False):
-    history = []
-    for i in range(t):
-        step = trajectory[i]
-        history.append({
-            'observation': step['observation'],
-            'action': step['action']
-        })
-    
-    state = {
-        'observation': trajectory[t]['observation'],
-        'candidate_actions': trajectory[t]['candidate_actions'],
-        'history': history,
-        'task': task
-    }
-
-    if exclude_reason:
-        reason_action = {
-            'action': trajectory[t]['action'],
-        }
-    else:
-        reason_action = {
-            'reason': trajectory[t]['reason'],
-            'action': trajectory[t]['action'],
-        }
-
-    return state, reason_action
-
-def alfworld_skip_file_condition(rolloutdir, file_name, max_rollout_per_task_per_dir=None, include_only_success=False):
-    """
-    For now, cannot handle include_only_success
-    """
-    return file_name.endswith(".json") or (max_rollout_per_task_per_dir is not None and int(file_name.split("_")[-1].split(".")[0]) >= max_rollout_per_task_per_dir)
-
-def alfworld_success_file_condition(file_name):
-    # TODO: Implement this
-    return True
-
-"""================================================================================
     20 Questions processing functions
 ================================================================================"""
-def twenty_questions_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False, dataset_min_reward=-1, dataset_max_reward=1):
+def twenty_questions_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False, dataset_min_reward=-1, dataset_max_reward=1, track_summary=False):
     try:
         with open(file_path, 'r') as file:
             trajectory = json.load(file)
@@ -99,7 +37,7 @@ def twenty_questions_process_file(file_path, gamma, exclude_reason=False, is_off
         Q_target = {}
         outcome_reward = twenty_questions_normalize_reward(trajectory[-1]['reward'])  # transform from [-1, 1]
         for t in range(len(trajectory) - 1, -1, -1):
-            state, reason_action = twenty_questions_extract_state_reason_action(trajectory, t, exclude_reason=exclude_reason)
+            state, reason_action = twenty_questions_extract_state_reason_action(trajectory, t, exclude_reason=exclude_reason, track_summary=track_summary)
             state_hash = sha256(json.dumps({'state': state, 'action': reason_action['action']}, sort_keys=True).encode()).hexdigest()
             update_Q(state, reason_action, state_hash, Q_target, outcome_reward, gamma, k=t, T=len(trajectory), is_offpolicy=is_offpolicy)
         return Q_target
@@ -107,7 +45,12 @@ def twenty_questions_process_file(file_path, gamma, exclude_reason=False, is_off
         print(f"Error processing {file_path}: {e}")
         return {}
 
-def twenty_questions_extract_state_reason_action(trajectory, t, exclude_reason=False):
+def twenty_questions_extract_state_reason_action(trajectory, t, exclude_reason=False, track_summary=False):
+    if track_summary and "summary" in trajectory[0]:
+        summary = trajectory[0]["summary"]
+    elif track_summary:
+        raise ValueError("Summary not found in trajectory")
+
     history = []
     for i in range(t-1):
         step = trajectory[i]
@@ -119,6 +62,9 @@ def twenty_questions_extract_state_reason_action(trajectory, t, exclude_reason=F
     state = {
         'history': history,
     }
+
+    if track_summary:
+        state["summary"] = summary
 
     if exclude_reason:
         reason_action = {
@@ -177,7 +123,7 @@ def twenty_questions_success_file_condition(file_name):
 """================================================================================
     Guess My City processing functions
 ================================================================================"""
-def guess_my_city_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False, dataset_min_reward=-1, dataset_max_reward=1):
+def guess_my_city_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False, dataset_min_reward=-1, dataset_max_reward=1, track_summary=False):
     try:
         with open(file_path, 'r') as file:
             trajectory = json.load(file)
@@ -219,15 +165,23 @@ def guess_my_city_extract_state_reason_action(trajectory, t, exclude_reason=Fals
     return state, reason_action
     
 def guess_my_city_normalize_reward(reward):
+    if reward != 0:
+        # When terminating early, some reward can be more than -1. We just set it to -1
+        reward = -1
+
+    # normalize outcome reward from [-1, 0] to [-1, 1]
+    #   We normalize the outcome reward to -1 and 1 so that we can proprogate the negative effect of failed trajectories
+    #   We assume that the reward before the last step is still 0
+    return 2 * reward + 1
     # The most negative a reward can be is -10, the most positive is 0. 
     #   But anything not 0 is a failure. So I think we should scale 0 to 10. 
     # normalize outcome reward from [-10, 10] to [-1, 1]
     #   We normalize the outcome reward to -1 and 1 so that we can proprogate the negative effect of failed trajectories
     #   We assume that the reward before the last step is still 0
-    if reward == 0:
-        reward = 10
+    # if reward == 0:
+    #     reward = 10
 
-    return reward / 10.0
+    # return reward / 10.0
 
 def guess_my_city_skip_file_condition(rolloutdir, file_name, max_rollout_per_task_per_dir=None):
     return (not file_name.endswith(".json")) or ('_summary_dict' in file_name) or ('original' in file_name) or (max_rollout_per_task_per_dir is not None and int(file_name.split("_")[-1].split(".")[0]) >= max_rollout_per_task_per_dir)
@@ -303,7 +257,7 @@ def car_dealer_normalize_reward(reward, dataset_min_reward=-2, dataset_max_rewar
     #   We assume that the reward before the last step is still 0
     return 2 * (reward - dataset_min_reward) / (dataset_max_reward - dataset_min_reward) - 1
     
-def car_dealer_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False, dataset_min_reward=-2, dataset_max_reward=2):
+def car_dealer_process_file(file_path, gamma, exclude_reason=False, is_offpolicy=False, dataset_min_reward=-2, dataset_max_reward=2, track_summary=False):
     try:
         with open(file_path, 'r') as file:
             trajectory = json.load(file)
@@ -590,10 +544,8 @@ def subsample_data(data: List[Dict], count_to_reduce: int, bins: int = 5, low_or
 
     
 # Main function using multiprocessing
-def compute_prm_target(files, files_breakdown, domain, outputdir, gamma, cpu_count=None, train_split=None, split_name=None, balance_data=True, onpolicy_pct_for_success=None, track_offpolicy=False, dataset_min_reward=None, dataset_max_reward=None):
-    if domain == "alfworld":
-        process_file = alfworld_process_file
-    elif domain == "twenty_questions":
+def compute_prm_target(files, files_breakdown, domain, outputdir, gamma, cpu_count=None, train_split=None, split_name=None, balance_data=True, onpolicy_pct_for_success=None, track_offpolicy=False, dataset_min_reward=None, dataset_max_reward=None, track_summary=False):
+    if domain == "twenty_questions":
         process_file = twenty_questions_process_file
     elif domain == "guess_my_city":
         process_file = guess_my_city_process_file
@@ -628,15 +580,15 @@ def compute_prm_target(files, files_breakdown, domain, outputdir, gamma, cpu_cou
             results.extend(list(tqdm(pool.imap(process_func, onpolicy_rollouts_succeeded), total=len(onpolicy_rollouts_succeeded), desc="Processing onpolicy rollouts succeeded")))
 
         with Pool(processes=num_cpus_per_type) as pool:
-            process_func = partial(process_file, gamma=gamma, is_offpolicy=True, dataset_min_reward=dataset_min_reward, dataset_max_reward=dataset_max_reward)
+            process_func = partial(process_file, gamma=gamma, is_offpolicy=True, dataset_min_reward=dataset_min_reward, dataset_max_reward=dataset_max_reward, track_summary=track_summary)
             results.extend(list(tqdm(pool.imap(process_func, offpolicy_files_failed_to_include), total=len(offpolicy_files_failed_to_include), desc="Processing offpolicy files failed to include")))
         
         with Pool(processes=num_cpus_per_type) as pool:
-            process_func = partial(process_file, gamma=gamma, is_offpolicy=True, dataset_min_reward=dataset_min_reward, dataset_max_reward=dataset_max_reward)
+            process_func = partial(process_file, gamma=gamma, is_offpolicy=True, dataset_min_reward=dataset_min_reward, dataset_max_reward=dataset_max_reward, track_summary=track_summary)
             results.extend(list(tqdm(pool.imap(process_func, offpolicy_files_good), total=len(offpolicy_files_good), desc="Processing offpolicy files good")))
     else:
         with Pool(processes=num_cpus) as pool:
-            process_func = partial(process_file, gamma=gamma, dataset_min_reward=dataset_min_reward, dataset_max_reward=dataset_max_reward)
+            process_func = partial(process_file, gamma=gamma, dataset_min_reward=dataset_min_reward, dataset_max_reward=dataset_max_reward, track_summary=track_summary)
             results = list(tqdm(pool.imap(process_func, files), total=len(files), desc="Processing files"))
     
     # # First test with single process
@@ -895,9 +847,7 @@ def reduce_and_save_data_for_split_biased(Q_target, outputdir, split_name, balan
     return data_to_save
 
 def compute_file_list(rolloutdirs, domain, max_files_per_dir=None, max_rollout_per_task_per_dir_list=None):
-    if domain == "alfworld":
-        skip_condition = alfworld_skip_file_condition
-    elif domain == "twenty_questions":
+    if domain == "twenty_questions":
         skip_condition = twenty_questions_skip_file_condition
     elif domain == "guess_my_city":
         skip_condition = guess_my_city_skip_file_condition
@@ -938,6 +888,9 @@ def compute_hindsight_file_list(rolloutdirs, domain, onpolicy_idx_range, offpoli
     elif domain == "car_dealer":
         skip_condition = car_dealer_skip_file_condition
         filter_condition_checker = car_dealer_filter_condition_checker
+    elif domain == "guess_my_city":
+        skip_condition = guess_my_city_skip_file_condition
+        filter_condition_checker = guess_my_city_filter_condition_checker
     else:
         raise ValueError(f"Invalid domain: {domain}")
 
@@ -1073,7 +1026,7 @@ def main(cfg: DictConfig):
         files, files_breakdown = compute_file_list(rolloutdirs, cfg.domain, cfg.max_files_per_dir, cfg.max_rollout_per_task_per_dir_list)
     
     input("Press any key to continue...")
-    compute_prm_target(files, files_breakdown, cfg.domain, cfg.outputdir, cfg.gamma, cfg.cpu_count, cfg.train_split, cfg.split_name, cfg.balance_data, cfg.hindsight.onpolicy_pct_for_success if is_hindsight_data else None, cfg.hindsight.track_offpolicy if is_hindsight_data else False, cfg.reward_min, cfg.reward_max)
+    compute_prm_target(files, files_breakdown, cfg.domain, cfg.outputdir, cfg.gamma, cfg.cpu_count, cfg.train_split, cfg.split_name, cfg.balance_data, cfg.hindsight.onpolicy_pct_for_success if is_hindsight_data else None, cfg.hindsight.track_offpolicy if is_hindsight_data else False, cfg.reward_min, cfg.reward_max, cfg.hindsight.track_summary)
 
 if __name__ == "__main__":
     main()
