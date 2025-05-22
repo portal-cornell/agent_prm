@@ -29,9 +29,15 @@ BASE_PATH = "playground/car_dealer/hindsight"
 # data_iter = "iter0"
 # dir_path = "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3"
 
-FOLDER_NAME = "inspect_iter2_hindsight_data"
-data_iter = "iter1"
-dir_path = "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50_250506_185257_iter1_hindsight-biased-on-50_pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50"
+# FOLDER_NAME = "inspect_iter2_hindsight_data"
+# data_iter = "iter1"
+# dir_path = "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50_250506_185257_iter1_hindsight-biased-on-50_pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50"
+
+# pi2-80pct_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50
+FOLDER_NAME = "inspect_iter3_hindsight_data"
+data_iter = "iter2"
+dir_path = "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter2/pi2-80pct_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50_250510_115714_iter2_hindsight-biased-on-50_no-past-rollout_pi2_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50"
+
 
 os.makedirs(os.path.join(BASE_PATH, FOLDER_NAME, f"{FOLDER_NAME}_{args.data_type}"), exist_ok=True)
 

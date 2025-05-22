@@ -2,7 +2,7 @@
 Example usage:
 
 When getting export's alternative actions:
-    python scripts/dataproc/hindsight/rollout_expert_alt_actions_car_dealer.py -e -m g -i 0 -d val -min 0 -max 4
+    python scripts/dataproc/hindsight/rollout_expert_alt_actions_car_dealer.py -e -m g -i 0 -d train -min 0 -max 4
 
     where
         -e indicates that we are using elogger
@@ -61,7 +61,9 @@ iter_to_rollout_dir = {
     # pi0 3 epochs
     0: "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter0/pi0-62pct_max-car-8_250504_061410_iter0-max-car-8_pi0_vanilla_max-car-8_epochs=3", 
     # pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50
-    1: "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50_250506_185257_iter1_hindsight-biased-on-50_pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50"
+    1: "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter1/pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50_250506_185257_iter1_hindsight-biased-on-50_pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50",
+    # pi2-80pct_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50
+    2: "/share/portal/hw575/agent_prm/data/car_dealer/eval/iter2/pi2-80pct_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50_250510_115714_iter2_hindsight-biased-on-50_no-past-rollout_pi2_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50"
 }
 
 
@@ -83,6 +85,19 @@ iter_to_agent_config = {
         "type": "sglang_server",
         "log_name": "pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50",
         "model_id": "/share/portal/hw575/agent_prm/save/car_dealer/online_dpo/250506_185257_iter1_hindsight-biased-on-50_pi1_Q0-85pct-lr=5e-6_max-car-8_hindsight-biased-on-50",
+        "api_prompt_template_file": "prompts/car_dealer/car_dealer_api_template.j2",
+        "prompt_template_file": "prompts/car_dealer/car_dealer_template.j2",
+        "server_url": "http://localhost:TODO/",
+        "dist_url_port": None,
+        "temperature": 0.3,
+        "batch_limit": 32,
+        "verbose": 0,
+        "debug": False,
+    },
+    2: {
+        "type": "sglang_server",
+        "log_name": "pi2-80pct_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50",
+        "model_id": "/share/portal/hw575/agent_prm/save/car_dealer/online_dpo/250510_115714_iter2_hindsight-biased-on-50_no-past-rollout_pi2_Q1-85pct-lr=5e-6_no-past_hindsight-biased-on-50/checkpoint-800",
         "api_prompt_template_file": "prompts/car_dealer/car_dealer_api_template.j2",
         "prompt_template_file": "prompts/car_dealer/car_dealer_template.j2",
         "server_url": "http://localhost:TODO/",
