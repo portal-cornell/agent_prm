@@ -67,7 +67,9 @@ folder_to_baselines = {
     # pi2
     "rl-pi2-hd": ["gpt-4o", "pi0", "pi1", "BoN_pi1_Q1*_hindsight"],
     "rl-pi1-hd-with-pi0-pi2-mix": ["gpt-4o", "pi0"],
-    "prm-pi2-q0-hd-with-pi0-pi2-mix": ["gpt-4o", "pi0", "pi1", "pi2"]
+    "prm-pi2-q0-hd-with-pi0-pi2-mix": ["gpt-4o", "pi0", "pi1", "pi2"],
+    ############################################################
+    "rl-explore": [] # Not baselines
 }
 
 folder_to_regex = {
@@ -153,7 +155,21 @@ folder_to_regex = {
     'rl-pi2-hd': 
         [r'^(pi2-(\d+)pct)_Q1-80pct-lr=5e-6-hindsight$', r'^pi2_Q1-80pct-lr=5e-6-hindsight$', r'^(pi2-(\d+)pct)_Q1-60pct-lr=5e-6$', r'^pi2_Q1-60pct-lr=5e-6$'],
     'prm-pi2-q0-hd-with-pi0-pi2-mix': 
-        [r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight', r'BoN_pi0_Q0-lr=5e-6_hindsight', r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_pi0-pi2-mix', r'BoN_pi0_Q0-lr=5e-6_pi0-pi2-mix', r'^BoN_pi2_(Q0-(\d+)pct)-lr=5e-6_hindsight-baseline$', r'^BoN_pi2_(Q0-(\d+)pct)-lr=5e-6_pi0-pi2-mix']
+        [r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_hindsight', r'BoN_pi0_Q0-lr=5e-6_hindsight', r'BoN_pi0_(Q0-(\d+)pct)-lr=5e-6_pi0-pi2-mix', r'BoN_pi0_Q0-lr=5e-6_pi0-pi2-mix', r'^BoN_pi2_(Q0-(\d+)pct)-lr=5e-6_hindsight-baseline$', r'^BoN_pi2_(Q0-(\d+)pct)-lr=5e-6_pi0-pi2-mix'],
+    ############################################################
+    "rl-explore":
+        [
+            # Original policy
+            r'^(pi1-(\d+)pct)_Q0-lr=5e-6_no-explore_hindsight-biased-on-60$', r'^pi1_Q0-lr=5e-6_no-explore_hindsight-biased-on-60$',
+            # Using LEAP to explore 
+            r'^(pi1-(\d+)pct)_Q0-lr=5e-6_leap-pi1-rl-explore_hindsight-biased-on-60$', r'^pi1_Q0-lr=5e-6_leap-pi1-rl-explore_hindsight-biased-on-60$',
+            # Using LEAP to explore 75% of the time (e.g., pi1-38pct_Q0-lr=5e-6_leap-explore=75pct_hindsight-biased-on-60)
+            r'^(pi1-(\d+)pct)_Q0-lr=5e-6_leap-explore=75pct_hindsight-biased-on-60$', r'^pi1_Q0-lr=5e-6_leap-explore=75pct_hindsight-biased-on-60$',
+            # Using Hindsight to explore e.g. pi1-50pct_Q0-lr=5e-6_hindsight-explore_hindsight-biased-on-60_with-summary
+            r'^(pi1-(\d+)pct)_Q0-lr=5e-6_hindsight-explore_hindsight-biased-on-60_with-summary$', r'^pi1_Q0-lr=5e-6_hindsight-explore_hindsight-biased-on-60_with-summary$',
+            # Using Hindsight to explore 75% of the time (e.g., pi1-80pct_Q0-lr=5e-6_hindsight-explore=75pct_hindsight-biased-on-60_with-summary)
+            r'^(pi1-(\d+)pct)_Q0-lr=5e-6_hindsight-explore=75pct_hindsight-biased-on-60_with-summary$', r'^pi1_Q0-lr=5e-6_hindsight-explore=75pct_hindsight-biased-on-60_with-summary$',
+        ]
 }
 
 folder_to_plot_models = {
@@ -225,7 +241,16 @@ folder_to_plot_models = {
     "rl-pi2-hd": 
         ['gpt-4o', 'pi0', 'pi1', 'BoN_pi1_Q1*_hindsight', 'pi2_Q1-60pct-lr=5e-6', 'pi2_Q1-80pct-lr=5e-6-hindsight'],
     'prm-pi2-q0-hd-with-pi0-pi2-mix': 
-        ['gpt-4o', 'pi0', 'pi1', 'pi2', 'BoN_pi0_Q0-lr=5e-6_hindsight-baseline',  'BoN_pi0_Q0-lr=5e-6_pi0-pi2-mix', 'BoN_pi2_Q0-lr=5e-6_hindsight-baseline', 'BoN_pi2_Q0-lr=5e-6_pi0-pi2-mix']
+        ['gpt-4o', 'pi0', 'pi1', 'pi2', 'BoN_pi0_Q0-lr=5e-6_hindsight-baseline',  'BoN_pi0_Q0-lr=5e-6_pi0-pi2-mix', 'BoN_pi2_Q0-lr=5e-6_hindsight-baseline', 'BoN_pi2_Q0-lr=5e-6_pi0-pi2-mix'],
+    ############################################################
+    "rl-explore":
+        [
+            'pi1_Q0-lr=5e-6_no-explore_hindsight-biased-on-60', 
+            'pi1_Q0-lr=5e-6_leap-pi1-rl-explore_hindsight-biased-on-60',
+            'pi1_Q0-lr=5e-6_leap-explore=75pct_hindsight-biased-on-60',
+            'pi1_Q0-lr=5e-6_hindsight-explore_hindsight-biased-on-60_with-summary',
+            'pi1_Q0-lr=5e-6_hindsight-explore=75pct_hindsight-biased-on-60_with-summary',
+        ]
 }
 
 EVAL_DIR = "data/twenty_questions/eval"
@@ -238,7 +263,7 @@ ROLLOUT_PER_TASK_DICT = {
 }
 
 REWARD_MIN, REWARD_MAX = -18, -4
-SUCCESS_RATE_MIN, SUCCESS_RATE_MAX = 0.4, 0.85
+SUCCESS_RATE_MIN, SUCCESS_RATE_MAX = 0.5, 1.0
 
 def is_valid_rollout(f: str, data_type: str) -> bool:
     """

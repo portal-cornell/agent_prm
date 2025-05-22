@@ -43,6 +43,27 @@ from agent_prm.utils.logger_email import elogger
 from agent_prm.utils.general_utils import setup_sglang_server
 from agent_prm.utils.cfg_utils import get_output_path, find_matching_iter
 
+GPT4o_PERFORMANCE = {
+    "train": {
+        "avg_reward": -14.603053435114504,
+        "se_reward": 0.4835959968832463,
+        "avg_success_rate": 0.5954198473282443,
+        "se_success_rate": 0.0428823219093225
+    },
+    "val": {
+        "avg_reward": -14.514851485148515,
+        "se_reward": 0.5107632546695033,
+        "avg_success_rate": 0.6534653465346535,
+        "se_success_rate": 0.0473504302167663
+    },
+    "test": {
+        "avg_reward": -14.714285714285714,
+        "se_reward": 0.5990539409533556,
+        "avg_success_rate": 0.6103896103896104,
+        "se_success_rate": 0.0555742318497404
+    }
+}
+
 def online_eval(cfg: dict, logdir: str, agent: Agent):
     """
     Evaluate the model by interacting with the environment
@@ -122,7 +143,7 @@ def online_eval(cfg: dict, logdir: str, agent: Agent):
             save_json(os.path.join(logdir, obj_data_type, f"{obj}_{obj_rollout_idx_str}.json"), traj_list[i])
 
 
-def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, agent_name: str, rollout_per_task_dict: Dict[str, int], use_existing_table: bool = False, overwrite_existing_entry: bool = False):
+def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, agent_name: str, rollout_per_task_dict: Dict[str, int], use_existing_table: bool = False, overwrite_existing_entry: bool = False, normalize: bool = False):
     """
     Consolidate the online eval results and save it as a csv file
     """
@@ -196,13 +217,21 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
 
                 # Compute rewards efficiently
                 all_rewards = [sum(t["reward"] for t in load_json(os.path.join(agent_rollout_dir, data_type, f))) for f in json_files]
+                if normalize:
+                    all_rewards = [(20+r)/(20+GPT4o_PERFORMANCE[data_type]["avg_reward"]) for r in all_rewards]
+                
                 mean_reward = np.mean(all_rewards)
                 se_reward = np.std(all_rewards)/math.sqrt(len(all_rewards))
 
+                total_rewards.extend(all_rewards)
+
                 # Compute success rate
                 all_success_rates = [load_json(os.path.join(agent_rollout_dir, data_type, f))[-1]["reward"] == 0 for f in json_files]
+
                 mean_success_rate = np.mean(all_success_rates)
                 se_success_rate = np.std(all_success_rates)/math.sqrt(len(all_success_rates))
+
+                total_success_rates.extend(all_success_rates)
             else:
                 print(f"WARNING: {agent_name} does not have any rollouts for {data_type}")
                 mean_reward = np.nan
@@ -223,9 +252,6 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
                 table_dict[f"{data_type} (avg success rate)"].append(mean_success_rate)
                 table_dict[f"{data_type} (se success rate)"].append(se_success_rate)
                 table_dict[f"{data_type} (enough rollouts)"].append(has_enough_rollouts)
-            
-            total_rewards.append(mean_reward)
-            total_success_rates.append(mean_success_rate)
 
         total_avg_reward = np.mean(total_rewards)
         total_se_reward = np.std(total_rewards)/math.sqrt(len(total_rewards))
@@ -255,11 +281,11 @@ def main(cfg: DictConfig):
     if cfg.mode == "consolidate_online":
         # The table for this hydra run is saved in the hydra folder
         hydra_folder_path = get_output_path()
-        table_fp = os.path.join(hydra_folder_path, f"online_eval_table{'_' + cfg.consolidate_online.table_notes if cfg.consolidate_online.table_notes else ''}.csv")
+        table_fp = os.path.join(hydra_folder_path, f"online_eval_table{'_' + cfg.consolidate_online.table_notes if cfg.consolidate_online.table_notes else ''}{'_normalized' if cfg.consolidate_online.normalize else ''}.csv")
 
         if cfg.consolidate_online.use_existing_table:
             # Save a copy of the existing table in the current folder
-            table = pd.read_csv(os.path.join(cfg.logdir, f"online_eval_table{'_' + cfg.consolidate_online.main_table_notes if cfg.consolidate_online.main_table_notes else ''}.csv"))
+            table = pd.read_csv(os.path.join(cfg.logdir, f"online_eval_table{'_' + cfg.consolidate_online.main_table_notes if cfg.consolidate_online.main_table_notes else ''}{'_normalized' if cfg.consolidate_online.normalize else ''}.csv"))
 
             # Save a copy of the existing table in the current folder
             table.to_csv(table_fp, index=False)
@@ -296,10 +322,10 @@ def main(cfg: DictConfig):
         os.makedirs(logdir, exist_ok=True)
 
         if cfg.mode == "consolidate_online":
-            consolidate_online_eval(cfg, table_fp, agent_rollout_dir=logdir, agent_name=agent_config.log_name, rollout_per_task_dict=cfg.consolidate_online.rollout_per_task_dict, use_existing_table=cfg.consolidate_online.use_existing_table, overwrite_existing_entry=cfg.consolidate_online.overwrite_existing_entry)
+            consolidate_online_eval(cfg, table_fp, agent_rollout_dir=logdir, agent_name=agent_config.log_name, rollout_per_task_dict=cfg.consolidate_online.rollout_per_task_dict, use_existing_table=cfg.consolidate_online.use_existing_table, overwrite_existing_entry=cfg.consolidate_online.overwrite_existing_entry, normalize=cfg.consolidate_online.normalize)
 
             # Check if the file or symlink exists, then remove it
-            dst_link_fp = os.path.join(cfg.logdir, f"online_eval_table{'_' + cfg.consolidate_online.main_table_notes if cfg.consolidate_online.main_table_notes else ''}.csv")
+            dst_link_fp = os.path.join(cfg.logdir, f"online_eval_table{'_' + cfg.consolidate_online.main_table_notes if cfg.consolidate_online.main_table_notes else ''}{'_normalized' if cfg.consolidate_online.normalize else ''}.csv")
             if os.path.exists(dst_link_fp) or os.path.islink(dst_link_fp):
                 os.remove(dst_link_fp)
 

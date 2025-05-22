@@ -36,6 +36,27 @@ from agent_prm.envs.car_dealer.data import get_all_games_to_play, load_car_inven
 from agent_prm.envs.car_dealer.interface import rollout_batch
 from agent_prm.envs.car_dealer.parser import format_reason_action_car_dealer_critic
 
+GPT4o_PERFORMANCE = {
+    "train": {
+        "avg_reward": 0.4661368011247421,
+        "se_reward": 0.0475555122667512,
+        "avg_success_rate": 0.4634146341463415,
+        "se_success_rate": 0.0449626322723274
+    },
+    "val": {
+        "avg_reward": 0.3937628140083773,
+        "se_reward": 0.0469807544916971,
+        "avg_success_rate": 0.3981481481481481,
+        "se_success_rate": 0.0471037271736682
+    },
+    "test": {
+        "avg_reward": 0.5877413997788367,
+        "se_reward": 0.051066357087632,
+        "avg_success_rate": 0.5904761904761905,
+        "se_success_rate": 0.0479894888250012
+    }
+}
+
 def online_eval(cfg: dict, logdir: str, agent: Agent, agent_api_call_template: Template, agent_prompt_template: Template):
     """
     Evaluate the model by interacting with the environment
@@ -88,7 +109,7 @@ def online_eval(cfg: dict, logdir: str, agent: Agent, agent_api_call_template: T
 
 
 
-def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, agent_name: str, rollout_per_task_dict: Dict[str, int], use_existing_table: bool = False, overwrite_existing_entry: bool = False):
+def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, agent_name: str, rollout_per_task_dict: Dict[str, int], use_existing_table: bool = False, overwrite_existing_entry: bool = False, normalize: bool = False):
     """
     Consolidate the online eval results and save it as a csv file
     """
@@ -138,7 +159,7 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
             to_include = False
 
             for i in range(rollout_per_task_dict[data_type]):
-                if f"_{i}" in f:
+                if f"_{i}." in f:
                     to_include = True
                     break
 
@@ -162,13 +183,21 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
 
                 # Compute rewards efficiently
                 all_rewards = [sum(t["reward"] for t in load_json(os.path.join(agent_rollout_dir, data_type, f))) for f in json_files]
+                if normalize:
+                    all_rewards = [r/GPT4o_PERFORMANCE[data_type]["avg_reward"] for r in all_rewards]
                 mean_reward = np.mean(all_rewards)
                 se_reward = np.std(all_rewards)/math.sqrt(len(all_rewards))
+
+                total_rewards.extend(all_rewards)
 
                 # Compute success rate
                 all_success_rates = [load_json(os.path.join(agent_rollout_dir, data_type, f))[-1]["success"] for f in json_files]
                 mean_success_rate = np.mean(all_success_rates)
                 se_success_rate = np.std(all_success_rates)/math.sqrt(len(all_success_rates))
+
+                print(f"[{agent_name}] {data_type} len={len(all_rewards)} (avg reward): {mean_reward}, (se reward): {se_reward}, (avg success rate): {mean_success_rate}, (se success rate): {se_success_rate}")
+
+                total_success_rates.extend(all_success_rates)
             else:
                 print(f"WARNING: {agent_name} does not have any rollouts for {data_type}")
                 mean_reward = np.nan
@@ -190,13 +219,13 @@ def consolidate_online_eval(cfg: dict, table_fp: str, agent_rollout_dir: str, ag
                 table_dict[f"{data_type} (se success rate)"].append(se_success_rate)
                 table_dict[f"{data_type} (enough rollouts)"].append(has_enough_rollouts)
             
-            total_rewards.append(mean_reward)
-            total_success_rates.append(mean_success_rate)
-
         total_avg_reward = np.mean(total_rewards)
         total_se_reward = np.std(total_rewards)/math.sqrt(len(total_rewards))
         total_avg_success_rate = np.mean(total_success_rates)
         total_se_success_rate = np.std(total_success_rates)/math.sqrt(len(total_success_rates))
+
+        print(f"len(total_rewards): {len(total_rewards)}, mean: {total_avg_reward}, se: {total_se_reward}")
+        print(f"len(total_success_rates): {len(total_success_rates)}, mean: {total_avg_success_rate}, se: {total_se_success_rate}")
 
         if overwrite:
             table_dict["total (avg reward)"][table_dict["model"].index(agent_name)] = total_avg_reward
@@ -221,11 +250,11 @@ def main(cfg: DictConfig):
     if cfg.mode == "consolidate_online":
         # The table for this hydra run is saved in the hydra folder
         hydra_folder_path = get_output_path()
-        table_fp = os.path.join(hydra_folder_path, f"online_eval_table{'_' + cfg.consolidate_online.table_notes if cfg.consolidate_online.table_notes else ''}.csv")
+        table_fp = os.path.join(hydra_folder_path, f"online_eval_table{'_' + cfg.consolidate_online.table_notes if cfg.consolidate_online.table_notes else ''}{'_normalized' if cfg.consolidate_online.normalize else ''}.csv")
 
         if cfg.consolidate_online.use_existing_table:
             # Save a copy of the existing table in the current folder
-            table = pd.read_csv(os.path.join(cfg.logdir, f"online_eval_table{'_' + cfg.consolidate_online.main_table_notes if cfg.consolidate_online.main_table_notes else ''}.csv"))
+            table = pd.read_csv(os.path.join(cfg.logdir, f"online_eval_table{'_' + cfg.consolidate_online.main_table_notes if cfg.consolidate_online.main_table_notes else ''}{'_normalized' if cfg.consolidate_online.normalize else ''}.csv"))
 
             # Save a copy of the existing table in the current folder
             table.to_csv(table_fp, index=False)
@@ -267,10 +296,10 @@ def main(cfg: DictConfig):
         os.makedirs(logdir, exist_ok=True)
 
         if cfg.mode == "consolidate_online":
-            consolidate_online_eval(cfg, table_fp, agent_rollout_dir=logdir, agent_name=agent_config.log_name, rollout_per_task_dict=cfg.consolidate_online.rollout_per_task_dict, use_existing_table=cfg.consolidate_online.use_existing_table, overwrite_existing_entry=cfg.consolidate_online.overwrite_existing_entry)
+            consolidate_online_eval(cfg, table_fp, agent_rollout_dir=logdir, agent_name=agent_config.log_name, rollout_per_task_dict=cfg.consolidate_online.rollout_per_task_dict, use_existing_table=cfg.consolidate_online.use_existing_table, overwrite_existing_entry=cfg.consolidate_online.overwrite_existing_entry, normalize=cfg.consolidate_online.normalize)
 
             # Check if the file or symlink exists, then remove it
-            dst_link_fp = os.path.join(cfg.logdir, f"online_eval_table{'_' + cfg.consolidate_online.main_table_notes if cfg.consolidate_online.main_table_notes else ''}.csv")
+            dst_link_fp = os.path.join(cfg.logdir, f"online_eval_table{'_' + cfg.consolidate_online.main_table_notes if cfg.consolidate_online.main_table_notes else ''}{'_normalized' if cfg.consolidate_online.normalize else ''}.csv")
             if os.path.exists(dst_link_fp) or os.path.islink(dst_link_fp):
                 os.remove(dst_link_fp)
 
